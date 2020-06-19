@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "lib": ["es2019"],
+    "outDir": "dist",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "declaration": false,
+    "sourceMap": false,
+    "strictPropertyInitialization": false,
+    "experimentalDecorators": true,
+    "esModuleInterop": true
+  },
+  "include": ["packages/**/*"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@dealmore/next-codedeploy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.56",
+    "@types/glob": "^7.1.2",
+    "@vercel/build-utils": "^2.4.0",
+    "aws-sdk": "2.631.0",
+    "glob": "^7.1.6"
+  },
+  "dependencies": {
+    "@vercel/next": "^2.6.7"
+  }
+}

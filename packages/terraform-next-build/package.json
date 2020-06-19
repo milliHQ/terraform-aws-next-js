@@ -1,0 +1,18 @@
+{
+  "name": "terraform-next-build",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "bin": {
+    "tf-next": "index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@vercel/build-utils": "^2.4.0",
+    "@vercel/frameworks": "^0.0.15",
+    "@vercel/next": "2.6.8-canary.1",
+    "@vercel/routing-utils": "^1.8.3"
+  }
+}
