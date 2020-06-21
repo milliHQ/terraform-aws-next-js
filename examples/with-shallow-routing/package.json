@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "next",
     "build": "next build",
+    "build-tf": "tf-next",
     "start": "next start"
   },
   "dependencies": {
