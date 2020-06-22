@@ -1000,6 +1000,11 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
+"@dealmore/next-tf@2.6.8-canary.1":
+  version "2.6.8-canary.1"
+  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.6.8-canary.1.tgz#d5909906ab37b38e3c2ceaba346e2526f75da5bc"
+  integrity sha512-esuw4KL95ollZoO/VqSm2wSCByha6Il1fjlQo7+vN8UoOSJx64ueCQgagDOqgqahrJHtGPECmZNaV8XN3Nd+OA==
+
 "@next/react-dev-overlay@9.4.4":
   version "9.4.4"
   resolved "https://registry.yarnpkg.com/@next/react-dev-overlay/-/react-dev-overlay-9.4.4.tgz#4ae03ac839ff022b3ce5c695bd24b179d4ef459d"
@@ -1085,11 +1090,6 @@
   version "0.0.15"
   resolved "https://registry.yarnpkg.com/@vercel/frameworks/-/frameworks-0.0.15.tgz#f7366a3d85e78abf2831f2840011018dc4f4f6de"
   integrity sha512-bZ29k2NyP9/s5K4bhx6pJN4g1W5/1WtKEdM+FmCS2/uo4KnbvMbPf9zaPvEEBzh+2DiZ7VgpbUxvm7AvI/LrKA==
-
-"@vercel/next@2.6.8-canary.1":
-  version "2.6.8-canary.1"
-  resolved "https://registry.yarnpkg.com/@vercel/next/-/next-2.6.8-canary.1.tgz#062ca0ad30b16587ff04f2fbee8a3c0bd784ac43"
-  integrity sha512-H7diAO7k3K+5/4Uhld4ppGMy8HQoGJq6+lIfzlwG1+SWtqqpuVGlw0lvlLxMaEoKtIEI0cqOw79RzSalL3L7kg==
 
 "@vercel/next@^2.6.7":
   version "2.6.7"

@@ -84,6 +84,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = aws_iam_policy.lambda_logging.arn
 }
 
+# Lambda
+
 resource "aws_lambda_function" "this" {
   for_each = local.lambdas
 
@@ -97,6 +99,19 @@ resource "aws_lambda_function" "this" {
   filename = "${local.config_dir}/${lookup(each.value, "filename", "")}"
 
   depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.this]
+}
+
+# Lambda invoke permission
+
+resource "aws_lambda_permission" "current_version_triggers" {
+  for_each = local.lambdas
+
+  statement_id  = "AllowInvokeFromApiGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = random_id.function_name[each.key].hex
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${module.api_gateway.this_apigatewayv2_api_execution_arn}/*/*/*"
 }
 
 #############
@@ -119,7 +134,7 @@ locals {
   integrations = zipmap(local.integrations_keys, local.integration_values)
 }
 
-module "aws_api_gateway_rest_api" {
+module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
   version = "~> 0.2.0"
 

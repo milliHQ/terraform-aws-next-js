@@ -1,4 +1,4 @@
-import { build } from '@vercel/next';
+import { build } from '@dealmore/next-tf';
 import tmp from 'tmp';
 import { glob, Lambda, FileFsRef } from '@vercel/build-utils';
 import * as fs from 'fs-extra';
