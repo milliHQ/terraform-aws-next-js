@@ -12,5 +12,8 @@
     "react": "16.13.1",
     "react-dom": "16.13.1"
   },
+  "devDependencies": {
+    "@dealmore/terraform-next-proxy": "^0.0.2"
+  },
   "license": "ISC"
 }

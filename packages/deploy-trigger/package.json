@@ -1,0 +1,11 @@
+{
+  "name": "@dealmore/terraform-next-trigger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@dealmore/funny": "^0.3.2",
+    "@types/aws-lambda": "^8.10.56",
+    "aws-sdk": "2.631.0"
+  }
+}

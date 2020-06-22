@@ -1,0 +1,16 @@
+{
+  "name": "@dealmore/terraform-next-proxy",
+  "version": "0.0.2",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "funny build -e aws-sdk src/handler.ts dist.zip"
+  },
+  "devDependencies": {
+    "@dealmore/funny": "^0.3.2",
+    "@types/aws-lambda": "^8.10.56"
+  },
+  "files": [
+    "dist.zip"
+  ]
+}

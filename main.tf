@@ -1,3 +1,7 @@
+provider "aws" {
+  alias = "global"
+}
+
 locals {
   config_dir  = trimsuffix(var.next_tf_dir, "/")
   config_file = jsondecode(file("${local.config_dir}/config.json"))
@@ -145,4 +149,18 @@ module "api_gateway" {
   create_api_domain_name = false
 
   integrations = local.integrations
+}
+
+#######
+# Proxy
+#######
+
+module "proxy" {
+  source = "./modules/proxy"
+
+  api_gateway_endpoint = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+
+  providers = {
+    aws = aws.global
+  }
 }
