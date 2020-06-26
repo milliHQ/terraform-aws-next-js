@@ -1,8 +1,10 @@
 import { build } from '@dealmore/next-tf';
 import tmp from 'tmp';
-import { glob, Lambda, FileFsRef } from '@vercel/build-utils';
+import { glob, Lambda, FileFsRef, streamToBuffer } from '@vercel/build-utils';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { Route } from '@vercel/routing-utils';
+import archiver from 'archiver';
 
 interface Lambdas {
   [key: string]: Lambda;
@@ -20,12 +22,14 @@ function getFiles(basePath: string) {
 }
 
 interface OutputProps {
+  routes: Route[];
   lambdas: Lambdas;
   staticWebsiteFiles: StaticWebsiteFiles;
   outputDir: string;
 }
 
 interface ConfigOutput {
+  routes: Route[];
   lambdas: {
     [key: string]: {
       handler: string;
@@ -35,9 +39,51 @@ interface ConfigOutput {
   };
 }
 
+function writeStaticWebsiteFiles(
+  outputFile: string,
+  files: StaticWebsiteFiles
+) {
+  return new Promise(async (resolve, reject) => {
+    // Create a zip package for the static website files
+    const output = fs.createWriteStream(outputFile);
+    const archive = archiver('zip', {
+      zlib: { level: 9 },
+    });
+
+    archive.pipe(output);
+
+    output.on('close', function () {
+      console.log(archive.pointer() + ' total bytes');
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      reject(err);
+    });
+
+    const appendFiles = [];
+
+    for (const [key, file] of Object.entries(files)) {
+      appendFiles.push(
+        new Promise(async (resolve) => {
+          const buf = await streamToBuffer(file.toStream());
+          archive.append(buf, { name: key });
+          console.log('RESOLVED', key);
+          resolve();
+        })
+      );
+    }
+
+    await Promise.all(appendFiles);
+
+    archive.finalize();
+  });
+}
+
 function writeOutput(props: OutputProps) {
   const config: ConfigOutput = {
     lambdas: {},
+    routes: props.routes,
   };
 
   for (const [key, lambda] of Object.entries(props.lambdas)) {
@@ -51,10 +97,21 @@ function writeOutput(props: OutputProps) {
     };
   }
 
+  const staticFilesArchive = writeStaticWebsiteFiles(
+    path.join(props.outputDir, 'static-website-files.zip'),
+    props.staticWebsiteFiles
+  );
+
   // Write config.json
-  fs.outputJSONSync(path.join(props.outputDir, 'config.json'), config, {
-    spaces: 2,
-  });
+  const writeConfig = fs.outputJSON(
+    path.join(props.outputDir, 'config.json'),
+    config,
+    {
+      spaces: 2,
+    }
+  );
+
+  return Promise.all([writeConfig, staticFilesArchive]);
 }
 
 async function main() {
@@ -90,7 +147,8 @@ async function main() {
       }
     }
 
-    writeOutput({
+    await writeOutput({
+      routes: buildResult.routes,
       lambdas,
       staticWebsiteFiles,
       outputDir: outputDir,
