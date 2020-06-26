@@ -21,7 +21,7 @@ resource "random_id" "function_name" {
 
 module "edge_proxy" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "~> 1.14.0"
+  version = "~> 1.16.0"
 
   lambda_at_edge = true
 
@@ -80,7 +80,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     compress               = true
 
     lambda_function_association {
-      event_type   = "viewer-request"
+      event_type   = "origin-request"
       lambda_arn   = module.edge_proxy.this_lambda_function_qualified_arn
       include_body = false
     }
@@ -88,8 +88,8 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
-    ssl_support_method             = "sni-only"
-    minimum_protocol_version       = "TLSv1.2_2018"
+    # ssl_support_method             = "sni-only"
+    # minimum_protocol_version       = "TLSv1.2_2018"
   }
 
   restrictions {
