@@ -1,18 +1,9 @@
-locals {
-  locate_proxy_script = <<-EOF
-    console.log(
-      JSON.stringify({
-        path: require.resolve("@dealmore/terraform-next-proxy/dist.zip")
-      })
-    );
-  EOF
-}
+module "proxy_package" {
+  source = "../file-from-npm"
 
-data "external" "proxy_package" {
-  program     = ["node", "-e", "${local.locate_proxy_script}"]
-  working_dir = path.cwd
+  module_name  = "@dealmore/terraform-next-proxy"
+  path_to_file = "dist.zip"
 }
-
 
 resource "random_id" "function_name" {
   prefix      = "next-tf-proxy-"
@@ -31,7 +22,7 @@ module "edge_proxy" {
   runtime       = "nodejs12.x"
 
   create_package         = false
-  local_existing_package = data.external.proxy_package.result.path
+  local_existing_package = module.proxy_package.abs_path
 
   cloudwatch_logs_retention_in_days = 30
 }

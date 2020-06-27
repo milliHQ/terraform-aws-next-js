@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": ""
+    "build": "funny build -e aws-sdk src/handler.ts dist.zip"
   },
   "devDependencies": {
     "@dealmore/funny": "^0.3.2",

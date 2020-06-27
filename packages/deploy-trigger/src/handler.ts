@@ -1,5 +1,4 @@
 import { S3Handler } from 'aws-lambda';
-import { parse } from 'path';
 
 export const handler: S3Handler = async function (event) {
   // Object key may have spaces or unicode non-ASCII characters.
