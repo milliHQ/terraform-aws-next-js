@@ -1,5 +1,5 @@
 {
-  "name": "@dealmore/terraform-next-trigger",
+  "name": "@dealmore/terraform-next-deploy-trigger",
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",

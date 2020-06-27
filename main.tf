@@ -45,6 +45,13 @@ resource "aws_iam_role" "lambda" {
 # Lambdas
 #########
 
+# Static deployment to S3 website
+module "statics_deploy" {
+  source = "./modules/statics-deploy"
+}
+
+# TODO: Maybe we dont need this anymore
+
 # Cloudwatch Logs
 resource "aws_cloudwatch_log_group" "this" {
   for_each = local.lambdas
