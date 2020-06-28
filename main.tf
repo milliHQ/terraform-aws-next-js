@@ -105,7 +105,8 @@ resource "aws_lambda_function" "this" {
   runtime       = lookup(each.value, "runtime", "nodejs12.x")
   memory_size   = lookup(each.value, "memory:", 1024)
 
-  filename = "${local.config_dir}/${lookup(each.value, "filename", "")}"
+  filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
+  source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
 
   depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.this]
 }
@@ -163,7 +164,9 @@ module "api_gateway" {
 module "proxy" {
   source = "./modules/proxy"
 
-  api_gateway_endpoint = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+  api_gateway_endpoint          = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+  static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
+  static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
 
   providers = {
     aws = aws.global

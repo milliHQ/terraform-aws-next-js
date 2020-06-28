@@ -9,6 +9,12 @@
   "devDependencies": {
     "@dealmore/funny": "^0.3.2",
     "@types/aws-lambda": "^8.10.56",
+    "@types/mime": "^2.0.2",
+    "@types/unzipper": "^0.10.3",
     "aws-sdk": "2.631.0"
+  },
+  "dependencies": {
+    "mime": "^2.4.6",
+    "unzipper": "^0.10.11"
   }
 }
