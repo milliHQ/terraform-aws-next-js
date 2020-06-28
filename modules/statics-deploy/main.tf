@@ -1,3 +1,7 @@
+locals {
+  lambda_policies = [aws_iam_policy.access_static_upload.arn]
+}
+
 ########
 # Bucket
 ########
@@ -10,6 +14,20 @@ resource "aws_s3_bucket" "static_upload" {
   versioning {
     enabled = true
   }
+}
+
+data "aws_iam_policy_document" "access_static_upload" {
+  statement {
+    actions   = ["s3:DeleteObject", "s3:DeleteObjectVersion"]
+    resources = ["${aws_s3_bucket.static_upload.arn}/*"]
+  }
+}
+
+resource "aws_iam_policy" "access_static_upload" {
+  name_prefix = "next-tf"
+  description = "S3 access for ${aws_s3_bucket.static_upload.id} bucket"
+
+  policy = data.aws_iam_policy_document.access_static_upload.json
 }
 
 resource "aws_s3_bucket_notification" "on_create" {
@@ -33,7 +51,7 @@ module "lambda_content" {
 }
 
 resource "random_id" "function_name" {
-  prefix      = "next-tf-proxy-"
+  prefix      = "next-tf-deploy-"
   byte_length = 4
 }
 
@@ -50,10 +68,16 @@ module "deploy_trigger" {
   create_package         = false
   local_existing_package = module.lambda_content.abs_path
 
+  cloudwatch_logs_retention_in_days = 14
+
   allowed_triggers = {
     AllowExecutionFromS3Bucket = {
       service    = "s3"
       source_arn = aws_s3_bucket.static_upload.arn
     }
   }
+
+  attach_policies    = length(local.lambda_policies) > 0 ? true : false
+  number_of_policies = length(local.lambda_policies)
+  policies           = local.lambda_policies
 }
