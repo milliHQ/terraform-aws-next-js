@@ -15,14 +15,17 @@
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.8.3",
     "archiver": "^4.0.1",
+    "aws-sdk": "^2.706.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/archiver": "^3.1.0",
     "@types/fs-extra": "^9.0.1",
     "@types/glob": "^7.1.2",
-    "@types/tmp": "^0.2.0"
+    "@types/tmp": "^0.2.0",
+    "@types/yargs": "^15.0.5"
   }
 }

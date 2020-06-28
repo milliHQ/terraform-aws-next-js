@@ -5,6 +5,11 @@
 resource "aws_s3_bucket" "static_upload" {
   bucket_prefix = "next-tf-deploy-source"
   acl           = "private"
+
+  # We are using versioning here to ensure that no file gets overridden at upload
+  versioning {
+    enabled = true
+  }
 }
 
 resource "aws_s3_bucket_notification" "on_create" {
