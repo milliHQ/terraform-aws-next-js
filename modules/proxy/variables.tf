@@ -9,3 +9,8 @@ variable "static_bucket_access_identity" {
 variable "static_bucket_endpoint" {
   type = string
 }
+
+variable "cloudfront_price_class" {
+  type    = string
+  default = "PriceClass_100"
+}

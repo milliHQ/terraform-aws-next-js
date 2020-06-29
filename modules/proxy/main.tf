@@ -41,7 +41,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
   comment         = "Managed by Terraform-next.js"
-  price_class     = "PriceClass_100"
+  price_class     = var.cloudfront_price_class
   # aliases         = [var.domain_name]
 
   # Static deployment S3 bucket
@@ -105,6 +105,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       }
     }
 
+    compress               = true
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
     default_ttl            = 86400
