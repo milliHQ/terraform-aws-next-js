@@ -9,6 +9,7 @@ export interface ConfigOutput {
       handler: string;
       runtime: string;
       filename: string;
+      route: string;
     };
   };
 }

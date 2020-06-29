@@ -131,7 +131,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
 locals {
   integrations_keys = flatten([
     for integration_key, integration in local.lambdas : [
-      "ANY /${integration_key}"
+      "ANY ${lookup(integration, "route", "/")}"
     ]
   ])
   integration_values = flatten([

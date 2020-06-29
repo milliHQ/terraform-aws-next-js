@@ -31,6 +31,10 @@ interface OutputProps {
   outputDir: string;
 }
 
+function normalizeRoute(input: string) {
+  return input.replace(/\/index$/, '/');
+}
+
 function writeStaticWebsiteFiles(
   outputFile: string,
   files: StaticWebsiteFiles
@@ -60,7 +64,6 @@ function writeStaticWebsiteFiles(
         new Promise(async (resolve) => {
           const buf = await streamToBuffer(file.toStream());
           archive.append(buf, { name: key });
-          console.log('RESOLVED', key);
           resolve();
         })
       );
@@ -83,11 +86,13 @@ function writeOutput(props: OutputProps) {
   for (const [key, lambda] of Object.entries(props.lambdas)) {
     const zipFilename = path.join(props.outputDir, 'lambdas', `${key}.zip`);
     fs.outputFileSync(zipFilename, lambda.zipBuffer);
+    const route = `/${key}`;
 
     config.lambdas[key] = {
       handler: lambda.handler,
       runtime: lambda.runtime,
       filename: path.relative(props.outputDir, zipFilename),
+      route: normalizeRoute(route),
     };
   }
 
