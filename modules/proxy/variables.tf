@@ -14,3 +14,7 @@ variable "cloudfront_price_class" {
   type    = string
   default = "PriceClass_100"
 }
+
+variable "proxy_config_json" {
+  type = string
+}

@@ -3,13 +3,27 @@ locals {
   origin_id_static_deployment = "S3 Static Deployment"
 }
 
-
 module "proxy_package" {
   source = "../file-from-npm"
 
   module_name  = "@dealmore/terraform-next-proxy"
   path_to_file = "dist.zip"
 }
+
+##############
+# Proxy Config
+##############
+
+module "proxy_config" {
+  source = "../proxy-config"
+
+  cloudfront_price_class = var.cloudfront_price_class
+  proxy_config_json      = var.proxy_config_json
+}
+
+#############
+# Lambda@Edge
+#############
 
 resource "random_id" "function_name" {
   prefix      = "next-tf-proxy-"
@@ -31,6 +45,12 @@ module "edge_proxy" {
   local_existing_package = module.proxy_package.abs_path
 
   cloudwatch_logs_retention_in_days = 30
+
+  # environment_variables = {
+  #   API_GATEWAY_ENDPOINT = var.api_gateway_endpoint
+  #   LAMBDA_ROUTES        = var.lambda_routes_json
+  #   ROUTES               = var.routes_json
+  # }
 }
 
 ############
@@ -52,26 +72,36 @@ resource "aws_cloudfront_distribution" "distribution" {
     s3_origin_config {
       origin_access_identity = var.static_bucket_access_identity
     }
+
+    custom_header {
+      name  = "x-env-config-endpoint"
+      value = module.proxy_config.config_endpoint
+    }
+
+    custom_header {
+      name  = "x-env-api-endpoint"
+      value = var.api_gateway_endpoint
+    }
   }
 
   # Lambda@Edge Proxy
-  origin {
-    domain_name = var.api_gateway_endpoint
-    origin_id   = local.origin_id_api_gateway
+  # origin {
+  #   domain_name = var.api_gateway_endpoint
+  #   origin_id   = local.origin_id_api_gateway
 
-    custom_origin_config {
-      http_port              = "80"
-      https_port             = "443"
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
+  #   custom_origin_config {
+  #     http_port              = "80"
+  #     https_port             = "443"
+  #     origin_protocol_policy = "https-only"
+  #     origin_ssl_protocols   = ["TLSv1.2"]
+  #   }
+  # }
 
   # Lambda@Edge Proxy
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.origin_id_api_gateway
+    target_origin_id = local.origin_id_static_deployment
 
     forwarded_values {
       query_string = true

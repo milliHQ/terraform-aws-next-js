@@ -8,9 +8,9 @@
     "strict": true,
     "declaration": false,
     "sourceMap": false,
-    "strictPropertyInitialization": false,
     "experimentalDecorators": true,
     "esModuleInterop": true
   },
-  "include": ["packages/**/*"]
+  "include": ["packages/**/*"],
+  "exclude": ["**/*.spec.ts"]
 }

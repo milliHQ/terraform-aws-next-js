@@ -6,6 +6,17 @@ locals {
   config_dir  = trimsuffix(var.next_tf_dir, "/")
   config_file = jsondecode(file("${local.config_dir}/config.json"))
   lambdas     = lookup(local.config_file, "lambdas", {})
+
+  routes_json = lookup(local.config_file, "routes", [])
+  lambda_routes_json = flatten([
+    for integration_key, integration in local.lambdas : [
+      "${lookup(integration, "route", "/")}"
+    ]
+  ])
+  proxy_config_json = jsonencode({
+    routes       = local.routes_json
+    lambdaRoutes = local.lambda_routes_json
+  })
 }
 
 # Generates for each function a unique function name
@@ -167,6 +178,7 @@ module "proxy" {
   api_gateway_endpoint          = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
+  proxy_config_json             = local.proxy_config_json
 
   providers = {
     aws = aws.global
