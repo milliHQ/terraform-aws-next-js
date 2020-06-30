@@ -1,6 +1,6 @@
 import { Route, HandleValue } from '@vercel/routing-utils';
 
-export interface Environment {
+export interface ProxyConfig {
   routes: Route[];
   lambdaRoutes: string[];
 }

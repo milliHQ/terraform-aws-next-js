@@ -51,7 +51,7 @@ describe('Proxy', () => {
     ];
 
     const proxy = new Proxy(routes);
-    const result = proxy.route('/undefined-route');
+    const result = proxy.route('/index');
 
     console.log(result);
   });

@@ -8,11 +8,13 @@
   },
   "dependencies": {
     "@vercel/routing-utils": "^1.8.3",
+    "node-fetch": "^2.6.0",
     "pcre-to-regexp": "^1.1.0"
   },
   "devDependencies": {
     "@dealmore/funny": "^0.3.2",
     "@types/aws-lambda": "^8.10.56",
+    "@types/node-fetch": "^2.5.7",
     "@types/webpack-env": "^1.15.2"
   },
   "files": [
