@@ -1,5 +1,5 @@
 {
-  "name": "@vercel/next",
+  "name": "@dealmore/next-tf",
   "version": "2.6.8-canary.1",
   "license": "MIT",
   "main": "./dist/index",
