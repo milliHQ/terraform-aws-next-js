@@ -92,9 +92,9 @@ describe('Proxy', () => {
     expect(route_2).toEqual(
       expect.objectContaining({
         found: true,
-        dest: '/__NEXT_PAGE_LAMBDA_0',
+        dest: '/404',
         headers: {
-          'x-nextjs-page': '/index',
+          'x-nextjs-page': '',
         },
       })
     );
