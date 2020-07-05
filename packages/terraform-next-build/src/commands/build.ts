@@ -40,6 +40,8 @@ function writeStaticWebsiteFiles(
   files: StaticWebsiteFiles
 ) {
   return new Promise(async (resolve, reject) => {
+    console.log('FILES: ', files);
+
     // Create a zip package for the static website files
     const output = fs.createWriteStream(outputFile);
     const archive = archiver('zip', {
@@ -57,19 +59,11 @@ function writeStaticWebsiteFiles(
       reject(err);
     });
 
-    const appendFiles = [];
-
     for (const [key, file] of Object.entries(files)) {
-      appendFiles.push(
-        new Promise(async (resolve) => {
-          const buf = await streamToBuffer(file.toStream());
-          archive.append(buf, { name: key });
-          resolve();
-        })
-      );
+      const buf = await streamToBuffer(file.toStream());
+      console.log('adds', key);
+      archive.append(buf, { name: key });
     }
-
-    await Promise.all(appendFiles);
 
     archive.finalize();
   });
@@ -133,7 +127,11 @@ async function main() {
       workPath: workDirObj.name,
       entrypoint,
       config: {},
-      meta: { isDev: false },
+      meta: {
+        isDev: false,
+        // TODO: Add option to skip download
+        // skipDownload: true
+      },
     });
 
     // Get BuildId
@@ -143,12 +141,12 @@ async function main() {
     );
 
     for (const [key, file] of Object.entries(buildResult.output)) {
-      if (file instanceof Lambda) {
+      if (file.type === 'Lambda') {
         // Filter for lambdas
-        lambdas[key] = file;
-      } else if (file instanceof FileFsRef) {
+        lambdas[key] = (file as unknown) as Lambda;
+      } else if (file.type === 'FileFsRef') {
         // Filter for static Website content
-        staticWebsiteFiles[key] = file;
+        staticWebsiteFiles[key] = file as FileFsRef;
       }
     }
 

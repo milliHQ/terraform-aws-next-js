@@ -45,12 +45,6 @@ module "edge_proxy" {
   local_existing_package = module.proxy_package.abs_path
 
   cloudwatch_logs_retention_in_days = 30
-
-  # environment_variables = {
-  #   API_GATEWAY_ENDPOINT = var.api_gateway_endpoint
-  #   LAMBDA_ROUTES        = var.lambda_routes_json
-  #   ROUTES               = var.routes_json
-  # }
 }
 
 ############
@@ -83,19 +77,6 @@ resource "aws_cloudfront_distribution" "distribution" {
       value = var.api_gateway_endpoint
     }
   }
-
-  # Lambda@Edge Proxy
-  # origin {
-  #   domain_name = var.api_gateway_endpoint
-  #   origin_id   = local.origin_id_api_gateway
-
-  #   custom_origin_config {
-  #     http_port              = "80"
-  #     https_port             = "443"
-  #     origin_protocol_policy = "https-only"
-  #     origin_ssl_protocols   = ["TLSv1.2"]
-  #   }
-  # }
 
   # Lambda@Edge Proxy
   default_cache_behavior {
@@ -140,6 +121,15 @@ resource "aws_cloudfront_distribution" "distribution" {
     min_ttl                = 0
     default_ttl            = 86400
     max_ttl                = 31536000
+  }
+
+  # Custom error response when a doc is not found in S3 (returns 403)
+  # Then shows the 404 page
+  custom_error_response {
+    error_caching_min_ttl = 60
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404"
   }
 
   viewer_certificate {

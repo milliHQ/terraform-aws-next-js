@@ -1,9 +1,9 @@
 import * as url from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
 import PCRE from 'pcre-to-regexp';
-import isURL from './util/is-url';
 
-import { RouteResult } from './types';
+import isURL from './util/is-url';
+import { RouteResult, HTTPHeaders } from './types';
 
 function resolveRouteParameters(
   str: string,
@@ -38,6 +38,7 @@ export class Proxy {
     let isContinue = false;
     let idx = -1;
     let phase: HandleValue | null = null;
+    let combinedHeaders: HTTPHeaders = {};
 
     for (const routeConfig of this.routes) {
       idx++;
@@ -48,7 +49,7 @@ export class Proxy {
         continue;
       }
 
-      const { src } = routeConfig;
+      const { src, headers } = routeConfig;
 
       const keys: string[] = [];
       const matcher = PCRE(`%${src}%`, keys);
@@ -60,6 +61,15 @@ export class Proxy {
 
         if (routeConfig.dest) {
           destPath = resolveRouteParameters(routeConfig.dest, match, keys);
+        }
+
+        if (headers) {
+          for (const originalKey of Object.keys(headers)) {
+            const lowerKey = originalKey.toLowerCase();
+            const originalValue = headers[originalKey];
+            const value = resolveRouteParameters(originalValue, match, keys);
+            combinedHeaders[lowerKey] = value;
+          }
         }
 
         if (routeConfig.continue) {
@@ -84,6 +94,7 @@ export class Proxy {
             matched_route: routeConfig,
             matched_route_idx: idx,
             phase,
+            headers: combinedHeaders,
           };
           break;
         } else {
@@ -103,6 +114,7 @@ export class Proxy {
             matched_route: routeConfig,
             matched_route_idx: idx,
             phase,
+            headers: combinedHeaders,
           };
           break;
         }
@@ -118,6 +130,7 @@ export class Proxy {
         isDestUrl: false,
         uri_args: query,
         phase,
+        headers: combinedHeaders,
       };
     }
 
