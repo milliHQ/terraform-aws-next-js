@@ -6,8 +6,10 @@ locals {
 module "proxy_package" {
   source = "../file-from-npm"
 
-  module_name  = "@dealmore/terraform-next-proxy"
-  path_to_file = "dist.zip"
+  module_name    = "@dealmore/terraform-next-proxy"
+  module_version = "0.0.2"
+  path_to_file   = "dist.zip"
+  use_local      = var.debug_use_local_packages
 }
 
 ##############

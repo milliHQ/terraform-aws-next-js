@@ -18,3 +18,8 @@ variable "cloudfront_price_class" {
 variable "proxy_config_json" {
   type = string
 }
+
+variable "debug_use_local_packages" {
+  type    = bool
+  default = false
+}

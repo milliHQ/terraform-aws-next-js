@@ -59,6 +59,8 @@ resource "aws_iam_role" "lambda" {
 # Static deployment to S3 website
 module "statics_deploy" {
   source = "./modules/statics-deploy"
+
+  debug_use_local_packages = var.debug_use_local_packages
 }
 
 # Cloudwatch Logs
@@ -179,6 +181,8 @@ module "proxy" {
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
+
+  debug_use_local_packages = var.debug_use_local_packages
 
   providers = {
     aws = aws.global

@@ -94,8 +94,10 @@ resource "aws_iam_policy" "access_static_deploy" {
 module "lambda_content" {
   source = "../file-from-npm"
 
-  module_name  = "@dealmore/terraform-next-deploy-trigger"
-  path_to_file = "dist.zip"
+  module_name    = "@dealmore/terraform-next-deploy-trigger"
+  module_version = "0.0.1"
+  path_to_file   = "dist.zip"
+  use_local      = var.debug_use_local_packages
 }
 
 resource "random_id" "function_name" {

@@ -12,7 +12,8 @@ provider "aws" {
 module "lambdas" {
   source = "../../.."
 
-  next_tf_dir = "../.next-tf"
+  next_tf_dir              = "../.next-tf"
+  debug_use_local_packages = false
 
   providers = {
     aws.global = aws.virginia
