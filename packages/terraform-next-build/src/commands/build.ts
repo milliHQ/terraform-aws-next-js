@@ -61,7 +61,6 @@ function writeStaticWebsiteFiles(
 
     for (const [key, file] of Object.entries(files)) {
       const buf = await streamToBuffer(file.toStream());
-      console.log('adds', key);
       archive.append(buf, { name: key });
     }
 
@@ -107,11 +106,21 @@ function writeOutput(props: OutputProps) {
   return Promise.all([writeConfig, staticFilesArchive]);
 }
 
-async function main() {
-  const entryPath = process.cwd();
+interface BuildProps {
+  skipDownload?: boolean;
+}
+
+async function buildCommand({ skipDownload = false }: BuildProps = {}) {
+  const mode = skipDownload ? 'local' : 'download';
+  const cwd = process.cwd();
+
+  // On download create a tmp dir where the files can be downloaded
+  const tmpDir = mode === 'download' ? tmp.dirSync() : null;
+
+  const entryPath = cwd;
   const entrypoint = 'package.json';
-  const workDirObj = tmp.dirSync();
-  const outputDir = path.join(process.cwd(), '.next-tf');
+  const workPath = mode === 'download' ? tmpDir!.name : cwd;
+  const outputDir = path.join(cwd, '.next-tf');
 
   // Ensure that the output dir exists
   fs.ensureDirSync(outputDir);
@@ -124,19 +133,19 @@ async function main() {
 
     const buildResult = await build({
       files,
-      workPath: workDirObj.name,
+      workPath,
       entrypoint,
       config: {},
       meta: {
         isDev: false,
-        // TODO: Add option to skip download
-        // skipDownload: true
+        // @ts-ignore
+        skipDownload,
       },
     });
 
     // Get BuildId
     const buildId = await fs.readFile(
-      path.join(workDirObj.name, '.next', 'BUILD_ID'),
+      path.join(workPath, '.next', 'BUILD_ID'),
       'utf8'
     );
 
@@ -163,9 +172,11 @@ async function main() {
     console.error(err);
   }
 
-  // Cleanup
-  fs.emptyDirSync(workDirObj.name);
-  workDirObj.removeCallback();
+  // Cleanup tmpDir
+  if (tmpDir) {
+    fs.emptyDirSync(tmpDir.name);
+    tmpDir.removeCallback();
+  }
 }
 
-export default main;
+export default buildCommand;

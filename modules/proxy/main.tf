@@ -1,5 +1,4 @@
 locals {
-  origin_id_api_gateway       = "ApiGateway"
   origin_id_static_deployment = "S3 Static Deployment"
 }
 
@@ -7,7 +6,7 @@ module "proxy_package" {
   source = "../file-from-npm"
 
   module_name    = "@dealmore/terraform-next-proxy"
-  module_version = "0.0.2"
+  module_version = var.proxy_module_version
   path_to_file   = "dist.zip"
   use_local      = var.debug_use_local_packages
 }

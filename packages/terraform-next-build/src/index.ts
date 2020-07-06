@@ -4,9 +4,16 @@ yargs
   .command(
     'build',
     'Build the next.js project',
-    () => {},
-    async () => {
-      (await import('./commands/build')).default();
+    (yargs_) => {
+      return yargs_.option('skipDownload', {
+        type: 'boolean',
+        description: 'Runs the build in the current working directory',
+      });
+    },
+    async ({ skipDownload }) => {
+      (await import('./commands/build')).default({
+        skipDownload,
+      });
     }
   )
   .command<{ bucket: string }>(
