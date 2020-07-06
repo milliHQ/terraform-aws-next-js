@@ -1,6 +1,6 @@
 {
   "name": "@dealmore/terraform-next-deploy-trigger",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -16,5 +16,8 @@
   "dependencies": {
     "mime": "^2.4.6",
     "unzipper": "^0.10.11"
-  }
+  },
+  "files": [
+    "dist.zip"
+  ]
 }
