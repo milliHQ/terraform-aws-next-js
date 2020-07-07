@@ -40,8 +40,6 @@ function writeStaticWebsiteFiles(
   files: StaticWebsiteFiles
 ) {
   return new Promise(async (resolve, reject) => {
-    console.log('FILES: ', files);
-
     // Create a zip package for the static website files
     const output = fs.createWriteStream(outputFile);
     const archive = archiver('zip', {

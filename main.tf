@@ -3,6 +3,10 @@ provider "aws" {
 }
 
 locals {
+  # Lambda default config
+  lambda_default_runtime = "nodejs12.x"
+  lambda_default_memory  = 1024
+
   config_dir  = trimsuffix(var.next_tf_dir, "/")
   config_file = jsondecode(file("${local.config_dir}/config.json"))
   lambdas     = lookup(local.config_file, "lambdas", {})
@@ -115,11 +119,15 @@ resource "aws_lambda_function" "this" {
   description   = "Managed by Terraform-next.js"
   role          = aws_iam_role.lambda[each.key].arn
   handler       = lookup(each.value, "handler", "")
-  runtime       = lookup(each.value, "runtime", "nodejs12.x")
-  memory_size   = lookup(each.value, "memory:", 1024)
+  runtime       = lookup(each.value, "runtime", local.lambda_default_runtime)
+  memory_size   = lookup(each.value, "memory:", local.lambda_default_memory)
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
+
+  environment {
+    variables = var.lambda_environment_variables
+  }
 
   depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.this]
 }
@@ -161,7 +169,7 @@ module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
   version = "~> 0.2.0"
 
-  name          = "Terraform-next.js"
+  name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
   protocol_type = "HTTP"
 
@@ -181,8 +189,13 @@ module "proxy" {
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
+  lambda_default_runtime        = local.lambda_default_runtime
 
-  debug_use_local_packages = var.debug_use_local_packages
+  # Forwarding variables
+  deployment_name             = var.deployment_name
+  cloudfront_origins          = var.cloudfront_origins
+  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors
+  debug_use_local_packages    = var.debug_use_local_packages
 
   providers = {
     aws = aws.global

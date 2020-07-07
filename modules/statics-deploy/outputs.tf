@@ -5,3 +5,7 @@ output "static_bucket_access_identity" {
 output "static_bucket_endpoint" {
   value = aws_s3_bucket.static_deploy.bucket_regional_domain_name
 }
+
+output "static_upload_bucket_id" {
+  value = aws_s3_bucket.static_upload.id
+}

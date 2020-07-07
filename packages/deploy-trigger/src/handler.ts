@@ -25,6 +25,8 @@ export const handler: S3Handler = async function (event) {
     .createReadStream()
     .pipe(unzipper.Parse({ forceStream: true }));
 
+  const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
+
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
 
@@ -41,11 +43,13 @@ export const handler: S3Handler = async function (event) {
         ContentType: ContentType || 'text/html',
       };
 
-      await s3.upload(uploadParams).promise();
+      uploads.push(s3.upload(uploadParams).promise());
     } else {
       entry.autodrain();
     }
   }
+
+  await Promise.all(uploads);
 
   // Cleanup
   await s3.deleteObject(params).promise();

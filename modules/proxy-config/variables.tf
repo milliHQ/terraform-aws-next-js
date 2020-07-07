@@ -5,3 +5,7 @@ variable "cloudfront_price_class" {
 variable "proxy_config_json" {
   type = string
 }
+
+variable "deployment_name" {
+  type = string
+}

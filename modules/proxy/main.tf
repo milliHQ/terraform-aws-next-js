@@ -20,6 +20,7 @@ module "proxy_config" {
 
   cloudfront_price_class = var.cloudfront_price_class
   proxy_config_json      = var.proxy_config_json
+  deployment_name        = var.deployment_name
 }
 
 #############
@@ -40,7 +41,7 @@ module "edge_proxy" {
   function_name = random_id.function_name.hex
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
-  runtime       = "nodejs12.x"
+  runtime       = var.lambda_default_runtime
 
   create_package         = false
   local_existing_package = module.proxy_package.abs_path
@@ -55,7 +56,7 @@ module "edge_proxy" {
 resource "aws_cloudfront_distribution" "distribution" {
   enabled         = true
   is_ipv6_enabled = true
-  comment         = "Managed by Terraform-next.js"
+  comment         = "${var.deployment_name} - Main"
   price_class     = var.cloudfront_price_class
   # aliases         = [var.domain_name]
 
@@ -76,6 +77,34 @@ resource "aws_cloudfront_distribution" "distribution" {
     custom_header {
       name  = "x-env-api-endpoint"
       value = var.api_gateway_endpoint
+    }
+  }
+
+  # Custom origins
+  dynamic "origin" {
+    for_each = var.cloudfront_origins != null ? var.cloudfront_origins : []
+    content {
+      domain_name = origin.value["domain_name"]
+      origin_id   = origin.value["origin_id"]
+
+      dynamic "s3_origin_config" {
+        for_each = lookup(origin.value, "s3_origin_config", null) != null ? [true] : []
+        content {
+          origin_access_identity = lookup(origin.value["s3_origin_config"], "origin_access_identity", null)
+        }
+      }
+
+      dynamic "custom_origin_config" {
+        for_each = lookup(origin.value, "custom_origin_config", null) != null ? [true] : []
+        content {
+          http_port                = lookup(origin.value["custom_origin_config"], "http_port", null)
+          https_port               = lookup(origin.value["custom_origin_config"], "https_port", null)
+          origin_protocol_policy   = lookup(origin.value["custom_origin_config"], "origin_protocol_policy", null)
+          origin_ssl_protocols     = lookup(origin.value["custom_origin_config"], "origin_ssl_protocols", null)
+          origin_keepalive_timeout = lookup(origin.value["custom_origin_config"], "origin_keepalive_timeout", null)
+          origin_read_timeout      = lookup(origin.value["custom_origin_config"], "origin_read_timeout", null)
+        }
+      }
     }
   }
 
@@ -103,6 +132,34 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
+  # Custom behaviors
+  dynamic "ordered_cache_behavior" {
+    for_each = var.cloudfront_custom_behaviors != null ? var.cloudfront_custom_behaviors : []
+    content {
+      path_pattern     = ordered_cache_behavior.value["path_pattern"]
+      allowed_methods  = ordered_cache_behavior.value["allowed_methods"]
+      cached_methods   = ordered_cache_behavior.value["cached_methods"]
+      target_origin_id = ordered_cache_behavior.value["target_origin_id"]
+
+      min_ttl                = ordered_cache_behavior.value["min_ttl"]
+      default_ttl            = ordered_cache_behavior.value["default_ttl"]
+      max_ttl                = ordered_cache_behavior.value["max_ttl"]
+      compress               = ordered_cache_behavior.value["compress"]
+      viewer_protocol_policy = ordered_cache_behavior.value["viewer_protocol_policy"]
+
+      dynamic "forwarded_values" {
+        for_each = lookup(ordered_cache_behavior.value, "forwarded_values", null) != null ? [true] : []
+        content {
+          query_string = lookup(ordered_cache_behavior.value["forwarded_values"], "query_string", null)
+          cookies {
+            forward = lookup(lookup(ordered_cache_behavior.value["forwarded_values"], "cookies", null), "forward", null)
+          }
+        }
+      }
+    }
+  }
+
+  # Next.js static assets
   ordered_cache_behavior {
     path_pattern     = "/_next/*"
     allowed_methods  = ["GET", "HEAD"]
