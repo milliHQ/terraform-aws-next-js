@@ -120,7 +120,7 @@ resource "aws_lambda_function" "this" {
   role          = aws_iam_role.lambda[each.key].arn
   handler       = lookup(each.value, "handler", "")
   runtime       = lookup(each.value, "runtime", local.lambda_default_runtime)
-  memory_size   = lookup(each.value, "memory:", local.lambda_default_memory)
+  memory_size   = lookup(each.value, "memory", local.lambda_default_memory)
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
