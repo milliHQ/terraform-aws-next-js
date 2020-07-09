@@ -363,17 +363,18 @@ export async function getRoutesManifest(
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const routesManifest: RoutesManifest = require(pathRoutesManifest);
 
-  // massage temporary array based routeKeys from v1/v2 of routes
-  // manifest into new object based
-  for (const route of [
-    ...(routesManifest.dataRoutes || []),
-    ...(routesManifest.dynamicRoutes || []),
-  ]) {
+  // remove temporary array based routeKeys from v1/v2 of routes
+  // manifest since it can result in invalid routes
+  for (const route of routesManifest.dataRoutes || []) {
     if (Array.isArray(route.routeKeys)) {
-      route.routeKeys = route.routeKeys.reduce((prev, cur) => {
-        prev[cur] = cur;
-        return prev;
-      }, {});
+      delete route.routeKeys;
+      delete route.namedDataRouteRegex;
+    }
+  }
+  for (const route of routesManifest.dynamicRoutes || []) {
+    if (Array.isArray(route.routeKeys)) {
+      delete route.routeKeys;
+      delete route.namedRegex;
     }
   }
 
