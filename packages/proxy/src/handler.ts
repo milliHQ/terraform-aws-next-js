@@ -52,7 +52,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     request.origin = {
       custom: {
         domainName: apiEndpoint,
-        path: '',
+        path: proxyResult.dest,
         customHeaders: {},
         keepaliveTimeout: 5,
         port: 443,
@@ -75,9 +75,8 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     proxyResult.headers
   );
 
-  // Rewrite path
-  if (!proxyResult.isDestUrl) {
-    request.uri = proxyResult.dest;
+  if (!request.uri) {
+    request.uri = '/';
   }
 
   return request;

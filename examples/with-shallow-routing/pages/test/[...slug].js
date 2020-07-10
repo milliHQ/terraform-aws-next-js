@@ -4,15 +4,27 @@ import { format } from 'url';
 
 let counter = 0;
 
-export async function getServerSideProps() {
+export async function getServerSideProps(ctx) {
   counter++;
-  return { props: { initialPropsCounter: counter } };
+  return {
+    props: {
+      params: ctx.params,
+      query: ctx.query,
+      slug: ctx.query && ctx.query.slug,
+      initialPropsCounter: counter,
+    },
+  };
 }
 
-export default function Index({ initialPropsCounter }) {
+export default function Index({
+  initialPropsCounter,
+  slug,
+  params,
+  query: serverQuery,
+}) {
   const router = useRouter();
   const { pathname, query } = router;
-  const { slug } = query;
+
   const reload = () => {
     router.push(format({ pathname, query }));
   };
@@ -30,7 +42,11 @@ export default function Index({ initialPropsCounter }) {
         <a>About</a>
       </Link>
       <button onClick={reload}>Reload</button>
-      <pre>Slug: {JSON.stringify(slug)}</pre>
+      <pre>Server: {JSON.stringify(slug)}</pre>
+      <pre>Client: {JSON.stringify(query.slug)}</pre>
+
+      <pre>Params: {JSON.stringify(params)}</pre>
+      <pre>Query: {JSON.stringify(serverQuery)}</pre>
       <button onClick={incrementCounter}>Change State Counter</button>
       <p>"getServerSideProps" ran for "{initialPropsCounter}" times.</p>
       <p>Counter: "{query.counter || 0}".</p>

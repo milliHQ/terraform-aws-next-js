@@ -10,7 +10,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@dealmore/next-tf": "2.6.10-canary.0",
+    "@dealmore/next-tf": "2.6.10",
     "@vercel/build-utils": "^2.4.0",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.8.3",
