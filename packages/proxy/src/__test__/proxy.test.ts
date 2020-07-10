@@ -24,6 +24,14 @@ describe('Proxy', () => {
         check: true,
       },
       {
+        src: '^/test/\\[\\.\\.\\.slug\\]$',
+        dest: '/__NEXT_PAGE_LAMBDA_0',
+        headers: {
+          'x-nextjs-page': '/test/[...slug]',
+        },
+        check: true,
+      },
+      {
         handle: 'miss',
       },
       {
@@ -36,8 +44,22 @@ describe('Proxy', () => {
         handle: 'rewrite',
       },
       {
-        src: '^\\/_next\\/data\\/28sHj5gXQxWlFW6LMqdu4\\/index.json$',
+        src: '^\\/_next\\/data\\/pfZNt\\-UZicRzJPVDsdWhM\\/index.json$',
         dest: '/',
+        check: true,
+      },
+      {
+        src:
+          '^\\/_next\\/data\\/pfZNt\\-UZicRzJPVDsdWhM\\/test\\/(.+?)\\.json$',
+        dest: '/test/[...slug]',
+        check: true,
+      },
+      {
+        src: '^/test/\\[\\.\\.\\.slug\\]$',
+        dest: '/__NEXT_PAGE_LAMBDA_0',
+        headers: {
+          'x-nextjs-page': '/test/[...slug]',
+        },
         check: true,
       },
       {
@@ -45,6 +67,19 @@ describe('Proxy', () => {
         dest: '/__NEXT_PAGE_LAMBDA_0',
         headers: {
           'x-nextjs-page': '/index',
+        },
+        check: true,
+      },
+      {
+        src: '^\\/test\\/(.+?)(?:\\/)?$',
+        dest: '/test/[...slug]',
+        check: true,
+      },
+      {
+        src: '^/test/\\[\\.\\.\\.slug\\]$',
+        dest: '/__NEXT_PAGE_LAMBDA_0',
+        headers: {
+          'x-nextjs-page': '/test/[...slug]',
         },
         check: true,
       },
@@ -71,7 +106,7 @@ describe('Proxy', () => {
       },
     ];
 
-    proxy = new Proxy(routes);
+    proxy = new Proxy(routes, ['/__NEXT_PAGE_LAMBDA_0']);
   });
 
   test('Proxy::Routing', () => {
@@ -95,6 +130,18 @@ describe('Proxy', () => {
         dest: '/404',
         headers: {
           'x-nextjs-page': '',
+        },
+      })
+    );
+
+    // Lambda route
+    const route_3 = proxy.route('/test/a/b/c');
+    expect(route_3).toEqual(
+      expect.objectContaining({
+        found: true,
+        dest: '/__NEXT_PAGE_LAMBDA_0',
+        headers: {
+          'x-nextjs-page': '/test/[...slug]',
         },
       })
     );

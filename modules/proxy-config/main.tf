@@ -1,6 +1,7 @@
 locals {
-  s3_origin_id     = "S3-Proxy-Config-${aws_s3_bucket.proxy_config.id}"
-  proxy_config_key = "proxy-config.json"
+  s3_origin_id         = "S3-Proxy-Config-${aws_s3_bucket.proxy_config.id}"
+  proxy_config_key     = "proxy-config.json"
+  proxy_config_max_age = 15 * 60
 }
 
 ########
@@ -34,9 +35,11 @@ resource "aws_s3_bucket_policy" "origin_access" {
 #####################
 
 resource "aws_s3_bucket_object" "proxy_config" {
-  bucket  = aws_s3_bucket.proxy_config.id
-  key     = local.proxy_config_key
-  content = var.proxy_config_json
+  bucket        = aws_s3_bucket.proxy_config.id
+  key           = local.proxy_config_key
+  content       = var.proxy_config_json
+  content_type  = "application/json"
+  cache_control = "max-age=${local.proxy_config_max_age}"
 
   etag = md5(var.proxy_config_json)
 }

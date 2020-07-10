@@ -58,7 +58,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   is_ipv6_enabled = true
   comment         = "${var.deployment_name} - Main"
   price_class     = var.cloudfront_price_class
-  # aliases         = [var.domain_name]
+  aliases         = var.cloudfront_alias_domains
 
   # Static deployment S3 bucket
   origin {
@@ -161,7 +161,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Next.js static assets
   ordered_cache_behavior {
-    path_pattern     = "/_next/*"
+    path_pattern     = "/_next/static/*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = local.origin_id_static_deployment
@@ -191,9 +191,10 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
-    # ssl_support_method             = "sni-only"
-    # minimum_protocol_version       = "TLSv1.2_2018"
+    cloudfront_default_certificate = var.cloudfront_viewer_certificate_arn != null ? false : true
+    acm_certificate_arn            = var.cloudfront_viewer_certificate_arn
+    ssl_support_method             = var.cloudfront_viewer_certificate_arn != null ? "sni-only" : null
+    minimum_protocol_version       = var.cloudfront_viewer_certificate_arn != null ? "TLSv1.2_2018" : null
   }
 
   restrictions {

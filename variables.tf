@@ -10,6 +10,22 @@ variable "deployment_name" {
   default     = "Terraform-next.js"
 }
 
+variable "create_domain_name_records" {
+  type    = bool
+  default = true
+}
+
+variable "domain_names" {
+  type        = list(string)
+  description = "Alternative domain names for the CloudFront distribution."
+  default     = []
+}
+
+variable "domain_zone_names" {
+  type    = list(string)
+  default = []
+}
+
 ########
 # Lambda
 ########
@@ -23,6 +39,11 @@ variable "lambda_environment_variables" {
 #########################
 # Cloudfront Distribution
 #########################
+
+variable "cloudfront_viewer_certificate_arn" {
+  type    = string
+  default = null
+}
 
 variable "cloudfront_origins" {
   type    = list(any)

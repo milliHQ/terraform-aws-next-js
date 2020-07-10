@@ -46,3 +46,13 @@ variable "cloudfront_custom_behaviors" {
   type    = list(any)
   default = null
 }
+
+variable "cloudfront_alias_domains" {
+  type    = list(string)
+  default = []
+}
+
+variable "cloudfront_viewer_certificate_arn" {
+  type    = string
+  default = null
+}

@@ -1070,10 +1070,10 @@
     tmp "0.2.0"
     yargs "15.3.1"
 
-"@dealmore/next-tf@2.6.8-canary.1":
-  version "2.6.8-canary.1"
-  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.6.8-canary.1.tgz#d5909906ab37b38e3c2ceaba346e2526f75da5bc"
-  integrity sha512-esuw4KL95ollZoO/VqSm2wSCByha6Il1fjlQo7+vN8UoOSJx64ueCQgagDOqgqahrJHtGPECmZNaV8XN3Nd+OA==
+"@dealmore/next-tf@2.6.10-canary.0":
+  version "2.6.10-canary.0"
+  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.6.10-canary.0.tgz#07e7e9881d6e7fa4579d6c0c51bb63f756ea314a"
+  integrity sha512-wL15e1r3Dl3mWS7e4m6wAbg9XKfxnRkL7bS+3zXEVqg5q2J/Jw4mX+ktBl1JCjRZCaWHup8aJvfUDGBrhaNBCA==
 
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"

@@ -26,9 +26,11 @@ function resolveRouteParameters(
 
 export class Proxy {
   routes: Route[];
+  lambdaRoutes: string[];
 
-  constructor(routes: Route[]) {
+  constructor(routes: Route[], lambdaRoutes: string[]) {
     this.routes = routes;
+    this.lambdaRoutes = lambdaRoutes;
   }
 
   route(reqUrl: string) {
@@ -79,6 +81,13 @@ export class Proxy {
           reqPathname = destPath;
           isContinue = true;
           continue;
+        }
+
+        if (routeConfig.check && phase !== 'hit') {
+          if (!this.lambdaRoutes.includes(destPath)) {
+            reqPathname = destPath;
+            continue;
+          }
         }
 
         const isDestUrl = isURL(destPath);
