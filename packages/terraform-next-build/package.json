@@ -2,12 +2,14 @@
   "name": "@dealmore/terraform-next-build",
   "version": "0.0.1",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bin": {
     "tf-next": "index.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepack": "cp ../../LICENSE ./",
+    "postpack": "rm ./LICENSE"
   },
   "dependencies": {
     "@dealmore/next-tf": "2.6.10",
@@ -27,5 +29,9 @@
     "@types/glob": "^7.1.2",
     "@types/tmp": "^0.2.0",
     "@types/yargs": "^15.0.5"
-  }
+  },
+  "files": [
+    "dist/**",
+    "index.js"
+  ]
 }

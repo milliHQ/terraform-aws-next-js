@@ -2,9 +2,11 @@
   "name": "@dealmore/terraform-next-proxy",
   "version": "0.0.4",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
-    "build": "funny build -e aws-sdk src/handler.ts dist.zip"
+    "build": "funny build -e aws-sdk src/handler.ts dist.zip",
+    "prepack": "cp ../../LICENSE ./",
+    "postpack": "rm ./LICENSE"
   },
   "dependencies": {
     "@vercel/routing-utils": "^1.8.3",

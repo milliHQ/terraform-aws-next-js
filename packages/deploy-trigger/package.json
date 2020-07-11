@@ -2,9 +2,11 @@
   "name": "@dealmore/terraform-next-deploy-trigger",
   "version": "0.0.3",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
-    "build": "funny build -e aws-sdk src/handler.ts dist.zip"
+    "build": "funny build -e aws-sdk src/handler.ts dist.zip",
+    "prepack": "cp ../../LICENSE ./",
+    "postpack": "rm ./LICENSE"
   },
   "devDependencies": {
     "@dealmore/funny": "^0.3.2",
@@ -16,6 +18,11 @@
   "dependencies": {
     "mime": "^2.4.6",
     "unzipper": "^0.10.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dealmore/terraform-next.js.git",
+    "directory": "packages/deploy-trigger"
   },
   "files": [
     "dist.zip"

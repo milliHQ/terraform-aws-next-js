@@ -2,7 +2,7 @@
   "name": "@dealmore/terraform-aws-nextjs-ws",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "Apache-2.0",
   "workspaces": [
     "packages/*",
     "examples/*"
