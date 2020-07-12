@@ -8,9 +8,11 @@ locals {
   lambda_default_memory  = 1024
   lambda_default_timeout = 10
 
-  config_dir  = trimsuffix(var.next_tf_dir, "/")
-  config_file = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas     = lookup(local.config_file, "lambdas", {})
+  # next-tf config
+  config_dir           = trimsuffix(var.next_tf_dir, "/")
+  config_file          = jsondecode(file("${local.config_dir}/config.json"))
+  lambdas              = lookup(local.config_file, "lambdas", {})
+  static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   routes_json = lookup(local.config_file, "routes", [])
   lambda_routes_json = flatten([
@@ -65,6 +67,7 @@ resource "aws_iam_role" "lambda" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
+  static_files_archive     = local.static_files_archive
   debug_use_local_packages = var.debug_use_local_packages
 }
 

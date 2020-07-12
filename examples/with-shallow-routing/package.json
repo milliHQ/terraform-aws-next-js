@@ -11,7 +11,6 @@
     "dev": "next",
     "build": "next build",
     "build-tf": "tf-next build",
-    "deploy-tf": "tf-next sync next-tf-deploy-source20200627154750486900000001",
     "start": "next start"
   },
   "dependencies": {
