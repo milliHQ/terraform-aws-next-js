@@ -3,6 +3,11 @@
   "version": "0.0.4",
   "main": "index.js",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dealmore/terraform-next.js.git",
+    "directory": "packages/proxy"
+  },
   "scripts": {
     "build": "funny build -e aws-sdk src/handler.ts dist.zip",
     "prepack": "cp ../../LICENSE ./",

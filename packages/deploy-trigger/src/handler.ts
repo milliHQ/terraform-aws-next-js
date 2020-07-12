@@ -5,6 +5,9 @@ import { getType } from 'mime';
 
 const deployBucket = process.env.TARGET_BUCKET;
 
+const CacheControlImmutable = 'public,max-age=31536000,immutable';
+const CacheControlStaticHtml = 'max-age=300';
+
 export const handler: S3Handler = async function (event) {
   const s3 = new S3({ apiVersion: '2006-03-01' });
 
@@ -34,13 +37,17 @@ export const handler: S3Handler = async function (event) {
     const type = entry.type;
     if (type === 'File') {
       // Get ContentType
-      const ContentType = getType(fileName);
+      const ContentType = getType(fileName) || 'text/html';
 
       const uploadParams: S3.Types.PutObjectRequest = {
         Bucket: deployBucket,
         Key: fileName,
         Body: entry,
-        ContentType: ContentType || 'text/html',
+        ContentType,
+        CacheControl:
+          ContentType === 'text/html'
+            ? CacheControlStaticHtml
+            : CacheControlImmutable,
       };
 
       uploads.push(s3.upload(uploadParams).promise());

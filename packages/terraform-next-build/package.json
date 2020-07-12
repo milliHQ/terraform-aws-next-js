@@ -3,6 +3,11 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dealmore/terraform-next.js.git",
+    "directory": "packages/terraform-next-build"
+  },
   "bin": {
     "tf-next": "index.js"
   },
