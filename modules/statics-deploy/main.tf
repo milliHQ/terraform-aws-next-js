@@ -107,7 +107,7 @@ resource "random_id" "function_name" {
 
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "~> 1.16.0"
+  version = "1.16.0"
 
   function_name = random_id.function_name.hex
   description   = "Managed by Terraform-next.js"
@@ -119,6 +119,9 @@ module "deploy_trigger" {
 
   create_package         = false
   local_existing_package = module.lambda_content.abs_path
+
+  # Prevent running concurrently
+  reserved_concurrent_executions = 1
 
   cloudwatch_logs_retention_in_days = 14
 
