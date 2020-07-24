@@ -165,9 +165,12 @@ async function buildCommand({ skipDownload = false }: BuildProps = {}) {
       outputDir: outputDir,
     });
 
-    console.log('hello world!', buildResult);
+    console.log('buildResult:', buildResult);
   } catch (err) {
     console.error(err);
+
+    // If an error occurs make the task fail
+    process.exitCode = 1;
   }
 
   // Cleanup tmpDir
