@@ -1,5 +1,15 @@
 # AWS Next.js Terraform module
 
+## Features
+
+This module is under active development.
+Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
+
+- [x] Supports Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
+- [x] Supports [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
+- [ ] Automatic expiring of old build assets
+- [ ] Supports [AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
+
 ## Usage
 
 ### Add to your Next.js project
@@ -31,7 +41,44 @@ The output in the `.next-tf` directory is all what the Terraform module needs in
 
 ### Setup the Next.js Terraform module
 
-TODO
+> **Note:** Make sure that the `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` environment variables are set when running Terraform commands.
+
+Adding Terraform to your existing Next.js installation is easy.
+Simply create a new `main.tf` file in the root of your Next.js project and add the following content:
+
+```tf
+# main.tf
+
+provider "aws" {
+  version = "~> 2.0"
+  region  = var.aws_region
+}
+
+# For CloudFront configuration
+provider "aws" {
+  alias  = "virginia"
+  region = "us-east-1"
+}
+
+module "lambdas" {
+  source = "github.com/dealmore/terraform-next.js"
+
+  # For CloudFront configuration
+  providers = {
+    aws.global = aws.virginia
+  }
+}
+```
+
+To deploy your app to AWS simply run the following commands:
+
+```sh
+terraform init    # Only needed on the first time running Terraform
+
+yarn tf-next      # Build the next.js app
+terraform plan    # See what resources Terraform will create
+terraform apply   # Deploy the App to your AWS account
+```
 
 ### `.terraformignore`
 
@@ -41,6 +88,10 @@ You can create a `.terraformignore` in the root of your project and add the foll
 ```diff
 +  !**/.next-tf/**
 ```
+
+## Examples
+
+- [Complete](./examples/complete) - Complete example with SSR, API and static pages.
 
 ## Known issues
 
