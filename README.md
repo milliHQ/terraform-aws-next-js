@@ -62,7 +62,7 @@ provider "aws" {
 }
 
 module "lambdas" {
-  source = "github.com/dealmore/terraform-next.js"
+  source  = "dealmore/next-js/aws"
 
   # For CloudFront configuration
   providers = {

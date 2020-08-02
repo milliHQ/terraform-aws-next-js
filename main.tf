@@ -112,6 +112,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
   role       = random_id.function_name[each.key].hex
   policy_arn = aws_iam_policy.lambda_logging.arn
+
+  depends_on = [aws_iam_role.lambda]
 }
 
 # Lambda
