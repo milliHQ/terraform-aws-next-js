@@ -51,7 +51,8 @@ Simply create a new `main.tf` file in the root of your Next.js project and add t
 
 provider "aws" {
   version = "~> 2.0"
-  region  = var.aws_region
+  # Main region where the resources should be created in
+  region  = "eu-central-1"
 }
 
 # For CloudFront configuration
