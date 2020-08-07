@@ -1,4 +1,4 @@
-# AWS Next.js Terraform module
+# AWS Next.js Terraform module ![Test proxy](https://github.com/dealmore/terraform-aws-next-js/workflows/Test%20proxy/badge.svg)
 
 ## Features
 
