@@ -17,7 +17,7 @@
     "postpack": "rm ./LICENSE"
   },
   "dependencies": {
-    "@dealmore/next-tf": "2.6.10",
+    "@dealmore/next-tf": "2.6.19",
     "@vercel/build-utils": "^2.4.0",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.8.3",

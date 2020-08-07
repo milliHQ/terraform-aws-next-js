@@ -5,6 +5,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
+import * as util from 'util';
 
 import { ConfigOutput } from '../types';
 
@@ -106,11 +107,19 @@ function writeOutput(props: OutputProps) {
 
 interface BuildProps {
   skipDownload?: boolean;
+  logLevel?: 'verbose' | 'none';
+  deleteBuildCache?: boolean;
+  cwd: string;
 }
 
-async function buildCommand({ skipDownload = false }: BuildProps = {}) {
+async function buildCommand({
+  skipDownload = false,
+  logLevel,
+  deleteBuildCache = true,
+  cwd,
+}: BuildProps) {
+  let buildOutput: OutputProps | null = null;
   const mode = skipDownload ? 'local' : 'download';
-  const cwd = process.cwd();
 
   // On download create a tmp dir where the files can be downloaded
   const tmpDir = mode === 'download' ? tmp.dirSync() : null;
@@ -157,16 +166,24 @@ async function buildCommand({ skipDownload = false }: BuildProps = {}) {
       }
     }
 
-    await writeOutput({
+    buildOutput = {
       buildId,
       routes: buildResult.routes,
       lambdas,
       staticWebsiteFiles,
       outputDir: outputDir,
-    });
+    };
+    await writeOutput(buildOutput);
 
-    console.log('buildResult:', buildResult);
+    if (logLevel === 'verbose') {
+      console.log(
+        util.format('Routes:\n%s', JSON.stringify(buildResult.routes, null, 2))
+      );
+    }
+
+    console.log('Build successful!');
   } catch (err) {
+    console.log('Build failed:');
     console.error(err);
 
     // If an error occurs make the task fail
@@ -174,10 +191,12 @@ async function buildCommand({ skipDownload = false }: BuildProps = {}) {
   }
 
   // Cleanup tmpDir
-  if (tmpDir) {
+  if (tmpDir && deleteBuildCache) {
     fs.emptyDirSync(tmpDir.name);
     tmpDir.removeCallback();
   }
+
+  return buildOutput;
 }
 
 export default buildCommand;

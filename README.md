@@ -5,6 +5,8 @@
 This module is under active development.
 Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
 
+- [x] Support for Next.js `v9.5+` (older Versions might work but are not actively supported)
+- [x] Support for Terraform `v0.12+`
 - [x] Supports Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - [x] Supports [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
 - [ ] Automatic expiring of old build assets

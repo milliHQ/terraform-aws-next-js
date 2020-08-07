@@ -62,7 +62,10 @@ export class Proxy {
         let destPath: string = reqPathname!;
 
         if (routeConfig.dest) {
-          destPath = resolveRouteParameters(routeConfig.dest, match, keys);
+          // Fix for next.js 9.5+: Removes querystring from slug URLs
+          destPath = url.parse(
+            resolveRouteParameters(routeConfig.dest, match, keys)
+          ).pathname!;
         }
 
         if (headers) {

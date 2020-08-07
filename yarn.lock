@@ -1075,10 +1075,10 @@
     tmp "0.2.0"
     yargs "15.3.1"
 
-"@dealmore/next-tf@2.6.10":
-  version "2.6.10"
-  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.6.10.tgz#2e9c6ef46463f3403c0e6f580820bc50906227c4"
-  integrity sha512-YEXVa8D956WzxNuZLYpnkwFTwMKT/yP/S5ZB48ZblQErpAYUUrSjSlObO6AmoN1R61fYOqMvkalUEF8uhNkf7Q==
+"@dealmore/next-tf@2.6.19":
+  version "2.6.19"
+  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.6.19.tgz#a3bb2d0738494dcec66283add1c8087f0413fc0d"
+  integrity sha512-vFlCe73YnCIjG2OKON4iqCZ17zwjOW4odJFQHYCBlJN8iR/xMA9DKZOD2YXvwmdSkrCkf8CZ9xKORNotCK0oaw==
 
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
