@@ -16,8 +16,8 @@ jobs:
 
       - name: Cache
         uses: actions/cache@v2
-          with:
-            path: |
-              .yarn
-              **/node_modules
-            key: ${{ runner.os }}-test
+        with:
+          path: |
+            .yarn
+            **/node_modules
+          key: ${{ runner.os }}-test
