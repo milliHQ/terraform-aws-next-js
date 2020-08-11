@@ -2,6 +2,8 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { format } from 'url';
 
+import { Header } from '../../components/header';
+
 let counter = 0;
 
 export async function getServerSideProps(ctx) {
@@ -37,6 +39,8 @@ export default function Index({
 
   return (
     <div>
+      <Header />
+
       <h2>This is the Home Page</h2>
       <Link href="/about">
         <a>About</a>

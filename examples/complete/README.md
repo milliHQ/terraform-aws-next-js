@@ -1,11 +1,11 @@
-# Terraform Next.js Example
+# Terraform Next.js complete example
 
 Install it and run:
 
 ```sh
 # Build
 yarn
-yarn build-tf
+yarn tf-next
 
 # Terraform
 cd terraform
