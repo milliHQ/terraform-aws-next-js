@@ -5,12 +5,48 @@
 This module is under active development.
 Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
 
-- [x] Support for Next.js `v9.5+` (older Versions might work but are not actively supported)
-- [x] Support for Terraform `v0.12+`
-- [x] Supports Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
-- [x] Supports [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
+- [x] Next.js `v9.5+` (older Versions might work but are not actively supported)
+- [x] Terraform `v0.12+`
+- [x] Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
+- [x] [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
+- [ ] [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
+- [ ] [Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
 - [ ] Automatic expiring of old build assets
-- [ ] Supports [AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
+- [ ] [AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
+
+## Architecture
+
+The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and ties them together to work as a single application:
+
+![Architecture overview diagram](./docs/assets/architecture.png)
+
+- **`I.` CloudFront**
+
+  This is the main CloudFront distribution which handles all incoming traffic to the Next.js application.
+  Static assets with the prefix `/_next/static/*` (e.g. JavaScript, CSS, images) are identified here and is pulled from a static content S3 bucket ([`II`](#II-s3-static-content)).
+  Other requests are delegated to the proxy handler Lambda@Edge function ([`III`](#III-lambda-edge-proxy)).
+
+- **`II.` S3 bucket for static content**<a id="II-s3-static-content"></a>
+
+  This bucket contains the static generated sites from the Next.js build and the static assets (JavaScript, CSS, images, ...).
+
+- **`III.` Lambda@Edge proxy handler**<a id="III-lambda-edge-proxy"></a>
+
+  The proxy handler analyzes the incoming requests and determines from which source a request should be served.
+  Static generated sites are fetched from the S3 bucket ([`II`](#II-s3-static-content)) and dynamic content is served from the Next.js Lambdas ([`V`](#V-next-js-lambdas)).
+
+* **`IV.` API Gateway**<a id="IV-api-gateway"></a>
+
+* **`V.` Shared Next.js Lambda functions**<a id="V-next-js-lambdas"></a>
+
+* **Static Content Deployment**
+
+  This flow is only triggered when a Terraform apply runs to update the application.
+  It consists of a dedicated S3 bucket and a single Lambda function.
+  The bucket is only used by Terraform to upload the static content from the `tf-next build` command as a zip archive.
+  The upload then triggers the Lambda which unzips the content and deploys it to the static content S3 bucket ([`II`](#II-s3-static-content)).
+
+* **Proxy Config Distribution**
 
 ## Usage
 
