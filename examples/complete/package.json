@@ -18,10 +18,8 @@
     "react": "16.13.1",
     "react-dom": "16.13.1"
   },
-  "devDependencies": {},
-  "internalDependencies": {
-    "@dealmore/terraform-next-proxy": "^0.0.2",
-    "@dealmore/terraform-next-deploy-trigger": "^0.0.1"
+  "devDependencies": {
+    "@dealmore/terraform-next-build": "^0.0.3"
   },
   "license": "ISC"
 }
