@@ -27,9 +27,9 @@ variable "domain_zone_names" {
   default = []
 }
 
-########
-# Lambda
-########
+###################
+# Lambdas (Next.js)
+###################
 
 variable "lambda_environment_variables" {
   type        = map(string)
@@ -53,6 +53,12 @@ variable "lambda_timeout" {
   description = "The amount of time your Lambda Function has to run in seconds."
   type        = number
   default     = 10
+}
+
+variable "lambda_policy_json" {
+  description = "An additional policy document as JSON to attach to the Lambda Function role"
+  type        = string
+  default     = null
 }
 
 #########################
