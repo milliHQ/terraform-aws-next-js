@@ -1,13 +1,4 @@
-provider "aws" {
-  alias = "global"
-}
-
 locals {
-  # Lambda default config
-  lambda_default_runtime = "nodejs12.x"
-  lambda_default_memory  = 1024
-  lambda_default_timeout = 10
-
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
   config_file          = jsondecode(file("${local.config_dir}/config.json"))
@@ -125,9 +116,9 @@ resource "aws_lambda_function" "this" {
   description   = "Managed by Terraform-next.js"
   role          = aws_iam_role.lambda[each.key].arn
   handler       = lookup(each.value, "handler", "")
-  runtime       = lookup(each.value, "runtime", local.lambda_default_runtime)
-  memory_size   = lookup(each.value, "memory", local.lambda_default_memory)
-  timeout       = local.lambda_default_timeout
+  runtime       = lookup(each.value, "runtime", var.lambda_runtime)
+  memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
+  timeout       = var.lambda_timeout
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
@@ -169,7 +160,7 @@ locals {
     for integration_key, integration in local.lambdas : {
       lambda_arn             = aws_lambda_function.this[integration_key].arn
       payload_format_version = "1.0"
-      timeout_milliseconds   = local.lambda_default_timeout * 1000
+      timeout_milliseconds   = var.lambda_timeout * 1000
     }
   ])
   integrations = zipmap(local.integrations_keys, local.integration_values)
@@ -177,7 +168,7 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "~> 0.2.0"
+  version = "0.3.0"
 
   name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
@@ -199,7 +190,6 @@ module "proxy" {
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
-  lambda_default_runtime        = local.lambda_default_runtime
 
   # Forwarding variables
   deployment_name                   = var.deployment_name
@@ -210,7 +200,7 @@ module "proxy" {
   debug_use_local_packages          = var.debug_use_local_packages
 
   providers = {
-    aws = aws.global
+    aws = aws.global_region
   }
 }
 

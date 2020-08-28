@@ -6,7 +6,7 @@ This module is under active development.
 Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
 
 - [x] Next.js `v9.5+` (older Versions might work but are not actively supported)
-- [x] Terraform `v0.12+`
+- [x] Terraform `v0.12` & `v0.13`
 - [x] Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - [x] [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
 - [ ] [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
@@ -88,24 +88,12 @@ Simply create a new `main.tf` file in the root of your Next.js project and add t
 # main.tf
 
 provider "aws" {
-  version = "~> 2.0"
-  # Main region where the resources should be created in
-  region  = "eu-central-1"
-}
-
-# For CloudFront configuration
-provider "aws" {
-  alias  = "virginia"
-  region = "us-east-1"
+  version = "~> 3.0"
+  region  = "eu-central-1" # Main region where the resources should be created in
 }
 
 module "lambdas" {
   source  = "dealmore/next-js/aws"
-
-  # For CloudFront configuration
-  providers = {
-    aws.global = aws.virginia
-  }
 }
 ```
 
