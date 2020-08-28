@@ -1,4 +1,6 @@
-# AWS Next.js Terraform module ![Test proxy](https://github.com/dealmore/terraform-aws-next-js/workflows/Test%20proxy/badge.svg)
+# AWS Next.js Terraform module
+
+![CI status](https://github.com/dealmore/terraform-aws-next-js/workflows/CI/badge.svg)
 
 ## Features
 
@@ -18,7 +20,7 @@ Some features are still under development, so here you can see a list of feature
 
 The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and ties them together to work as a single application:
 
-![Architecture overview diagram](./docs/assets/architecture.png)
+![Architecture overview diagram](https://github.com/dealmore/terraform-aws-next-js/blob/main/docs/assets/architecture.png?raw=true)
 
 - **`I.` CloudFront**
 
