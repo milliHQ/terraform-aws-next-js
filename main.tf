@@ -25,31 +25,6 @@ resource "random_id" "function_name" {
   byte_length = 4
 }
 
-##########
-# IAM role
-##########
-
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "lambda" {
-  for_each = local.lambdas
-
-  name        = random_id.function_name[each.key].hex
-  description = "Managed by Terraform-next.js"
-
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
 #########
 # Lambdas
 #########
@@ -60,51 +35,6 @@ module "statics_deploy" {
 
   static_files_archive     = local.static_files_archive
   debug_use_local_packages = var.debug_use_local_packages
-}
-
-# Cloudwatch Logs
-resource "aws_cloudwatch_log_group" "this" {
-  for_each = local.lambdas
-
-  name              = "/aws/lambda/${random_id.function_name[each.key].hex}"
-  retention_in_days = 14
-}
-
-resource "random_id" "iam_name" {
-  prefix      = "terraform_next_lambda_logging-"
-  byte_length = 4
-}
-
-resource "aws_iam_policy" "lambda_logging" {
-  name        = random_id.iam_name.hex
-  path        = "/"
-  description = "IAM policy for logging from a Terraform-next.js"
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:aws:logs:*:*:*",
-      "Effect": "Allow"
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  for_each = local.lambdas
-
-  role       = random_id.function_name[each.key].hex
-  policy_arn = aws_iam_policy.lambda_logging.arn
-
-  depends_on = [aws_iam_role.lambda]
 }
 
 # Lambda
