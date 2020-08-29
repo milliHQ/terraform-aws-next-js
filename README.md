@@ -123,6 +123,45 @@ You can create a `.terraformignore` in the root of your project and add the foll
 - [Complete](./examples/complete) - Complete example with SSR, API and static pages.
 
 <!--- BEGIN_TF_DOCS --->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| terraform | >= 0.12.6, < 0.14 |
+| aws | >= 2.67, < 4.0 |
+| random | ~> 2.3.0 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| aws | >= 2.67, < 4.0 |
+| random | ~> 2.3.0 |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
+| cloudfront\_origins | n/a | `list(any)` | `null` | no |
+| cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
+| create\_domain\_name\_records | Controls whether Route 53 records for the for the domain\_names should be created. | `bool` | `true` | no |
+| debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
+| deployment\_name | Identifier for the deployment group (Added to Comments). | `string` | `"Terraform-next.js"` | no |
+| domain\_names | Alternative domain names for the CloudFront distribution. | `list(string)` | `[]` | no |
+| domain\_zone\_names | n/a | `list(string)` | `[]` | no |
+| lambda\_environment\_variables | A map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
+| lambda\_memory\_size | Amount of memory in MB your Lambda Function can use at runtime. Valid value between 128 MB to 3008 MB, in 64 MB increments. | `number` | `1024` | no |
+| lambda\_policy\_json | An additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
+| lambda\_runtime | Lambda Function runtime | `string` | `"nodejs12.x"` | no |
+| lambda\_timeout | The amount of time your Lambda Function has to run in seconds. | `number` | `10` | no |
+| next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| static\_upload\_bucket\_id | n/a |
 
 <!--- END_TF_DOCS --->
 
