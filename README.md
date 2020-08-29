@@ -122,6 +122,10 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 - [Complete](./examples/complete) - Complete example with SSR, API and static pages.
 
+<!--- BEGIN_TF_DOCS --->
+
+<!--- END_TF_DOCS --->
+
 ## Known issues
 
 Under the hood this module uses a lot of [Vercel's](https://github.com/vercel/vercel/) build pipeline.

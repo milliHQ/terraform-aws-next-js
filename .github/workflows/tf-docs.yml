@@ -1,0 +1,21 @@
+# GitHub action to make sure that the terraform docs in the README are
+# up-to-date on every push to the main branch
+
+name: Terraform docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update Terraform docs in README
+        uses: Dirrk/terraform-docs@v1.0.8
+        with:
+          tf_docs_output_file: README.md
+          tf_docs_git_push: 'true'
+          tf_docs_git_commit_message: 'terraform-docs: Update'
