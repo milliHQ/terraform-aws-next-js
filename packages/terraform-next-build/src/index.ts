@@ -1,35 +1,26 @@
 import yargs from 'yargs';
 
-yargs
-  .command(
-    'build',
-    'Build the next.js project',
-    (yargs_) => {
-      return yargs_
-        .option('skipDownload', {
-          type: 'boolean',
-          description: 'Runs the build in the current working directory',
-        })
-        .option('verbose', {
-          type: 'boolean',
-          description: 'Run with verbose logging',
-        });
-    },
-    async ({ skipDownload, verbose }) => {
-      const cwd = process.cwd();
-
-      (await import('./commands/build')).default({
-        skipDownload,
-        logLevel: verbose ? 'verbose' : 'none',
-        cwd,
+yargs.command(
+  'build',
+  'Build the next.js project',
+  (yargs_) => {
+    return yargs_
+      .option('skipDownload', {
+        type: 'boolean',
+        description: 'Runs the build in the current working directory',
+      })
+      .option('verbose', {
+        type: 'boolean',
+        description: 'Run with verbose logging',
       });
-    }
-  )
-  .command<{ bucket: string }>(
-    'sync <bucket>',
-    'Syncs the static files with S3',
-    () => {},
-    async ({ bucket }) => {
-      (await import('./commands/sync')).default({ Bucket: bucket });
-    }
-  ).argv;
+  },
+  async ({ skipDownload, verbose }) => {
+    const cwd = process.cwd();
+
+    (await import('./commands/build')).default({
+      skipDownload,
+      logLevel: verbose ? 'verbose' : 'none',
+      cwd,
+    });
+  }
+).argv;
