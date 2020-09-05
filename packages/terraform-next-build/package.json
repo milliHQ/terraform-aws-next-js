@@ -1,6 +1,6 @@
 {
   "name": "@dealmore/terraform-next-build",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "CLI build tool for AWS Next.js Terraform module",
   "homepage": "https://github.com/dealmore/terraform-aws-next-js",
   "main": "index.js",

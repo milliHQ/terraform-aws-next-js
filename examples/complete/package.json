@@ -19,7 +19,7 @@
     "react-dom": "16.13.1"
   },
   "devDependencies": {
-    "@dealmore/terraform-next-build": "^0.0.4"
+    "@dealmore/terraform-next-build": "^0.1.0"
   },
   "license": "ISC"
 }
