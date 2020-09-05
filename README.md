@@ -161,6 +161,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 | Name | Description |
 |------|-------------|
+| cloudfront\_domain\_name | The domain of the main CloudFront distribution. |
 | static\_upload\_bucket\_id | n/a |
 
 <!--- END_TF_DOCS --->
