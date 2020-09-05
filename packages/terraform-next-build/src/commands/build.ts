@@ -20,7 +20,7 @@ interface StaticWebsiteFiles {
 function getFiles(basePath: string) {
   return glob('**', {
     cwd: basePath,
-    ignore: ['node_modules/**/*', '.next/**/*', '.next-tf/**/*'],
+    ignore: ['node_modules/**', '.next/**', '.next-tf/**'],
   });
 }
 
@@ -70,6 +70,7 @@ function writeStaticWebsiteFiles(
 function writeOutput(props: OutputProps) {
   const config: ConfigOutput = {
     lambdas: {},
+    staticRoutes: [],
     routes: props.routes,
     buildId: props.buildId,
     staticFilesArchive: 'static-website-files.zip',
@@ -87,6 +88,15 @@ function writeOutput(props: OutputProps) {
       route: normalizeRoute(route),
     };
   }
+
+  config.staticRoutes = Object.keys(props.staticWebsiteFiles)
+    .filter(
+      // Remove paths that are not routed from the proxy
+      // - _next/static/ -> Is routed directly by CloudFront
+      (fileName) => !fileName.startsWith('_next/static/')
+    )
+    // Add leading / to the route
+    .map((path) => `/${path}`);
 
   const staticFilesArchive = writeStaticWebsiteFiles(
     path.join(props.outputDir, config.staticFilesArchive),

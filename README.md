@@ -9,7 +9,7 @@ Some features are still under development, so here you can see a list of feature
 
 - [x] Next.js `v9.5+` (older Versions might work but are not actively supported)
 - [x] Terraform `v0.12` & `v0.13`
-- [x] Static, SSR and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
+- [x] Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - [x] [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
 - [ ] [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
 - [ ] [Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)

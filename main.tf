@@ -5,7 +5,8 @@ locals {
   lambdas              = lookup(local.config_file, "lambdas", {})
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
-  routes_json = lookup(local.config_file, "routes", [])
+  static_routes_json = lookup(local.config_file, "staticRoutes", [])
+  routes_json        = lookup(local.config_file, "routes", [])
   lambda_routes_json = flatten([
     for integration_key, integration in local.lambdas : [
       "${lookup(integration, "route", "/")}"
@@ -13,6 +14,7 @@ locals {
   ])
   proxy_config_json = jsonencode({
     routes       = local.routes_json
+    staticRoutes = local.static_routes_json
     lambdaRoutes = local.lambda_routes_json
   })
 }
