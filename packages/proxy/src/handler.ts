@@ -37,7 +37,11 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   try {
     if (!proxyConfig) {
       proxyConfig = await fetchProxyConfig(configEndpoint);
-      proxy = new Proxy(proxyConfig.routes, proxyConfig.lambdaRoutes);
+      proxy = new Proxy(
+        proxyConfig.routes,
+        proxyConfig.lambdaRoutes,
+        proxyConfig.staticRoutes
+      );
     }
   } catch (err) {
     console.error(format('Error while initialization: %j', err));

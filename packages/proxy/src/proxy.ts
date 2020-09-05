@@ -26,16 +26,24 @@ function resolveRouteParameters(
 
 export class Proxy {
   routes: Route[];
-  lambdaRoutes: string[];
+  lambdaRoutes: Set<string>;
+  staticRoutes: Set<string>;
 
-  constructor(routes: Route[], lambdaRoutes: string[]) {
+  constructor(routes: Route[], lambdaRoutes: string[], staticRoutes: string[]) {
     this.routes = routes;
-    this.lambdaRoutes = lambdaRoutes;
+    this.lambdaRoutes = new Set<string>(lambdaRoutes);
+    this.staticRoutes = new Set<string>(staticRoutes);
   }
 
+  _checkFileSystem = (path: string) => {
+    return this.staticRoutes.has(path);
+  };
+
   route(reqUrl: string) {
+    const parsedUrl = url.parse(reqUrl, true);
+    let query = parsedUrl.query;
+    let reqPathname = parsedUrl.pathname ?? '/';
     let result: RouteResult | undefined;
-    let { query, pathname: reqPathname = '/' } = url.parse(reqUrl, true);
     let status: number | undefined;
     let isContinue = false;
     let idx = -1;
@@ -48,6 +56,24 @@ export class Proxy {
 
       if (isHandler(routeConfig)) {
         phase = routeConfig.handle;
+
+        // Check if the path is a static file that should be served from the
+        // filesystem
+        if (routeConfig.handle === 'filesystem') {
+          // Check if the route matches a route from the filesystem
+          if (this._checkFileSystem(reqPathname)) {
+            result = {
+              found: true,
+              target: 'filesystem',
+              dest: reqPathname,
+              headers: combinedHeaders,
+              continue: false,
+              isDestUrl: false,
+            };
+            break;
+          }
+        }
+
         continue;
       }
 
@@ -56,10 +82,10 @@ export class Proxy {
       const keys: string[] = [];
       const matcher = PCRE(`%${src}%`, keys);
       const match =
-        matcher.exec(reqPathname!) || matcher.exec(reqPathname!.substring(1));
+        matcher.exec(reqPathname) || matcher.exec(reqPathname!.substring(1));
 
       if (match) {
-        let destPath: string = reqPathname!;
+        let destPath: string = reqPathname;
 
         if (routeConfig.dest) {
           // Fix for next.js 9.5+: Removes querystring from slug URLs
@@ -87,7 +113,7 @@ export class Proxy {
         }
 
         if (routeConfig.check && phase !== 'hit') {
-          if (!this.lambdaRoutes.includes(destPath)) {
+          if (!this.lambdaRoutes.has(destPath)) {
             reqPathname = destPath;
             continue;
           }
@@ -136,7 +162,7 @@ export class Proxy {
     if (!result) {
       result = {
         found: false,
-        dest: reqPathname!,
+        dest: reqPathname,
         continue: isContinue,
         status,
         isDestUrl: false,

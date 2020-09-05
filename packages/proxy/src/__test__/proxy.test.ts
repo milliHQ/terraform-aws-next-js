@@ -1,147 +1,22 @@
-import { Route } from '@vercel/routing-utils';
-
 import { Proxy } from '../proxy';
+import { ProxyConfig } from '../types';
 
 describe('Proxy', () => {
-  describe('Proxy::Routing 1', () => {
+  describe('Proxy::Routing 001', () => {
     let proxy: Proxy;
     beforeAll(() => {
-      const routes: Route[] = [
-        {
-          src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
-          headers: {
-            Location: '/$1',
-          },
-          status: 308,
-        },
-        {
-          src: '/404',
-          status: 404,
-          continue: true,
-        },
-        {
-          handle: 'filesystem',
-        },
-        {
-          src: '^/api/robots/?$',
-          dest: '/__NEXT_API_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/api/robots',
-          },
-          check: true,
-        },
-        {
-          src: '^(/|/index|)/?$',
-          dest: '/__NEXT_PAGE_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/index',
-          },
-          check: true,
-        },
-        {
-          src: '^/test/\\[\\.\\.\\.slug\\]/?$',
-          dest: '/__NEXT_PAGE_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/test/[...slug]',
-          },
-          check: true,
-        },
-        {
-          src: '^\\/robots\\.txt$',
-          dest: '/api/robots',
-          check: true,
-        },
-        {
-          handle: 'miss',
-        },
-        {
-          src:
-            '/_next/static/(?:[^/]+/pages|pages|chunks|runtime|css|media)/.+',
-          status: 404,
-          check: true,
-          dest: '$0',
-        },
-        {
-          handle: 'rewrite',
-        },
-        {
-          src: '^/_next/data/3L\\-yA_7zVvNyrhLaBNi3Z/index.json$',
-          dest: '/',
-          check: true,
-        },
-        {
-          src: '^/_next/data/3L\\-yA_7zVvNyrhLaBNi3Z/test/(?<slug>.+?)\\.json$',
-          dest: '/test/[...slug]?slug=$slug',
-          check: true,
-        },
-        {
-          src: '^/test/\\[\\.\\.\\.slug\\]/?$',
-          dest: '/__NEXT_PAGE_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/test/[...slug]',
-          },
-          check: true,
-        },
-        {
-          src: '^/api/robots/?$',
-          dest: '/__NEXT_API_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/api/robots',
-          },
-          check: true,
-        },
-        {
-          src: '^(/|/index|)/?$',
-          dest: '/__NEXT_PAGE_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/index',
-          },
-          check: true,
-        },
-        {
-          src: '^/test/(?<slug>.+?)(?:/)?$',
-          dest: '/test/[...slug]?slug=$slug',
-          check: true,
-        },
-        {
-          src: '^/test/\\[\\.\\.\\.slug\\]/?$',
-          dest: '/__NEXT_PAGE_LAMBDA_0',
-          headers: {
-            'x-nextjs-page': '/test/[...slug]',
-          },
-          check: true,
-        },
-        {
-          handle: 'hit',
-        },
-        {
-          src:
-            '/_next/static/(?:[^/]+/pages|pages|chunks|runtime|css|media)/.+',
-          headers: {
-            'cache-control': 'public,max-age=31536000,immutable',
-          },
-          continue: true,
-        },
-        {
-          handle: 'error',
-        },
-        {
-          src: '/.*',
-          dest: '/404',
-          status: 404,
-          headers: {
-            'x-nextjs-page': '',
-          },
-        },
-      ];
-
-      proxy = new Proxy(routes, ['/__NEXT_PAGE_LAMBDA_0']);
+      // Initialize proxy
+      const config = require('./res/config-001.json') as ProxyConfig;
+      proxy = new Proxy(
+        config.routes,
+        config.lambdaRoutes,
+        config.staticRoutes
+      );
     });
 
-    test('Proxy::Routing 1', () => {
-      // Lambda route
-      const route_1 = proxy.route('/');
-      expect(route_1).toEqual(
+    test('/: Index Lambda route', () => {
+      const route = proxy.route('/');
+      expect(route).toEqual(
         expect.objectContaining({
           found: true,
           dest: '/__NEXT_PAGE_LAMBDA_0',
@@ -150,10 +25,11 @@ describe('Proxy', () => {
           },
         })
       );
+    });
 
-      // About Route not found
-      const route_2 = proxy.route('/about');
-      expect(route_2).toEqual(
+    test('/about: Route not found', () => {
+      const route = proxy.route('/about');
+      expect(route).toEqual(
         expect.objectContaining({
           found: true,
           dest: '/404',
@@ -162,148 +38,60 @@ describe('Proxy', () => {
           },
         })
       );
+    });
 
-      // Lambda route
-      const route_3 = proxy.route('/test/a/b/c');
-      expect(route_3).toEqual(
+    test('/test/a/b/c: Slug Lambda Route', () => {
+      const route = proxy.route('/test/a/b/c');
+      expect(route).toEqual(
         expect.objectContaining({
           found: true,
           dest: '/__NEXT_PAGE_LAMBDA_0',
           headers: {
             'x-nextjs-page': '/test/[...slug]',
           },
+        })
+      );
+    });
+
+    test('/sitemap.xml: Static file routing', () => {
+      const route = proxy.route('/sitemap.xml');
+      expect(route).toEqual(
+        expect.objectContaining({
+          found: true,
+          dest: '/sitemap.xml',
+          target: 'filesystem',
+          headers: {},
         })
       );
     });
   });
 
-  describe('Proxy::Routing 2', () => {
+  describe('Proxy::Routing 002', () => {
     let proxy: Proxy;
-    const routes: Route[] = [
-      {
-        src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
-        headers: {
-          Location: '/$1',
-        },
-        status: 308,
-      },
-      {
-        src: '/404',
-        status: 404,
-        continue: true,
-      },
-      {
-        handle: 'filesystem',
-      },
-      {
-        src: '^/api/robots/?$',
-        dest: '/__NEXT_API_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/api/robots',
-        },
-        check: true,
-      },
-      {
-        src: '^(/|/index|)/?$',
-        dest: '/__NEXT_PAGE_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/index',
-        },
-        check: true,
-      },
-      {
-        src: '^/product/\\[\\.\\.\\.slug\\]/?$',
-        dest: '/__NEXT_PAGE_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/product/[...slug]',
-        },
-        check: true,
-      },
-      {
-        src: '^\\/robots\\.txt$',
-        dest: '/api/robots',
-        check: true,
-      },
-      {
-        handle: 'miss',
-      },
-      {
-        src: '/_next/static/(?:[^/]+/pages|pages|chunks|runtime|css|media)/.+',
-        status: 404,
-        check: true,
-        dest: '$0',
-      },
-      {
-        handle: 'rewrite',
-      },
-      {
-        src: '^/api/robots/?$',
-        dest: '/__NEXT_API_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/api/robots',
-        },
-        check: true,
-      },
-      {
-        src: '^(/|/index|)/?$',
-        dest: '/__NEXT_PAGE_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/index',
-        },
-        check: true,
-      },
-      {
-        src: '^/product/(?<slug>.+?)(?:/)?$',
-        dest: '/product/[...slug]?slug=$slug',
-        check: true,
-      },
-      {
-        src: '^/product/\\[\\.\\.\\.slug\\]/?$',
-        dest: '/__NEXT_PAGE_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/product/[...slug]',
-        },
-        check: true,
-      },
-      {
-        handle: 'hit',
-      },
-      {
-        src: '/_next/static/(?:[^/]+/pages|pages|chunks|runtime|css|media)/.+',
-        headers: {
-          'cache-control': 'public,max-age=31536000,immutable',
-        },
-        continue: true,
-      },
-      {
-        handle: 'error',
-      },
-      {
-        src: '/.*',
-        dest: '/404',
-        status: 404,
-        headers: {
-          'x-nextjs-page': '',
-        },
-      },
-    ];
 
-    proxy = new Proxy(routes, [
-      '/__NEXT_API_LAMBDA_0',
-      '/__NEXT_PAGE_LAMBDA_0',
-    ]);
+    beforeAll(() => {
+      // Initialize proxy
+      const config = require('./res/config-002.json') as ProxyConfig;
+      proxy = new Proxy(
+        config.routes,
+        config.lambdaRoutes,
+        config.staticRoutes
+      );
+    });
 
-    const route_1 = proxy.route(
-      '/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc'
-    );
-    expect(route_1).toEqual(
-      expect.objectContaining({
-        found: true,
-        dest: '/__NEXT_PAGE_LAMBDA_0',
-        headers: {
-          'x-nextjs-page': '/product/[...slug]',
-        },
-      })
-    );
+    test('/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc: Dynamic URL', () => {
+      const route = proxy.route(
+        '/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc'
+      );
+      expect(route).toEqual(
+        expect.objectContaining({
+          found: true,
+          dest: '/__NEXT_PAGE_LAMBDA_0',
+          headers: {
+            'x-nextjs-page': '/product/[...slug]',
+          },
+        })
+      );
+    });
   });
 });

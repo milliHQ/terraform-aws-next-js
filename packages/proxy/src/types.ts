@@ -7,11 +7,14 @@ export interface HTTPHeaders {
 export interface ProxyConfig {
   routes: Route[];
   lambdaRoutes: string[];
+  staticRoutes: string[];
 }
 
 export interface RouteResult {
   // `true` if a route was matched, `false` otherwise
   found: boolean;
+  // if found this indicated wether it is a lambda or static file
+  target?: 'lambda' | 'filesystem';
   // "dest": <string of the dest, either file for lambda or full url for remote>
   dest: string;
   // `true` if last route in current phase matched but set `continue: true`
