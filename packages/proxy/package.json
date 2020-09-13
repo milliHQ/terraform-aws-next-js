@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@vercel/routing-utils": "^1.8.3",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "pcre-to-regexp": "^1.1.0"
   },
   "devDependencies": {
