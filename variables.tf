@@ -70,6 +70,12 @@ variable "cloudfront_viewer_certificate_arn" {
   default = null
 }
 
+variable "cloudfront_minimum_protocol_version" {
+  description = "The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
+  type    = string
+  default = "TLSv1.2_2019"
+}
+
 variable "cloudfront_origins" {
   type    = list(any)
   default = null

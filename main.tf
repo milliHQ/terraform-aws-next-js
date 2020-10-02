@@ -124,12 +124,13 @@ module "proxy" {
   proxy_config_json             = local.proxy_config_json
 
   # Forwarding variables
-  deployment_name                   = var.deployment_name
-  cloudfront_origins                = var.cloudfront_origins
-  cloudfront_custom_behaviors       = var.cloudfront_custom_behaviors
-  cloudfront_alias_domains          = var.domain_names
-  cloudfront_viewer_certificate_arn = var.cloudfront_viewer_certificate_arn
-  debug_use_local_packages          = var.debug_use_local_packages
+  deployment_name                     = var.deployment_name
+  cloudfront_origins                  = var.cloudfront_origins
+  cloudfront_custom_behaviors         = var.cloudfront_custom_behaviors
+  cloudfront_alias_domains            = var.domain_names
+  cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
+  cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
+  debug_use_local_packages            = var.debug_use_local_packages
 
   providers = {
     aws = aws.global_region

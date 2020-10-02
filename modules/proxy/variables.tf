@@ -57,3 +57,7 @@ variable "cloudfront_viewer_certificate_arn" {
   type    = string
   default = null
 }
+
+variable "cloudfront_minimum_protocol_version" {
+  type = string
+}

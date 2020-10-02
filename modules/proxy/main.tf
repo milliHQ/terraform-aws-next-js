@@ -194,7 +194,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     cloudfront_default_certificate = var.cloudfront_viewer_certificate_arn != null ? false : true
     acm_certificate_arn            = var.cloudfront_viewer_certificate_arn
     ssl_support_method             = var.cloudfront_viewer_certificate_arn != null ? "sni-only" : null
-    minimum_protocol_version       = var.cloudfront_viewer_certificate_arn != null ? "TLSv1.2_2018" : null
+    minimum_protocol_version       = var.cloudfront_viewer_certificate_arn != null ? var.cloudfront_minimum_protocol_version : null
   }
 
   restrictions {
