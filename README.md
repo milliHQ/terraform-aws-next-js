@@ -2,6 +2,8 @@
 
 ![CI status](https://github.com/dealmore/terraform-aws-next-js/workflows/CI/badge.svg)
 
+A zero-config Terraform module for self-hosting Next.js sites on AWS Lambda.
+
 ## Features
 
 This module is under active development.
@@ -39,16 +41,20 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
 
 * **`IV.` API Gateway**<a id="IV-api-gateway"></a>
 
+  The [HTTP API Gateway](https://aws.amazon.com/api-gateway/) distributes the incoming traffic on the existing Next.js Lambdas ([`V`](#V-next-js-lambdas)). It uses a cost efficient HTTP API for this.
+
 * **`V.` Shared Next.js Lambda functions**<a id="V-next-js-lambdas"></a>
 
-* **Static Content Deployment**
+  These are the Next.js Lambdas which are doing the server-side rendering. They are composed, so a single lambda can serve multiple SSR-pages.
+
+- **Static Content Deployment**
 
   This flow is only triggered when a Terraform apply runs to update the application.
   It consists of a dedicated S3 bucket and a single Lambda function.
   The bucket is only used by Terraform to upload the static content from the `tf-next build` command as a zip archive.
   The upload then triggers the Lambda which unzips the content and deploys it to the static content S3 bucket ([`II`](#II-s3-static-content)).
 
-* **Proxy Config Distribution**
+- **Proxy Config Distribution**
 
 ## Usage
 
@@ -122,6 +128,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 - [Complete](./examples/complete) - Complete example with SSR, API and static pages.
 
+<!-- prettier-ignore-start -->
 <!--- BEGIN_TF_DOCS --->
 ## Requirements
 
@@ -165,6 +172,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | static\_upload\_bucket\_id | n/a |
 
 <!--- END_TF_DOCS --->
+<!-- prettier-ignore-end -->
 
 ## Known issues
 
