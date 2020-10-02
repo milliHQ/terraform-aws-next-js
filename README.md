@@ -150,6 +150,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
+| cloudfront\_minimum\_protocol\_version | The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
 | cloudfront\_origins | n/a | `list(any)` | `null` | no |
 | cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
 | create\_domain\_name\_records | Controls whether Route 53 records for the for the domain\_names should be created. | `bool` | `true` | no |
