@@ -1,16 +1,19 @@
 locals {
-  lambda_policies = [aws_iam_policy.access_static_upload.arn, aws_iam_policy.access_static_deploy.arn]
+  lambda_policies = [
+    aws_iam_policy.access_static_upload.arn,
+    aws_iam_policy.access_static_deploy.arn
+  ]
+  manifest_key = "_tf-next/deployment.json"
 }
 
-########
-# Bucket
-########
-
-# Upload (zipped)
+########################
+# Upload Bucket (zipped)
+########################
 
 resource "aws_s3_bucket" "static_upload" {
   bucket_prefix = "next-tf-deploy-source"
   acl           = "private"
+  force_destroy = true
 
   # We are using versioning here to ensure that no file gets overridden at upload
   versioning {
@@ -41,12 +44,27 @@ resource "aws_s3_bucket_notification" "on_create" {
   }
 }
 
-# Serve (unzipped)
+#########################
+# Serve Bucket (unzipped)
+#########################
 
 resource "aws_s3_bucket" "static_deploy" {
   bucket_prefix = "next-tf-static-deploy"
   acl           = "private"
   force_destroy = true
+
+  lifecycle_rule {
+    id      = "Expire static assets"
+    enabled = var.expire_static_assets >= 0 # -1 disables the cleanup
+
+    tags = {
+      "tfnextExpire" = "true"
+    }
+
+    expiration {
+      days = var.expire_static_assets > 0 ? var.expire_static_assets : 0
+    }
+  }
 }
 
 # CloudFront permissions for the bucket
@@ -65,6 +83,18 @@ data "aws_iam_policy_document" "cf_access" {
       identifiers = [aws_cloudfront_origin_access_identity.this.iam_arn]
     }
   }
+
+  # Do not expose the manifest to the public
+  statement {
+    effect    = "Deny"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.static_deploy.arn}/${local.manifest_key}"]
+
+    principals {
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.this.iam_arn]
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "origin_access" {
@@ -72,12 +102,30 @@ resource "aws_s3_bucket_policy" "origin_access" {
   policy = data.aws_iam_policy_document.cf_access.json
 }
 
-# Lambda permissions for the bucket
+# Lambda permissions for updating the static files bucket
+# and to create CloudFront invalidations
 
 data "aws_iam_policy_document" "access_static_deploy" {
   statement {
-    actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.static_deploy.arn}/*"]
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:GetObjectTagging",
+      "s3:PutObjectTagging"
+    ]
+    resources = [
+      aws_s3_bucket.static_deploy.arn,
+      "${aws_s3_bucket.static_deploy.arn}/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "cloudfront:CreateInvalidation"
+    ]
+    resources = [var.cloudfront_arn]
   }
 }
 
@@ -114,8 +162,8 @@ module "deploy_trigger" {
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
   runtime       = "nodejs12.x"
-  memory_size   = 512
-  timeout       = 30
+  memory_size   = 1024
+  timeout       = 60
   publish       = true
 
   create_package         = false
@@ -138,8 +186,10 @@ module "deploy_trigger" {
   policies           = local.lambda_policies
 
   environment_variables = {
-    NODE_ENV      = "production"
-    TARGET_BUCKET = aws_s3_bucket.static_deploy.id
+    NODE_ENV          = "production"
+    TARGET_BUCKET     = aws_s3_bucket.static_deploy.id
+    EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
+    DISTRIBUTION_ID   = var.cloudfront_id
   }
 }
 

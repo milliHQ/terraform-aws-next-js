@@ -39,7 +39,10 @@ module "statics_deploy" {
   source = "./modules/statics-deploy"
 
   static_files_archive     = local.static_files_archive
+  expire_static_assets     = var.expire_static_assets
   debug_use_local_packages = var.debug_use_local_packages
+  cloudfront_id            = module.proxy.cloudfront_id
+  cloudfront_arn           = module.proxy.cloudfront_arn
 }
 
 # Lambda
@@ -88,7 +91,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
 locals {
   integrations_keys = flatten([
     for integration_key, integration in local.lambdas : [
-      "ANY ${lookup(integration, "route", "/")}/{proxy+}"
+      "ANY ${lookup(integration, "route", "")}/{proxy+}"
     ]
   ])
   integration_values = flatten([
@@ -158,8 +161,8 @@ resource "aws_route53_record" "alias_domains" {
   type    = "A"
 
   alias {
-    name                   = module.proxy.distribution_domain_name
-    zone_id                = module.proxy.distribution_hosted_zone_id
+    name                   = module.proxy.cloudfront_domain_name
+    zone_id                = module.proxy.cloudfront_hosted_zone_id
     evaluate_target_health = false
   }
 }

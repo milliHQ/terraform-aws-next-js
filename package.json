@@ -9,6 +9,7 @@
     "test/fixtures/*"
   ],
   "scripts": {
+    "test:prepare": "docker-compose up -d",
     "test": "jest",
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest --config jest.e2e.config.js"

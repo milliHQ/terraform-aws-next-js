@@ -1,63 +1,75 @@
 import { S3Handler } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import unzipper from 'unzipper';
-import { getType } from 'mime';
 
-const deployBucket = process.env.TARGET_BUCKET;
+import { deployTrigger } from './deploy-trigger';
+import { ExpireValue } from './types';
+import { updateManifest } from './update-manifest';
+import { deploymentConfigurationKey } from './constants';
+import { getOrCreateManifest } from './get-or-create-manifest';
+import { createInvalidation } from './create-invalidation';
 
-const CacheControlImmutable = 'public,max-age=31536000,immutable';
-const CacheControlStaticHtml = 'max-age=300';
+// Default value after how many days an old deployment should be expired
+const defaultExpireAfterDays = 30;
+
+function parseExpireAfterDays() {
+  if (process.env.EXPIRE_AFTER_DAYS) {
+    if (process.env.EXPIRE_AFTER_DAYS === 'never') {
+      return 'never';
+    }
+
+    // Parse to int
+    try {
+      const days = Number(process.env.EXPIRE_AFTER_DAYS);
+      if (days >= 0) {
+        return days;
+      }
+
+      return 'never';
+    } catch (err) {
+      return defaultExpireAfterDays;
+    }
+  }
+
+  return defaultExpireAfterDays;
+}
 
 export const handler: S3Handler = async function (event) {
   const s3 = new S3({ apiVersion: '2006-03-01' });
+  const deployBucket = process.env.TARGET_BUCKET;
+  const distributionId = process.env.DISTRIBUTION_ID;
+  const expireAfterDays: ExpireValue = parseExpireAfterDays();
 
   // Get needed information of the event
   const { object } = event.Records[0].s3;
   const { versionId, key } = object;
-  const bucket = event.Records[0].s3.bucket.name;
+  const sourceBucket = event.Records[0].s3.bucket.name;
 
-  const params: S3.Types.DeleteObjectRequest = {
-    Key: key,
-    Bucket: bucket,
-    VersionId: versionId,
-  };
+  const manifest = await getOrCreateManifest(
+    s3,
+    deployBucket,
+    deploymentConfigurationKey
+  );
 
-  // GetObject
-  const zip = s3
-    .getObject(params)
-    .createReadStream()
-    .pipe(unzipper.Parse({ forceStream: true }));
+  // Unpack the package
+  const { files, buildId } = await deployTrigger({
+    s3,
+    sourceBucket,
+    deployBucket,
+    key,
+    versionId,
+  });
 
-  const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
+  // Update the manifest
+  const { invalidate } = await updateManifest({
+    s3,
+    bucket: deployBucket,
+    expireAfterDays,
+    files,
+    buildId,
+    deploymentConfigurationKey,
+    manifest,
+  });
 
-  for await (const e of zip) {
-    const entry = e as unzipper.Entry;
-
-    const fileName = entry.path;
-    const type = entry.type;
-    if (type === 'File') {
-      // Get ContentType
-      const ContentType = getType(fileName) || 'text/html';
-
-      const uploadParams: S3.Types.PutObjectRequest = {
-        Bucket: deployBucket,
-        Key: fileName,
-        Body: entry,
-        ContentType,
-        CacheControl:
-          ContentType === 'text/html'
-            ? CacheControlStaticHtml
-            : CacheControlImmutable,
-      };
-
-      uploads.push(s3.upload(uploadParams).promise());
-    } else {
-      entry.autodrain();
-    }
-  }
-
-  await Promise.all(uploads);
-
-  // Cleanup
-  await s3.deleteObject(params).promise();
+  // Invalidate the paths from the CloudFront distribution
+  await createInvalidation(distributionId, invalidate);
 };
