@@ -1,5 +1,5 @@
 {
-  "name": "terraform-next-js-example-complete",
+  "name": "terraform-next-js-example-static",
   "version": "1.0.0",
   "private": true,
   "workspaces": {

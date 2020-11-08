@@ -199,3 +199,5 @@ So issues that exist on Vercel are likely to occur on this project too.
 ## License
 
 Apache-2.0 - see [LICENSE](./LICENSE) for details.
+
+> **Note:** All sample projects in [`examples/*`](./examples) are licensed as MIT to comply with the official [Next.js examples](https://github.com/vercel/next.js/tree/canary/examples).

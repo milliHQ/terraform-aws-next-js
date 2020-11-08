@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "deployment_name" {
   type    = string
-  default = "terraform-next-js-example-complete"
+  default = "terraform-next-js-example-static"
 }
 
 variable "next_tf_dir" {
