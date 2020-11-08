@@ -59,6 +59,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   comment         = "${var.deployment_name} - Main"
   price_class     = var.cloudfront_price_class
   aliases         = var.cloudfront_alias_domains
+  default_root_object = "index"
 
   # Static deployment S3 bucket
   origin {
