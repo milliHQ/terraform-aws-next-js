@@ -1,10 +1,44 @@
-import * as url from 'url';
+import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
 import PCRE from 'pcre-to-regexp';
 
 import isURL from './util/is-url';
 import { RouteResult, HTTPHeaders } from './types';
 
+// Since we have no replacement for url.parse, thanks Node.js
+// https://github.com/nodejs/node/issues/12682
+const baseUrl = 'http://example.org';
+
+function parseUrl(url: string) {
+  const _url = new URL(url, baseUrl);
+  return {
+    pathname: _url.pathname,
+    searchParams: _url.searchParams,
+  };
+}
+
+/**
+ * Appends URLSearchParams from param 2 to param 1.
+ * Basically Object.assign for URLSearchParams
+ * @param param1
+ * @param param2
+ */
+function appendURLSearchParams(
+  param1: URLSearchParams,
+  param2: URLSearchParams
+) {
+  for (const [key, value] of param2.entries()) {
+    param1.append(key, value);
+  }
+  return param1;
+}
+
+/**
+ *
+ * @param str
+ * @param match
+ * @param keys
+ */
 function resolveRouteParameters(
   str: string,
   match: string[],
@@ -40,20 +74,30 @@ export class Proxy {
   };
 
   route(reqUrl: string) {
-    const parsedUrl = url.parse(reqUrl, true);
-    let query = parsedUrl.query;
-    let reqPathname = parsedUrl.pathname ?? '/';
+    const parsedUrl = parseUrl(reqUrl);
+    let { searchParams, pathname: reqPathname = '/' } = parsedUrl;
     let result: RouteResult | undefined;
     let status: number | undefined;
     let isContinue = false;
     let idx = -1;
-    let phase: HandleValue | null = null;
+    let phase: HandleValue | undefined;
     let combinedHeaders: HTTPHeaders = {};
 
     for (const routeConfig of this.routes) {
+      /**
+       * This is how the routing basically works
+       * 1. Checks if the route is an exact match to a route in the
+       *    S3 filesystem (e.g. /test.html -> s3://test.html)
+       *    --> true: returns found in filesystem
+       * 2.
+       *
+       */
+
       idx++;
       isContinue = false;
 
+      //////////////////////////////////////////////////////////////////////////
+      // Phase 1: Check for handler
       if (isHandler(routeConfig)) {
         phase = routeConfig.handle;
 
@@ -77,21 +121,25 @@ export class Proxy {
         continue;
       }
 
+      //////////////////////////////////////////////////////////////////////////
+      // Phase 2: Check for source
       const { src, headers } = routeConfig;
-
-      const keys: string[] = [];
-      const matcher = PCRE(`%${src}%`, keys);
+      let keys: string[] = []; // Filled by PCRE in next step
+      // Note: Routes are case-insensitive
+      // PCRE tries to match the path to the regex of the route
+      // It also parses the parameters to the keys variable
+      const matcher = PCRE(`%${src}%i`, keys);
       const match =
         matcher.exec(reqPathname) || matcher.exec(reqPathname!.substring(1));
 
-      if (match) {
+      if (match !== null) {
+        // The path that should be sent to the target system (lambda or filesystem)
         let destPath: string = reqPathname;
 
         if (routeConfig.dest) {
-          // Fix for next.js 9.5+: Removes querystring from slug URLs
-          destPath = url.parse(
-            resolveRouteParameters(routeConfig.dest, match, keys)
-          ).pathname!;
+          // Rewrite dynamic routes
+          // e.g. /posts/1234 -> /posts/[id]?id=1234
+          destPath = resolveRouteParameters(routeConfig.dest, match, keys);
         }
 
         if (headers) {
@@ -114,12 +162,21 @@ export class Proxy {
 
         if (routeConfig.check && phase !== 'hit') {
           if (!this.lambdaRoutes.has(destPath)) {
-            reqPathname = destPath;
-            continue;
+            // When it is not a lambda route we cut the url_args
+            // for the next iteration
+            const nextUrl = parseUrl(destPath);
+            reqPathname = nextUrl.pathname!;
+
+            // Check if we have a static route
+            if (!this.staticRoutes.has(reqPathname)) {
+              appendURLSearchParams(searchParams, nextUrl.searchParams);
+              continue;
+            }
           }
         }
 
         const isDestUrl = isURL(destPath);
+
         if (isDestUrl) {
           result = {
             found: true,
@@ -128,7 +185,7 @@ export class Proxy {
             userDest: false,
             isDestUrl,
             status: routeConfig.status || status,
-            uri_args: query,
+            uri_args: searchParams,
             matched_route: routeConfig,
             matched_route_idx: idx,
             phase,
@@ -139,8 +196,9 @@ export class Proxy {
           if (!destPath.startsWith('/')) {
             destPath = `/${destPath}`;
           }
-          const destParsed = url.parse(destPath, true);
-          Object.assign(destParsed.query, query);
+
+          const destParsed = parseUrl(destPath);
+          appendURLSearchParams(searchParams, destParsed.searchParams);
           result = {
             found: true,
             dest: destParsed.pathname || '/',
@@ -148,7 +206,7 @@ export class Proxy {
             userDest: Boolean(routeConfig.dest),
             isDestUrl,
             status: routeConfig.status || status,
-            uri_args: destParsed.query,
+            uri_args: searchParams,
             matched_route: routeConfig,
             matched_route_idx: idx,
             phase,
@@ -166,7 +224,7 @@ export class Proxy {
         continue: isContinue,
         status,
         isDestUrl: false,
-        uri_args: query,
+        uri_args: searchParams,
         phase,
         headers: combinedHeaders,
       };

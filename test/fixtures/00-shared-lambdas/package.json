@@ -1,7 +1,12 @@
 {
+  "name": "fixture-00",
+  "version": "0.0.0",
   "dependencies": {
-    "next": "~9.5.0",
+    "next": "latest",
     "react": "^16.8.6",
     "react-dom": "^16.8.6"
+  },
+  "devDependencies": {
+    "@dealmore/terraform-next-build": "*"
   }
 }
