@@ -7,16 +7,11 @@ on:
   pull_request:
 
 jobs:
-  test-proxy:
+  test-integration:
     runs-on: ubuntu-latest
     container: registry.gitlab.com/dealmore/dealmore-build-images/lambdaci:nodejs12.x
     steps:
       - uses: actions/checkout@v2
-
-      - name: Jest
-        run: |
-          yarn --frozen-lockfile --cache-folder .yarn
-          yarn test
 
       - name: Cache
         uses: actions/cache@v2
@@ -25,3 +20,68 @@ jobs:
             .yarn
             **/node_modules
           key: ${{ runner.os }}-test
+
+      - name: Jest
+        run: |
+          yarn --frozen-lockfile --cache-folder .yarn
+          yarn test
+
+  test-e2e-prepare:
+    runs-on: ubuntu-latest
+    container: registry.gitlab.com/dealmore/dealmore-build-images/lambdaci:nodejs12.x
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            .yarn
+            **/node_modules
+          key: ${{ runner.os }}-test
+
+      - name: Yarn install
+        run: yarn --frozen-lockfile --cache-folder .yarn
+
+      - name: Build tf-next
+        run: yarn --cwd packages/terraform-next-build build
+
+      - name: Build e2e fixtures
+        run: yarn test:e2e:prepare
+
+      - name: Upload e2e fixtures
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-fixtures
+          path: |
+            packages/proxy/dist.zip
+            test/**/.next-tf/**/*
+          if-no-files-found: error
+
+  test-e2e:
+    needs: test-e2e-prepare
+    runs-on: ubuntu-latest
+    env:
+      SAM_CLI_TELEMETRY: 0
+      # Don't worry these are fake AWS credentials for AWS SAM
+      AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
+      AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
+    steps:
+      - name: Setup Docker
+        uses: docker-practice/actions-setup-docker@master
+      - name: Setup Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Setup AWS SAM
+        run: |
+          brew tap aws/tap
+          brew install aws-sam-cli
+          sam --version
+      - uses: actions/checkout@v2
+      - name: Download e2e fixtures
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e-fixtures
+      - run: yarn install --frozen-lockfile --check-files
+      - name: Run e2e-test
+        run: yarn test:e2e --runInBand

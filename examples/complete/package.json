@@ -14,9 +14,9 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "^9.5.4",
-    "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@dealmore/terraform-next-build": "^0.1.0"

@@ -152,7 +152,7 @@ async function buildCommand({
       files,
       workPath,
       entrypoint,
-      config: {},
+      config: { sharedLambdas: true },
       meta: {
         isDev: false,
         // @ts-ignore

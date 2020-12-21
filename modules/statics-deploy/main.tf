@@ -46,6 +46,7 @@ resource "aws_s3_bucket_notification" "on_create" {
 resource "aws_s3_bucket" "static_deploy" {
   bucket_prefix = "next-tf-static-deploy"
   acl           = "private"
+  force_destroy = true
 }
 
 # CloudFront permissions for the bucket

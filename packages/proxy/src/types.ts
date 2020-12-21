@@ -1,3 +1,4 @@
+import { URLSearchParams } from 'url';
 import { Route, HandleValue } from '@vercel/routing-utils';
 
 export interface HTTPHeaders {
@@ -24,7 +25,7 @@ export interface RouteResult {
   // "headers": <object of the added response header values>
   headers: HTTPHeaders;
   // "uri_args": <object (key=value) list of new uri args to be passed along to dest >
-  uri_args?: { [key: string]: any };
+  uri_args?: URLSearchParams;
   // "matched_route": <object of the route spec that matched>
   matched_route?: Route;
   // "matched_route_idx": <integer of the index of the route matched>
