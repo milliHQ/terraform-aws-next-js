@@ -23,6 +23,7 @@ describe('Proxy', () => {
           headers: {
             'x-nextjs-page': '/index',
           },
+          target: 'lambda',
         })
       );
     });
@@ -49,6 +50,7 @@ describe('Proxy', () => {
           headers: {
             'x-nextjs-page': '/test/[...slug]',
           },
+          target: 'lambda',
         })
       );
     });
@@ -90,6 +92,7 @@ describe('Proxy', () => {
           headers: {
             'x-nextjs-page': '/product/[...slug]',
           },
+          target: 'lambda',
         })
       );
     });

@@ -21,6 +21,19 @@
     {
       "path": "/another/invite/hello",
       "mustContain": "hello from /[teamSlug]/[project]/[id]"
+    },
+    // From issue #16
+    {
+      "path": "/products/one",
+      "mustContain": "one Product Name"
+    },
+    {
+      "path": "/products/five",
+      "mustContain": "five Product Name"
+    },
+    {
+      "path": "/products/beam",
+      "mustContain": "beam Product Name"
     }
   ]
 }

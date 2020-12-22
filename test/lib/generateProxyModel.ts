@@ -46,6 +46,7 @@ export async function generateProxySAM({
     routes: config.routes,
     staticRoutes: config.staticRoutes,
     lambdaRoutes: Object.values(config.lambdas).map((lambda) => lambda.route),
+    prerenders: config.prerenders,
   };
 
   // Generate the SAM yml

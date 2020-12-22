@@ -1,7 +1,11 @@
-import { CloudFrontRequestHandler, CloudFrontHeaders } from 'aws-lambda';
+import {
+  CloudFrontRequestHandler,
+  CloudFrontHeaders,
+  CloudFrontRequest,
+} from 'aws-lambda';
 import fetch, { RequestInit } from 'node-fetch';
 
-import { ProxyConfig, HTTPHeaders } from './types';
+import { ProxyConfig, HTTPHeaders, ApiGatewayOriginProps } from './types';
 import { Proxy } from './proxy';
 
 let proxyConfig: ProxyConfig;
@@ -41,6 +45,33 @@ async function fetchProxyConfig(endpointUri: string) {
   );
 }
 
+/**
+ * Modifies the request that it is served by API Gateway (Lambda)
+ */
+function serveFromApiGateway(
+  request: CloudFrontRequest,
+  apiEndpoint: string,
+  { path }: ApiGatewayOriginProps
+) {
+  request.origin = {
+    custom: {
+      domainName: apiEndpoint,
+      path,
+      customHeaders: {},
+      keepaliveTimeout: 5,
+      port: 443,
+      protocol: 'https',
+      readTimeout: 30,
+      sslProtocols: ['TLSv1.2'],
+    },
+  };
+
+  // Set Host header to the apiEndpoint
+  return {
+    host: apiEndpoint,
+  };
+}
+
 export const handler: CloudFrontRequestHandler = async (event) => {
   const { request } = event.Records[0].cf;
   const configEndpoint = request.origin!.s3!.customHeaders[
@@ -48,6 +79,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   ][0].value;
   const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
     .value;
+  let headers: Record<string, string> = {};
 
   try {
     if (!proxyConfig) {
@@ -68,45 +100,41 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   const requestPath = `${request.uri}${
     request.querystring !== '' ? `?${request.querystring}` : ''
   }`;
-  const proxyResult = proxy.route(requestPath);
 
-  // Check if route is served by lambda
-  if (proxyConfig.lambdaRoutes.includes(proxyResult.dest)) {
-    // Rewrite origin to use api-gateway
-    request.origin = {
-      custom: {
-        domainName: apiEndpoint,
-        path: proxyResult.dest,
-        customHeaders: {},
-        keepaliveTimeout: 5,
-        port: 443,
-        protocol: 'https',
-        readTimeout: 5,
-        sslProtocols: ['TLSv1.2'],
-      },
-    };
-
-    request.querystring = proxyResult.uri_args
-      ? proxyResult.uri_args.toString()
-      : '';
-
-    // Set Host header to the apiEndpoint
-    proxyResult.headers['host'] = apiEndpoint;
-  } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
-    // Send 404 directly to S3 bucket for handling without rewrite
-    return request;
+  // Check if we have a prerender route
+  // Bypasses proxy
+  if (request.uri in proxyConfig.prerenders) {
+    headers = serveFromApiGateway(request, apiEndpoint, {
+      path: `/${proxyConfig.prerenders[request.uri].lambda}`,
+    });
   } else {
-    // Route is served by S3 bucket
-    if (proxyResult.found) {
-      request.uri = proxyResult.dest;
+    // Handle by proxy
+    const proxyResult = proxy.route(requestPath);
+
+    // Check if route is served by lambda
+    if (proxyResult.target === 'lambda') {
+      headers = serveFromApiGateway(request, apiEndpoint, {
+        path: proxyResult.dest,
+      });
+
+      request.querystring = proxyResult.uri_args
+        ? proxyResult.uri_args.toString()
+        : '';
+    } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
+      // Send 404 directly to S3 bucket for handling without rewrite
+      return request;
+    } else {
+      // Route is served by S3 bucket
+      if (proxyResult.found) {
+        request.uri = proxyResult.dest;
+      }
     }
+
+    headers = { ...proxyResult.headers, ...headers };
   }
 
   // Modify headers
-  request.headers = convertToCustomHeaders(
-    request.headers,
-    proxyResult.headers
-  );
+  request.headers = convertToCustomHeaders(request.headers, headers);
 
   if (!request.uri) {
     request.uri = '/';
