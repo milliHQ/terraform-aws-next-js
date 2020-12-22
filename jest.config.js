@@ -4,7 +4,7 @@ module.exports = {
   rootDir: './',
   globals: {
     'ts-jest': {
-      tsConfig: 'tsconfig.test.json',
+      tsconfig: 'tsconfig.test.json',
     },
   },
   // By default we only run tests in the packages subfolders
