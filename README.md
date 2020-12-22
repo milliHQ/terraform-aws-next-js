@@ -9,8 +9,8 @@ A zero-config Terraform module for self-hosting Next.js sites on AWS Lambda.
 This module is under active development.
 Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
 
-- ✅ &nbsp;Next.js `v9.5+` (older Versions might work but are not actively supported)
-- ✅ &nbsp;Terraform `v0.12` & `v0.13`
+- ✅ &nbsp;Next.js `v9.5+` *(older Versions might work but are not actively supported)*
+- ✅ &nbsp;Terraform `v0.13+`
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
 - 🚧 &nbsp;[Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
@@ -87,7 +87,7 @@ The output in the `.next-tf` directory is all what the Terraform module needs in
 
 ### Setup the Next.js Terraform module
 
-> **Note:** Make sure that the `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` environment variables are set when running Terraform commands.
+> **Note:** Make sure that the `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` environment variables are set when running the Terraform commands. [How to create AWS Access Keys?](https://docs.aws.amazon.com/powershell/latest/userguide/pstools-appendix-sign-up.html)
 
 Adding Terraform to your existing Next.js installation is easy.
 Simply create a new `main.tf` file in the root of your Next.js project and add the following content:
@@ -110,7 +110,7 @@ provider "aws" {
 }
 
 module "tf_next" {
-  source  = "dealmore/next-js/aws"
+  source = "dealmore/next-js/aws"
 }
 ```
 

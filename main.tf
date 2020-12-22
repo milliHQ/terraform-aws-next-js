@@ -10,7 +10,7 @@ locals {
   routes_json        = lookup(local.config_file, "routes", [])
   lambda_routes_json = flatten([
     for integration_key, integration in local.lambdas : [
-      "${lookup(integration, "route", "/")}"
+      lookup(integration, "route", "/")
     ]
   ])
   prerenders_json = lookup(local.config_file, "prerenders", {})
@@ -103,7 +103,7 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "0.3.0"
+  version = "0.5.0"
 
   name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
