@@ -9,14 +9,14 @@ A zero-config Terraform module for self-hosting Next.js sites on AWS Lambda.
 This module is under active development.
 Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
 
-- [x] Next.js `v9.5+` (older Versions might work but are not actively supported)
-- [x] Terraform `v0.12` & `v0.13`
-- [x] Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
-- [x] [Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
-- [ ] [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
-- [ ] [Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
-- [ ] Automatic expiring of old build assets
-- [ ] [AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
+- ✅ &nbsp;Next.js `v9.5+` (older Versions might work but are not actively supported)
+- ✅ &nbsp;Terraform `v0.12` & `v0.13`
+- ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
+- ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
+- 🚧 &nbsp;[Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
+- 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
+- 🚧 &nbsp;Automatic expiring of old build assets
+- 🚧 &nbsp;[AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
 
 ## Architecture
 
@@ -95,12 +95,21 @@ Simply create a new `main.tf` file in the root of your Next.js project and add t
 ```tf
 # main.tf
 
-provider "aws" {
-  version = "~> 3.0"
-  region  = "eu-central-1" # Main region where the resources should be created in
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
 }
 
-module "lambdas" {
+# Main region where the resources should be created in
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "tf_next" {
   source  = "dealmore/next-js/aws"
 }
 ```
