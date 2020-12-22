@@ -160,10 +160,10 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | domain\_names | Alternative domain names for the CloudFront distribution. | `list(string)` | `[]` | no |
 | domain\_zone\_names | n/a | `list(string)` | `[]` | no |
 | lambda\_environment\_variables | A map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
-| lambda\_memory\_size | Amount of memory in MB your Lambda Function can use at runtime. Valid value between 128 MB to 3008 MB, in 64 MB increments. | `number` | `1024` | no |
+| lambda\_memory\_size | Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `1024` | no |
 | lambda\_policy\_json | An additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
 | lambda\_runtime | Lambda Function runtime | `string` | `"nodejs12.x"` | no |
-| lambda\_timeout | The amount of time your Lambda Function has to run in seconds. | `number` | `10` | no |
+| lambda\_timeout | The max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 
 ## Outputs
