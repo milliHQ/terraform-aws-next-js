@@ -44,13 +44,13 @@ variable "lambda_runtime" {
 }
 
 variable "lambda_memory_size" {
-  description = "Amount of memory in MB your Lambda Function can use at runtime. Valid value between 128 MB to 3008 MB, in 64 MB increments."
+  description = "Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments."
   type        = number
   default     = 1024
 }
 
 variable "lambda_timeout" {
-  description = "The amount of time your Lambda Function has to run in seconds."
+  description = "The max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway)."
   type        = number
   default     = 10
 }

@@ -127,6 +127,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 ## Examples
 
 - [Complete](./examples/complete) - Complete example with SSR, API and static pages.
+- [Static](./examples/static) - Example that uses static pages only (No SSR).
 
 <!-- prettier-ignore-start -->
 <!--- BEGIN_TF_DOCS --->
@@ -180,7 +181,17 @@ You can create a `.terraformignore` in the root of your project and add the foll
 Under the hood this module uses a lot of [Vercel's](https://github.com/vercel/vercel/) build pipeline.
 So issues that exist on Vercel are likely to occur on this project too.
 
-- Missing monorepo support ([#3547](https://github.com/vercel/vercel/issues/3547))
+- Stack deletion (`terraform destroy`) fails on first run ([terraform-provider-aws#1721](https://github.com/hashicorp/terraform-provider-aws/issues/1721))
+
+  This is intentional because we cannot delete a Lambda@Edge function (Used by proxy module) in a synchronous way.
+  It can take up to an hour for AWS to unbind a Lambda@Edge function from it's CloudFront distribution even when the distribution is already destroyed.
+
+  **Workaround:**
+
+  After running the initial `terraform destroy` command (that failed) wait ~1 hour and run the command again.
+  This time it should run successfully and delete the rest of the stack.
+
+- Missing monorepo support ([vercel#3547](https://github.com/vercel/vercel/issues/3547))
 
   **Workaround (for yarn workspaces):**
 
