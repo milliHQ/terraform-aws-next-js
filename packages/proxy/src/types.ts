@@ -1,14 +1,13 @@
 import { URLSearchParams } from 'url';
 import { Route, HandleValue } from '@vercel/routing-utils';
 
-export interface HTTPHeaders {
-  [key: string]: string;
-}
+export type HTTPHeaders = Record<string, string>;
 
 export interface ProxyConfig {
   routes: Route[];
   lambdaRoutes: string[];
   staticRoutes: string[];
+  prerenders: Record<string, { lambda: string }>;
 }
 
 export interface RouteResult {
@@ -36,4 +35,8 @@ export interface RouteResult {
   isDestUrl: boolean;
   // the phase that this route is defined in
   phase?: HandleValue | null;
+}
+
+export interface ApiGatewayOriginProps {
+  path: string;
 }

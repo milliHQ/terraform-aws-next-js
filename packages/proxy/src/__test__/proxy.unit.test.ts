@@ -96,6 +96,7 @@ test('[proxy-unit] shared lambda', () => {
     userDest: true,
     isDestUrl: false,
     phase: undefined,
+    target: 'lambda',
   });
 });
 
@@ -131,6 +132,7 @@ test('[proxy-unit] slug group and shared lambda', () => {
     userDest: true,
     isDestUrl: false,
     phase: undefined,
+    target: 'lambda',
   });
 });
 

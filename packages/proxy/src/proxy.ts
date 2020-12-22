@@ -7,7 +7,7 @@ import { RouteResult, HTTPHeaders } from './types';
 
 // Since we have no replacement for url.parse, thanks Node.js
 // https://github.com/nodejs/node/issues/12682
-const baseUrl = 'http://example.org';
+const baseUrl = 'http://n';
 
 function parseUrl(url: string) {
   const _url = new URL(url, baseUrl);
@@ -82,6 +82,7 @@ export class Proxy {
     let idx = -1;
     let phase: HandleValue | undefined;
     let combinedHeaders: HTTPHeaders = {};
+    let target: undefined | 'filesystem' | 'lambda';
 
     for (const routeConfig of this.routes) {
       /**
@@ -172,6 +173,8 @@ export class Proxy {
               appendURLSearchParams(searchParams, nextUrl.searchParams);
               continue;
             }
+          } else {
+            target = 'lambda';
           }
         }
 
@@ -190,6 +193,7 @@ export class Proxy {
             matched_route_idx: idx,
             phase,
             headers: combinedHeaders,
+            target,
           };
           break;
         } else {
@@ -211,6 +215,7 @@ export class Proxy {
             matched_route_idx: idx,
             phase,
             headers: combinedHeaders,
+            target,
           };
           break;
         }
