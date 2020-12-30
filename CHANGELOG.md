@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 (December 30, 2020)
+
+- Adds [new example](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/custom-domain) how to use custom domains.
+
+### Terraform module
+
+- Adds ability to change the price class of the associated CloudFront distributions (`cloudfront_price_class`).
+- Adds new option after how many days the static assets of previous deployments should be deleted from S3(`expire_static_assets`).
+- Updates deploy trigger Lambda function to `v0.1.0`.
+
+### Deploy trigger
+
+- Static routes are now cached much longer by CloudFront.
+- Static routes from CloudFront now get invalidated when a new deployment is pushed.
+- Updates deploy trigger Lambda function to support expiration of previous deployments.
+
 ## 0.3.0 (December 23, 2020)
 
 ### Terraform module
