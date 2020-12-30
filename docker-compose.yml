@@ -1,0 +1,20 @@
+##############
+# This docker-compose file is only meant for e2e testing packages that
+# require an S3 connection:
+# - deploy-trigger
+###############
+
+version: '3.6'
+
+services:
+  s3-emulator:
+    image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
+    ports:
+      - '9000:9000'
+    volumes:
+      - data-volume:/data
+    env_file:
+      - ./test.env
+
+volumes:
+  data-volume:

@@ -2,37 +2,36 @@
 
 ![CI status](https://github.com/dealmore/terraform-aws-next-js/workflows/CI/badge.svg)
 
-A zero-config Terraform module for self-hosting Next.js sites on AWS Lambda.
+A zero-config Terraform module for self-hosting Next.js sites serverless on AWS Lambda.
 
 ## Features
 
-This module is under active development.
-Some features are still under development, so here you can see a list of features that are currently supported and what we plan to bring in the next releases.
+Some features are still under development, here is a list of features that are currently supported and what we plan to bring with the next releases:
 
-- ✅ &nbsp;Next.js `v9.5+` *(older Versions might work but are not actively supported)*
+- ✅ &nbsp;Next.js `v9.5+` _(older Versions might work but are not actively supported)_
 - ✅ &nbsp;Terraform `v0.13+`
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
+- ✅ &nbsp;Automatic expiration of old static assets
 - ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
 - 🚧 &nbsp;[Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
 - 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
-- 🚧 &nbsp;Automatic expiring of old build assets
 - 🚧 &nbsp;[AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
 
 ## Architecture
 
-The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and ties them together to work as a single application:
+The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and connects them to work as a single application:
 
 ![Architecture overview diagram](https://github.com/dealmore/terraform-aws-next-js/blob/main/docs/assets/architecture.png?raw=true)
 
 - **`I.` CloudFront**
 
   This is the main CloudFront distribution which handles all incoming traffic to the Next.js application.
-  Static assets with the prefix `/_next/static/*` (e.g. JavaScript, CSS, images) are identified here and is pulled from a static content S3 bucket ([`II`](#II-s3-static-content)).
+  Static assets with the prefix `/_next/static/*` (e.g. JavaScript, CSS, images) are identified here and served directly from a static content S3 bucket ([`II`](#II-s3-static-content)).
   Other requests are delegated to the proxy handler Lambda@Edge function ([`III`](#III-lambda-edge-proxy)).
 
 - **`II.` S3 bucket for static content**<a id="II-s3-static-content"></a>
 
-  This bucket contains the static generated sites from the Next.js build and the static assets (JavaScript, CSS, images, ...).
+  This bucket contains the pre-rendered static HTML sites from the Next.js build and the static assets (JavaScript, CSS, images, etc.).
 
 - **`III.` Lambda@Edge proxy handler**<a id="III-lambda-edge-proxy"></a>
 
@@ -53,6 +52,8 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
   It consists of a dedicated S3 bucket and a single Lambda function.
   The bucket is only used by Terraform to upload the static content from the `tf-next build` command as a zip archive.
   The upload then triggers the Lambda which unzips the content and deploys it to the static content S3 bucket ([`II`](#II-s3-static-content)).
+  Static assets from previous deployments are then marked to be expired in a certain amount of days (default 30, configurable via `expire_static_assets` variable).
+  After the successful deployment a CloudFront [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html) is created to propagate the route changes to every edge location.
 
 - **Proxy Config Distribution**
 
@@ -112,31 +113,51 @@ provider "aws" {
 module "tf_next" {
   source = "dealmore/next-js/aws"
 }
+
+output "cloudfront_domain_name" {
+  value = module.tf_next.cloudfront_domain_name
+}
 ```
 
 To deploy your app to AWS simply run the following commands:
 
 ```sh
+npm run tf-next   # Build the Next.js app
+yarn tf-next      # Same command when using yarn
+
+# Expose your AWS Access Keys to the current terminal session
+# Only needed when running Terraform commands
+export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
 terraform init    # Only needed on the first time running Terraform
 
-yarn tf-next      # Build the next.js app
-terraform plan    # See what resources Terraform will create
-terraform apply   # Deploy the App to your AWS account
+terraform plan    # (Optional) See what resources Terraform will create
+terraform apply   # Deploy the Next.js app to your AWS account
+
+> Apply complete!
+>
+> Outputs:
+>
+> cloudfront_domain_name = "xxxxxxxxxxxxxx.cloudfront.net"
 ```
 
-### `.terraformignore`
+After the successful deployment your Next.js app is publicly available at the CloudFront subdomain from the `cloudfront_domain_name` output.
+
+### Deployment with Terraform Cloud
 
 When using this module together with [Terraform Cloud](https://www.terraform.io/) make sure that you also upload the build output from the [`terraform-next-build`](https://www.npmjs.com/package/@dealmore/terraform-next-build) task.
 You can create a `.terraformignore` in the root of your project and add the following line:
 
 ```diff
+# .terraformignore
 +  !**/.next-tf/**
 ```
 
 ## Examples
 
-- [Complete](./examples/complete) - Complete example with SSR, API and static pages.
-- [Static](./examples/static) - Example that uses static pages only (No SSR).
+- [Complete](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/complete) - Complete example with SSR, API and static pages.
+- [Static](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/static) - Example that uses static pages only (No SSR).
 
 <!-- prettier-ignore-start -->
 <!--- BEGIN_TF_DOCS --->

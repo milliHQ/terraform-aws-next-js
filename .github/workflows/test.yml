@@ -10,6 +10,18 @@ jobs:
   test-integration:
     runs-on: ubuntu-latest
     container: registry.gitlab.com/dealmore/dealmore-build-images/lambdaci:nodejs12.x
+    services:
+      s3:
+        image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
+        env:
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: testtest
+
+    env:
+      MINIO_ACCESS_KEY: test
+      MINIO_SECRET_KEY: testtest
+      S3_ENDPOINT: s3:9000
+
     steps:
       - uses: actions/checkout@v2
 

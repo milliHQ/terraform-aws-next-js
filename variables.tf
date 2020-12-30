@@ -27,6 +27,12 @@ variable "domain_zone_names" {
   default = []
 }
 
+variable "expire_static_assets" {
+  description = "The number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
+  type        = number
+  default     = 30
+}
+
 ###################
 # Lambdas (Next.js)
 ###################
@@ -72,8 +78,8 @@ variable "cloudfront_viewer_certificate_arn" {
 
 variable "cloudfront_minimum_protocol_version" {
   description = "The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
-  type    = string
-  default = "TLSv1.2_2019"
+  type        = string
+  default     = "TLSv1.2_2019"
 }
 
 variable "cloudfront_origins" {
