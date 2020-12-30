@@ -9,7 +9,7 @@ variable "debug_use_local_packages" {
 
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "0.0.4"
+  default = "0.1.0"
 }
 
 variable "expire_static_assets" {
