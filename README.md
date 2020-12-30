@@ -158,6 +158,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 - [Complete](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/complete) - Complete example with SSR, API and static pages.
 - [Static](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/static) - Example that uses static pages only (No SSR).
+- [Custom Domain](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/custom-domain) - Demonstrates how to use the module with a custom domain from Route 53.
 
 <!-- prettier-ignore-start -->
 <!--- BEGIN_TF_DOCS --->
