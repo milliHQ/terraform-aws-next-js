@@ -222,22 +222,6 @@ So issues that exist on Vercel are likely to occur on this project too.
   After running the initial `terraform destroy` command (that failed) wait ~1 hour and run the command again.
   This time it should run successfully and delete the rest of the stack.
 
-- Missing monorepo support ([vercel#3547](https://github.com/vercel/vercel/issues/3547))
-
-  **Workaround (for yarn workspaces):**
-
-  In the package, where Next.js is installed, add the following code to the `package.json`:
-
-  ```json
-  "workspaces": {
-    "nohoist": [
-      "**"
-    ]
-  },
-  ```
-
-  This ensures that all packages are installed to a `node_module` directory on the same level as the `package.json`.
-
 ## License
 
 Apache-2.0 - see [LICENSE](./LICENSE) for details.

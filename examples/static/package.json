@@ -2,11 +2,6 @@
   "name": "terraform-next-js-example-static",
   "version": "1.0.0",
   "private": true,
-  "workspaces": {
-    "nohoist": [
-      "**"
-    ]
-  },
   "scripts": {
     "dev": "next",
     "build": "next build",
