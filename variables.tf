@@ -71,6 +71,12 @@ variable "lambda_policy_json" {
 # Cloudfront Distribution
 #########################
 
+variable "cloudfront_price_class" {
+  description = "The price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
+  type        = string
+  default     = "PriceClass_100"
+}
+
 variable "cloudfront_viewer_certificate_arn" {
   type    = string
   default = null
