@@ -12,8 +12,7 @@ Some features are still under development, here is a list of features that are c
 - ✅ &nbsp;Terraform `v0.13+`
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;Automatic expiration of old static assets
-- ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites)
-- 🚧 &nbsp;[Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
+- ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites) & [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
 - 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
 - 🚧 &nbsp;[AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
 

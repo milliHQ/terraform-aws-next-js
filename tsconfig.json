@@ -12,5 +12,5 @@
     "esModuleInterop": true
   },
   "include": ["packages/**/*"],
-  "exclude": ["**/*.(spec|test).ts"]
+  "exclude": ["examples/**/*", "**/*.(spec|test).ts"]
 }

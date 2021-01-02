@@ -1,48 +1,78 @@
+import { STATUS_CODES } from 'http';
 import {
   CloudFrontRequestHandler,
   CloudFrontHeaders,
   CloudFrontRequest,
+  CloudFrontResultResponse,
 } from 'aws-lambda';
-import fetch, { RequestInit } from 'node-fetch';
 
-import { ProxyConfig, HTTPHeaders, ApiGatewayOriginProps } from './types';
+import {
+  ProxyConfig,
+  HTTPHeaders,
+  ApiGatewayOriginProps,
+  RouteResult,
+} from './types';
 import { Proxy } from './proxy';
+import { fetchTimeout } from './util/fetch-timeout';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
 
-function convertToCustomHeaders(
-  initialHeaders: CloudFrontHeaders = {},
+function convertToCloudFrontHeaders(
+  initialHeaders: CloudFrontHeaders,
   headers: HTTPHeaders
 ): CloudFrontHeaders {
   const cloudFrontHeaders: CloudFrontHeaders = { ...initialHeaders };
-  for (const [key, value] of Object.entries(headers)) {
-    cloudFrontHeaders[key] = [{ key, value }];
+  for (const key in headers) {
+    const lowercaseKey = key.toLowerCase();
+    cloudFrontHeaders[lowercaseKey] = [{ key, value: headers[key] }];
   }
 
   return cloudFrontHeaders;
 }
 
-// Timeout the connection before 30000ms to be able to print an error message
-// See Lambda@Edge Limits for origin-request event here:
-// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-see-limits
-// Promise.race: https://stackoverflow.com/a/49857905/831465
-function fetchTimeout(url: string, options?: RequestInit, timeout = 29500) {
-  return Promise.race([
-    fetch(url, options),
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Timeout while fetching config from ${url}`)),
-        timeout
-      )
-    ),
-  ]);
-}
-
 async function fetchProxyConfig(endpointUri: string) {
-  return fetchTimeout(endpointUri).then(
+  // Timeout the connection before 30000ms to be able to print an error message
+  // See Lambda@Edge Limits for origin-request event here:
+  // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-see-limits
+  return fetchTimeout(29500, endpointUri).then(
     (res) => res.json() as Promise<ProxyConfig>
   );
+}
+
+/**
+ * Checks if a route result issued a redirect
+ */
+function isRedirect(
+  routeResult: RouteResult
+): false | CloudFrontResultResponse {
+  if (
+    routeResult.status &&
+    routeResult.status >= 300 &&
+    routeResult.status <= 309
+  ) {
+    if ('Location' in routeResult.headers) {
+      let headers: CloudFrontHeaders = {};
+
+      // If the redirect is permanent, add caching it
+      if (routeResult.status === 301 || routeResult.status === 308) {
+        headers['cache-control'] = [
+          {
+            key: 'Cache-Control',
+            value: 'public,max-age=31536000,immutable',
+          },
+        ];
+      }
+
+      return {
+        status: routeResult.status.toString(),
+        statusDescription: STATUS_CODES[routeResult.status],
+        headers: convertToCloudFrontHeaders(headers, routeResult.headers),
+      };
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -111,6 +141,12 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     // Handle by proxy
     const proxyResult = proxy.route(requestPath);
 
+    // Check for redirect
+    const redirect = isRedirect(proxyResult);
+    if (redirect) {
+      return redirect;
+    }
+
     // Check if route is served by lambda
     if (proxyResult.target === 'lambda') {
       headers = serveFromApiGateway(request, apiEndpoint, {
@@ -134,7 +170,7 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   }
 
   // Modify headers
-  request.headers = convertToCustomHeaders(request.headers, headers);
+  request.headers = convertToCloudFrontHeaders(request.headers, headers);
 
   if (!request.uri) {
     request.uri = '/';

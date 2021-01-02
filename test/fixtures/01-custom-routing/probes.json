@@ -1,0 +1,40 @@
+{
+  "probes": [
+    {
+      "path": "/redir1",
+      "status": 308,
+      "responseHeaders": {
+        "location": "/redir2"
+      }
+    },
+    {
+      "path": "/redir2",
+      "status": 307,
+      "responseHeaders": {
+        "location": "/hello"
+      }
+    },
+    {
+      "path": "/redir/to-path",
+      "status": 307,
+      "responseHeaders": {
+        "location": "/to-path"
+      }
+    },
+    {
+      "path": "/unknown-route-with-tailing-slash/",
+      "status": 308,
+      "statusDescription": "Permanent Redirect",
+      "responseHeaders": {
+        "location": "/unknown-route-with-tailing-slash"
+      }
+    },
+    {
+      "path": "/hello/",
+      "status": 308,
+      "responseHeaders": {
+        "location": "/hello"
+      }
+    }
+  ]
+}

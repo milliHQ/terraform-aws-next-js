@@ -3,6 +3,7 @@
  * @see: https://github.com/vercel/vercel/blob/master/packages/now-cli/test/dev-router.unit.js
  */
 
+import { Route } from '@vercel/routing-utils';
 import { URLSearchParams } from 'url';
 
 import { Proxy } from '../proxy';
@@ -163,5 +164,143 @@ test('[proxy-unit] multiple named groups', () => {
     userDest: true,
     isDestUrl: false,
     phase: undefined,
+  });
+});
+
+test('[proxy-unit] Ignore other routes when no continue is set', () => {
+  const routesConfig = [
+    { src: '/about', dest: '/about.html' },
+    { src: '/about', dest: '/about.php' },
+  ];
+
+  const result = new Proxy(routesConfig, [], []).route('/about');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/about.html',
+    continue: false,
+    status: undefined,
+    headers: {},
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: true,
+    isDestUrl: false,
+    phase: undefined,
+  });
+});
+
+test('[proxy-unit] Continue after first route found', () => {
+  const routesConfig = [
+    {
+      src: '/about',
+      dest: '/about.html',
+      headers: {
+        'x-test': 'test',
+      },
+      continue: true,
+    },
+    { src: '/about', dest: '/about.php' },
+  ];
+
+  const result = new Proxy(routesConfig, [], []).route('/about');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/about.php',
+    continue: false,
+    status: undefined,
+    headers: {
+      'x-test': 'test',
+    },
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[1],
+    matched_route_idx: 1,
+    userDest: true,
+    isDestUrl: false,
+    phase: undefined,
+  });
+});
+
+test('[proxy-unit] Redirect: Remove tailing slash', () => {
+  const routesConfig = [
+    {
+      src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
+      headers: {
+        Location: '/$1',
+      },
+      status: 308,
+      continue: true,
+    },
+  ];
+  const proxy = new Proxy(routesConfig, [], ['/test']);
+
+  const result1 = proxy.route('/test/');
+  expect(result1).toEqual({
+    found: true,
+    dest: '/test/',
+    continue: true,
+    status: 308,
+    headers: { Location: '/test' },
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+
+  const result2 = proxy.route('/other-route/');
+  expect(result2).toEqual({
+    found: true,
+    dest: '/other-route/',
+    continue: true,
+    status: 308,
+    headers: { Location: '/other-route' },
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+});
+
+test('[proxy-unit] Redirect partial replace', () => {
+  const routesConfig = [
+    {
+      src: '^\\/redir(?:\\/([^\\/]+?))$',
+      headers: {
+        Location: '/$1',
+      },
+      status: 307,
+    },
+    {
+      src: '^/param/?$',
+      dest: '/__NEXT_PAGE_LAMBDA_0',
+      headers: {
+        'x-nextjs-page': '/param',
+      },
+      check: true,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route('/redir/other-path');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/redir/other-path',
+    continue: false,
+    status: 307,
+    headers: { Location: '/other-path' },
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
   });
 });
