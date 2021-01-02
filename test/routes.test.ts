@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse as parseJSON } from 'hjson';
-import { Proxy } from '@dealmore/terraform-next-proxy/src/index';
 import { ConfigOutput } from '@dealmore/terraform-next-build/src/types';
+import { CloudFrontResultResponse } from 'aws-lambda';
 
 import { generateSAM, SAM as LambdaSAM } from './lib/generateAppModel';
 import { generateProxySAM, SAM as ProxySAM } from './lib/generateProxyModel';
@@ -12,7 +12,13 @@ const pathToFixtures = path.join(__dirname, 'fixtures');
 const pathToProxyPackage = path.join(__dirname, '../packages/proxy/dist.zip');
 
 interface ProbeFile {
-  probes: { path: string; mustContain?: string }[];
+  probes: {
+    path: string;
+    mustContain?: string;
+    status?: number;
+    statusDescription?: string;
+    responseHeaders?: Record<string, string>;
+  }[];
 }
 
 describe('Test proxy config', () => {
@@ -21,7 +27,6 @@ describe('Test proxy config', () => {
       const pathToFixture = path.join(pathToFixtures, fixture);
       let config: ConfigOutput;
       let probeFile: ProbeFile;
-      let proxy: Proxy;
       let lambdaSAM: LambdaSAM;
       let proxySAM: ProxySAM;
 
@@ -38,12 +43,6 @@ describe('Test proxy config', () => {
             .readFileSync(path.join(pathToFixture, 'probes.json'))
             .toString('utf-8')
         ) as ProbeFile;
-
-        // Init proxy
-        const lambdaRoutes = Object.values(config.lambdas).map(
-          (lambda) => lambda.route
-        );
-        proxy = new Proxy(config.routes, lambdaRoutes, config.staticRoutes);
 
         // Generate SAM for SSR (Lambda)
         lambdaSAM = await generateSAM({
@@ -72,42 +71,68 @@ describe('Test proxy config', () => {
             uri: probe.path,
           });
 
-          if (Request.origin?.custom) {
-            // Request should be served by lambda (SSR)
-            const basePath = Request.origin.custom.path;
-            const { uri, querystring } = Request;
+          if ('origin' in Request) {
+            // Request
+            if (Request.origin?.custom) {
+              // Request should be served by lambda (SSR)
+              const basePath = Request.origin.custom.path;
+              const { uri, querystring } = Request;
 
-            // Merge request headers and custom headers from origin
-            const headers = {
-              ...normalizeCloudFrontHeaders(Request.headers),
-              ...normalizeCloudFrontHeaders(
-                Request.origin.custom.customHeaders
-              ),
-            };
-            const requestPath = `${basePath}${uri}${
-              querystring !== '' ? `?${querystring}` : ''
-            }`;
+              // Merge request headers and custom headers from origin
+              const headers = {
+                ...normalizeCloudFrontHeaders(Request.headers),
+                ...normalizeCloudFrontHeaders(
+                  Request.origin.custom.customHeaders
+                ),
+              };
+              const requestPath = `${basePath}${uri}${
+                querystring !== '' ? `?${querystring}` : ''
+              }`;
 
-            const lambdaResponse = await lambdaSAM
-              .sendApiGwRequest(requestPath, {
-                headers,
-              })
-              .then((res) => res.text())
-              .then((text) => Buffer.from(text, 'base64').toString('utf-8'));
+              const lambdaResponse = await lambdaSAM
+                .sendApiGwRequest(requestPath, {
+                  headers,
+                })
+                .then((res) => res.text())
+                .then((text) => Buffer.from(text, 'base64').toString('utf-8'));
 
-            if (probe.mustContain) {
-              expect(lambdaResponse).toContain(probe.mustContain);
+              if (probe.mustContain) {
+                expect(lambdaResponse).toContain(probe.mustContain);
+              }
+            } else if (Request.origin?.s3) {
+              // Request should be served by static file system (S3)
+              // Check static routes
+              const { uri } = Request;
+              if (!config.staticRoutes.find((route) => route === uri)) {
+                fail(
+                  `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
+                );
+              } else {
+                // TODO: Open the static file and check the content
+              }
+            } else {
+              fail(`Path ${probe.path} returned invalid proxy request`);
             }
           } else {
-            // Request should be served by static file system (S3)
-            // Check static routes
-            const { uri } = Request;
-            if (!config.staticRoutes.find((route) => route === uri)) {
-              fail(
-                `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
+            // Request-Response
+            const Response = Request as CloudFrontResultResponse;
+
+            if (probe.status) {
+              expect(Response.status).toBe(probe.status.toString());
+            }
+
+            for (const header in probe.responseHeaders) {
+              const lowerHeader = header.toLowerCase();
+              expect(Response.headers![lowerHeader]).toBeDefined();
+              expect(Response.headers![lowerHeader]).toContainEqual(
+                expect.objectContaining({
+                  value: probe.responseHeaders[header],
+                })
               );
-            } else {
-              // TODO: Open the static file and check the content
+            }
+
+            if (probe.statusDescription) {
+              expect(Response.statusDescription).toBe(probe.statusDescription);
             }
           }
         }

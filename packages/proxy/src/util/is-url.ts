@@ -1,3 +1,3 @@
-export default function isURL(str: any): boolean {
-  return typeof str === 'string' && /^https?:\/\//.test(str);
+export default function isURL(str: string): boolean {
+  return /^https?:\/\//.test(str);
 }

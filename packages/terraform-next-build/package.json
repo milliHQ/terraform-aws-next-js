@@ -22,7 +22,7 @@
     "@dealmore/next-tf": "2.7.3",
     "@vercel/build-utils": "^2.6.0",
     "@vercel/frameworks": "^0.0.15",
-    "@vercel/routing-utils": "^1.8.3",
+    "@vercel/routing-utils": "^1.9.1",
     "archiver": "^5.1.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",

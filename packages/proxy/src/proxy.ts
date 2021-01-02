@@ -79,14 +79,15 @@ export class Proxy {
     let result: RouteResult | undefined;
     let status: number | undefined;
     let isContinue = false;
-    let idx = -1;
     let phase: HandleValue | undefined;
     let combinedHeaders: HTTPHeaders = {};
     let target: undefined | 'filesystem' | 'lambda';
 
-    for (const routeConfig of this.routes) {
+    for (let routeIndex = 0; routeIndex < this.routes.length; routeIndex++) {
       /**
-       * This is how the routing basically works
+       * This is how the routing basically works:
+       * (For reference see: https://vercel.com/docs/configuration#routes)
+       *
        * 1. Checks if the route is an exact match to a route in the
        *    S3 filesystem (e.g. /test.html -> s3://test.html)
        *    --> true: returns found in filesystem
@@ -94,8 +95,7 @@ export class Proxy {
        *
        */
 
-      idx++;
-      isContinue = false;
+      const routeConfig = this.routes[routeIndex];
 
       //////////////////////////////////////////////////////////////////////////
       // Phase 1: Check for handler
@@ -105,8 +105,11 @@ export class Proxy {
         // Check if the path is a static file that should be served from the
         // filesystem
         if (routeConfig.handle === 'filesystem') {
+          // Remove tailing `/` for filesystem check
+          const filePath = reqPathname.replace(/\/+$/, '');
+
           // Check if the route matches a route from the filesystem
-          if (this._checkFileSystem(reqPathname)) {
+          if (this._checkFileSystem(filePath)) {
             result = {
               found: true,
               target: 'filesystem',
@@ -114,12 +117,18 @@ export class Proxy {
               headers: combinedHeaders,
               continue: false,
               isDestUrl: false,
+              status,
             };
             break;
           }
         }
 
         continue;
+      }
+
+      // Special case to allow redirect to kick in when a continue route was touched before
+      if (phase === 'error' && isContinue) {
+        break;
       }
 
       //////////////////////////////////////////////////////////////////////////
@@ -129,13 +138,18 @@ export class Proxy {
       // Note: Routes are case-insensitive
       // PCRE tries to match the path to the regex of the route
       // It also parses the parameters to the keys variable
+      // TODO: Performance: Cache results from PCRE
       const matcher = PCRE(`%${src}%i`, keys);
-      const match =
-        matcher.exec(reqPathname) || matcher.exec(reqPathname!.substring(1));
+      const match = matcher.exec(reqPathname);
 
       if (match !== null) {
+        isContinue = false;
         // The path that should be sent to the target system (lambda or filesystem)
         let destPath: string = reqPathname;
+
+        if (routeConfig.status) {
+          status = routeConfig.status;
+        }
 
         if (routeConfig.dest) {
           // Rewrite dynamic routes
@@ -144,21 +158,16 @@ export class Proxy {
         }
 
         if (headers) {
-          for (const originalKey of Object.keys(headers)) {
-            const lowerKey = originalKey.toLowerCase();
+          for (const originalKey in headers) {
             const originalValue = headers[originalKey];
             const value = resolveRouteParameters(originalValue, match, keys);
-            combinedHeaders[lowerKey] = value;
+            combinedHeaders[originalKey] = value;
           }
         }
 
         if (routeConfig.continue) {
-          if (routeConfig.status) {
-            status = routeConfig.status;
-          }
           reqPathname = destPath;
           isContinue = true;
-          continue;
         }
 
         if (routeConfig.check && phase !== 'hit') {
@@ -187,14 +196,19 @@ export class Proxy {
             continue: isContinue,
             userDest: false,
             isDestUrl,
-            status: routeConfig.status || status,
+            status: status,
             uri_args: searchParams,
             matched_route: routeConfig,
-            matched_route_idx: idx,
+            matched_route_idx: routeIndex,
             phase,
             headers: combinedHeaders,
             target,
           };
+
+          if (isContinue) {
+            continue;
+          }
+
           break;
         } else {
           if (!destPath.startsWith('/')) {
@@ -209,14 +223,19 @@ export class Proxy {
             continue: isContinue,
             userDest: Boolean(routeConfig.dest),
             isDestUrl,
-            status: routeConfig.status || status,
+            status: status,
             uri_args: searchParams,
             matched_route: routeConfig,
-            matched_route_idx: idx,
+            matched_route_idx: routeIndex,
             phase,
             headers: combinedHeaders,
             target,
           };
+
+          if (isContinue) {
+            continue;
+          }
+
           break;
         }
       }
