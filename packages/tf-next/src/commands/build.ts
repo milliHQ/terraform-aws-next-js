@@ -14,6 +14,7 @@ import archiver from 'archiver';
 import * as util from 'util';
 
 import { ConfigOutput } from '../types';
+import { removeRoutesByPrefix } from '../utils/routes';
 
 type Lambdas = Record<string, Lambda>;
 type Prerenders = Record<string, Prerender>;
@@ -128,6 +129,7 @@ interface BuildProps {
   logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
   cwd: string;
+  target?: 'AWS';
 }
 
 async function buildCommand({
@@ -135,6 +137,7 @@ async function buildCommand({
   logLevel,
   deleteBuildCache = true,
   cwd,
+  target = 'AWS',
 }: BuildProps) {
   let buildOutput: OutputProps | null = null;
   const mode = skipDownload ? 'local' : 'download';
@@ -209,10 +212,17 @@ async function buildCommand({
       }
     }
 
+    // Routes that are not handled by the AWS proxy module `_next/static/*` are filtered out
+    // for better performance
+    const optimizedRoutes =
+      target === 'AWS'
+        ? removeRoutesByPrefix(buildResult.routes, '_next/static/')
+        : buildResult.routes;
+
     buildOutput = {
       buildId,
       prerenders: prerenderedOutput,
-      routes: buildResult.routes,
+      routes: optimizedRoutes,
       lambdas,
       staticWebsiteFiles,
       outputDir: outputDir,
@@ -221,7 +231,7 @@ async function buildCommand({
 
     if (logLevel === 'verbose') {
       console.log(
-        util.format('Routes:\n%s', JSON.stringify(buildResult.routes, null, 2))
+        util.format('Routes:\n%s', JSON.stringify(optimizedRoutes, null, 2))
       );
     }
 
