@@ -1,4 +1,4 @@
-# AWS Next.js Terraform module
+# Terraform Next.js module for AWS
 
 ![CI status](https://github.com/dealmore/terraform-aws-next-js/workflows/CI/badge.svg)
 
@@ -63,8 +63,8 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
 First add our custom builder to your Next.js project. It uses the same builder under the hood as Vercel does:
 
 ```sh
-npm i -D @dealmore/terraform-next-build     # npm or
-yarn add -D @dealmore/terraform-next-build  # yarn
+npm i -D tf-next     # npm or
+yarn add -D tf-next  # yarn
 ```
 
 Then you should add a new script to your package.json (Make sure it is not named `build`):
@@ -145,7 +145,7 @@ After the successful deployment your Next.js app is publicly available at the Cl
 
 ### Deployment with Terraform Cloud
 
-When using this module together with [Terraform Cloud](https://www.terraform.io/) make sure that you also upload the build output from the [`terraform-next-build`](https://www.npmjs.com/package/@dealmore/terraform-next-build) task.
+When using this module together with [Terraform Cloud](https://www.terraform.io/) make sure that you also upload the build output from the [`tf-next`](https://www.npmjs.com/package/tf-next) task.
 You can create a `.terraformignore` in the root of your project and add the following line:
 
 ```diff

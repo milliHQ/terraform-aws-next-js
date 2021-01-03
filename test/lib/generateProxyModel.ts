@@ -11,11 +11,11 @@ import {
 import getPort from 'get-port';
 import http from 'http';
 import { URL } from 'url';
+import { ConfigOutput } from 'tf-next/src/types';
 
 import { SAMTemplate } from './types';
 import { getLocalIpAddressFromHost, unzipToLocation } from './utils';
 import { createSAMLocal, SAMLocal } from './SAMLocal';
-import { ConfigOutput } from '@dealmore/terraform-next-build/src/types';
 
 const LambdaFunctionName = 'proxy';
 

@@ -14,7 +14,7 @@
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@dealmore/terraform-next-build": "^0.2.0"
+    "tf-next": "^0.2.0"
   },
   "license": "MIT"
 }

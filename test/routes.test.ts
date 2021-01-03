@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse as parseJSON } from 'hjson';
-import { ConfigOutput } from '@dealmore/terraform-next-build/src/types';
+import { ConfigOutput } from 'tf-next/src/types';
 import { CloudFrontResultResponse } from 'aws-lambda';
 
 import { generateSAM, SAM as LambdaSAM } from './lib/generateAppModel';

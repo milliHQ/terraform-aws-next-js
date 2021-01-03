@@ -7,6 +7,6 @@
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@dealmore/terraform-next-build": "*"
+    "tf-next": "*"
   }
 }

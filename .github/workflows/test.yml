@@ -56,7 +56,7 @@ jobs:
         run: yarn --frozen-lockfile --cache-folder .yarn
 
       - name: Build tf-next
-        run: yarn --cwd packages/terraform-next-build build
+        run: yarn --cwd packages/tf-next build
 
       - name: Build e2e fixtures
         run: yarn test:e2e:prepare

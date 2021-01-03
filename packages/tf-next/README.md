@@ -5,8 +5,8 @@ CLI build tool for [AWS Next.js Terraform module](https://github.com/dealmore/te
 ## Usage
 
 ```sh
-npm i --save-dev @dealmore/terraform-next-build  # npm or
-yarn add -D @dealmore/terraform-next-build       # yarn
+npm i --save-dev tf-next  # npm or
+yarn add -D tf-next       # yarn
 ```
 
 ### Commands
