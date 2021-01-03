@@ -20,7 +20,7 @@ variable "proxy_config_json" {
 
 variable "proxy_module_version" {
   type    = string
-  default = "0.2.0"
+  default = "0.3.0"
 }
 
 variable "debug_use_local_packages" {

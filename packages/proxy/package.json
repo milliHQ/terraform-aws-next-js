@@ -1,8 +1,10 @@
 {
   "name": "@dealmore/terraform-next-proxy",
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "description": "Proxy module for AWS Next.js Terraform module.",
   "main": "index.js",
   "license": "Apache-2.0",
+  "homepage": "https://registry.terraform.io/modules/dealmore/next-js/aws",
   "repository": {
     "type": "git",
     "url": "https://github.com/dealmore/terraform-next.js.git",
