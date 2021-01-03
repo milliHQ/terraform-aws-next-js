@@ -1,14 +1,14 @@
 {
-  "name": "@dealmore/terraform-next-build",
+  "name": "tf-next",
   "version": "0.2.0",
-  "description": "CLI build tool for AWS Next.js Terraform module",
-  "homepage": "https://github.com/dealmore/terraform-aws-next-js",
+  "description": "CLI build tool for AWS Next.js Terraform module.",
+  "homepage": "https://registry.terraform.io/modules/dealmore/next-js/aws",
   "main": "index.js",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/dealmore/terraform-next.js.git",
-    "directory": "packages/terraform-next-build"
+    "directory": "packages/tf-next"
   },
   "bin": {
     "tf-next": "index.js"
