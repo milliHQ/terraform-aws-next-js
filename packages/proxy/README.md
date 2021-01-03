@@ -1,6 +1,6 @@
-# Terraform Next.js Proxy module
+# Terraform Next.js Proxy component
 
-Proxy module for [AWS Next.js Terraform module](https://github.com/dealmore/terraform-aws-next-js).
+Proxy component of [Terraform Next.js module for AWS](https://github.com/dealmore/terraform-aws-next-js).
 
 ## License
 

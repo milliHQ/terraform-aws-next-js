@@ -1,6 +1,6 @@
 # Terraform Next Build
 
-CLI build tool for [AWS Next.js Terraform module](https://github.com/dealmore/terraform-aws-next-js).
+CLI build tool for [Terraform Next.js module for AWS](https://github.com/dealmore/terraform-aws-next-js).
 
 ## Usage
 

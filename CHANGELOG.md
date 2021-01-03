@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 (January 03, 2021)
+
+Happy New Year! 🍾  
+With this release we bring native support for [redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects) in Next.js.
+
+### Proxy (0.3.0)
+
+- Adds ability to handle redirects ([#10](https://github.com/dealmore/terraform-aws-next-js/issues/10), [#24](https://github.com/dealmore/terraform-aws-next-js/pull/24)).
+
+### tf-next (0.3.0)
+
+- The build tool got a new name, now it is simply `tf-next` instead of `@dealmore/terraform-next-build`.  
+  For backwards compatibility we plan to release new versions to both the old and the new package name until v1.0.
+
+- When running `tf-next build` we now filter out routes with the prefix `_next/static/*` since they are handled directly by CloudFront and will never hit the Proxy.
+
 ## 0.4.0 (December 30, 2020)
 
 - Adds [new example](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/custom-domain) how to use custom domains.
