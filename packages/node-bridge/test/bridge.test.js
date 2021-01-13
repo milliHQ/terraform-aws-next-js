@@ -9,77 +9,62 @@ test('port binding', async () => {
 
   // Test port binding
   const info = await bridge.listening;
-  assert.equal(info.address, '127.0.0.1');
-  assert.equal(typeof info.port, 'number');
+  expect(info.address).toBe('127.0.0.1');
+  expect(typeof info.port).toBe('number');
 
   server.close();
 });
 
 test('`APIGatewayProxyEvent` normalizing', async () => {
-  const server = new Server((req, res) =>
+  const server = new Server((req, res) => {
+    res.setHeader('Set-Cookie', 'abc');
+    res.setHeader('x-some-multi-header', ['d', 'e', 'f']);
+
     res.end(
       JSON.stringify({
         method: req.method,
         path: req.url,
         headers: req.headers,
       })
-    )
-  );
+    );
+  });
   const bridge = new Bridge(server);
   bridge.listen();
   const context = {};
   const result = await bridge.launcher(
     {
-      httpMethod: 'GET',
-      headers: { foo: 'bar' },
-      path: '/apigateway',
+      headers: { foo: 'bar', multi: 'a,b,c' },
+      rawPath: '/apigateway',
+      requestContext: {
+        http: {
+          method: 'GET',
+          path: '/',
+        },
+      },
       body: null,
     },
     context
   );
-  assert.equal(result.isBase64Encoded, true);
-  assert.equal(result.statusCode, 200);
-  const body = JSON.parse(Buffer.from(result.body, 'base64').toString());
-  assert.equal(body.method, 'GET');
-  assert.equal(body.path, '/apigateway');
-  assert.equal(body.headers.foo, 'bar');
-  assert.equal(context.callbackWaitsForEmptyEventLoop, false);
 
-  server.close();
-});
+  expect(result.isBase64Encoded).toBe(true);
+  expect(result.statusCode).toBe(200);
+  expect(result.isBase64Encoded).toBe(true);
+  expect(result.headers['set-cookie']).toBeUndefined();
+  expect(result.headers['Set-Cookie']).toBeUndefined();
+  expect(result.cookies).toEqual(['abc']);
+  expect(result.headers).toEqual(
+    expect.objectContaining({
+      'x-some-multi-header': 'd, e, f',
+    })
+  );
 
-test('`NowProxyEvent` normalizing', async () => {
-  const server = new Server((req, res) =>
-    res.end(
-      JSON.stringify({
-        method: req.method,
-        path: req.url,
-        headers: req.headers,
-      })
-    )
-  );
-  const bridge = new Bridge(server);
-  bridge.listen();
-  const context = { callbackWaitsForEmptyEventLoop: true };
-  const result = await bridge.launcher(
-    {
-      Action: 'Invoke',
-      body: JSON.stringify({
-        method: 'POST',
-        headers: { foo: 'baz' },
-        path: '/nowproxy',
-        body: 'body=1',
-      }),
-    },
-    context
-  );
-  assert.equal(result.isBase64Encoded, true);
-  assert.equal(result.statusCode, 200);
   const body = JSON.parse(Buffer.from(result.body, 'base64').toString());
-  assert.equal(body.method, 'POST');
-  assert.equal(body.path, '/nowproxy');
-  assert.equal(body.headers.foo, 'baz');
-  assert.equal(context.callbackWaitsForEmptyEventLoop, false);
+  expect(body.method).toBe('GET');
+  // TODO: Understand the change from path (v1.0) to rawPath (v2.0)
+  expect(body.path).toBe('/apigateway');
+  expect(body.headers.foo).toBe('bar');
+  expect(body.headers.multi).toEqual('a,b,c');
+  expect(context.callbackWaitsForEmptyEventLoop).toBe(false);
 
   server.close();
 });
@@ -96,11 +81,15 @@ test('consumeEvent', async () => {
   const context = { callbackWaitsForEmptyEventLoop: true };
   await bridge.launcher(
     {
-      Action: 'Invoke',
       body: JSON.stringify({
-        method: 'POST',
         headers: { foo: 'baz' },
-        path: '/nowproxy',
+        requestContext: {
+          http: {
+            method: 'POST',
+            path: '/nowproxy',
+          },
+        },
+        rawPath: '/nowproxy',
         body: 'body=1',
       }),
     },

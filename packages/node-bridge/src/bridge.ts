@@ -1,6 +1,10 @@
 /// <reference types="node" />
 import { AddressInfo } from 'net';
-import { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyStructuredResultV2,
+  Context,
+} from 'aws-lambda';
 import {
   Server,
   IncomingHttpHeaders,
@@ -8,11 +12,6 @@ import {
   request,
 } from 'http';
 import { URLSearchParams } from 'url';
-
-interface NowProxyEvent {
-  Action: string;
-  body: string;
-}
 
 export interface NowProxyRequest {
   isApiGateway?: boolean;
@@ -52,48 +51,29 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-function normalizeNowProxyEvent(event: NowProxyEvent): NowProxyRequest {
-  let bodyBuffer: Buffer | null;
-  const { method, path, headers, encoding, body } = JSON.parse(event.body);
-
-  if (body) {
-    if (encoding === 'base64') {
-      bodyBuffer = Buffer.from(body, encoding);
-    } else if (encoding === undefined) {
-      bodyBuffer = Buffer.from(body);
-    } else {
-      throw new Error(`Unsupported encoding: ${encoding}`);
-    }
-  } else {
-    bodyBuffer = Buffer.alloc(0);
-  }
-
-  return { isApiGateway: false, method, path, headers, body: bodyBuffer };
-}
-
 function normalizeAPIGatewayProxyEvent(
-  event: APIGatewayProxyEvent
+  event: APIGatewayProxyEventV2
 ): NowProxyRequest {
   let bodyBuffer: Buffer | null;
   const {
-    httpMethod: method,
-    path,
+    requestContext: {
+      http: { method, path },
+    },
     headers,
     body,
-    multiValueQueryStringParameters,
-    resource = '',
+    queryStringParameters,
+    rawPath,
   } = event;
   // Trims the resource from the path
-  const normalizedResource = resource.endsWith('/{proxy+}')
-    ? resource.substring(0, resource.length - 9)
-    : resource;
-  const trimmedPath = path.slice(normalizedResource.length) || '/';
+  const normalizedRawPath = rawPath.endsWith('/{proxy+}')
+    ? rawPath.substring(0, rawPath.length - 9)
+    : rawPath;
+  const trimmedPath = path.slice(normalizedRawPath.length) || '/';
 
-  // API Gateway 1.0 format cuts the query string from the path
+  // API Gateway cuts the query string from the path
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-  const params = new URLSearchParams(
-    multiValueQueryStringParameters || {}
-  ).toString();
+  // TODO: Move to Vercel trusted params in future
+  const params = new URLSearchParams(queryStringParameters).toString();
   const parameterizedPath = params ? `${trimmedPath}?${params}` : trimmedPath;
 
   if (body) {
@@ -114,21 +94,6 @@ function normalizeAPIGatewayProxyEvent(
     body: bodyBuffer,
   };
 }
-
-function normalizeEvent(
-  event: NowProxyEvent | APIGatewayProxyEvent
-): NowProxyRequest {
-  if ('Action' in event) {
-    if (event.Action === 'Invoke') {
-      return normalizeNowProxyEvent(event);
-    } else {
-      throw new Error(`Unexpected event.Action: ${event.Action}`);
-    }
-  } else {
-    return normalizeAPIGatewayProxyEvent(event);
-  }
-}
-
 export class Bridge {
   private server: ServerLike | null;
   private listening: Promise<AddressInfo>;
@@ -200,13 +165,13 @@ export class Bridge {
   }
 
   async launcher(
-    event: NowProxyEvent | APIGatewayProxyEvent,
+    event: APIGatewayProxyEventV2,
     context: Pick<Context, 'callbackWaitsForEmptyEventLoop'>
-  ): Promise<NowProxyResponse> {
+  ): Promise<APIGatewayProxyStructuredResultV2> {
     context.callbackWaitsForEmptyEventLoop = false;
     const { port } = await this.listening;
 
-    const normalizedEvent = normalizeEvent(event);
+    const normalizedEvent = normalizeAPIGatewayProxyEvent(event);
     const { isApiGateway, method, path, headers, body } = normalizedEvent;
 
     if (this.shouldStoreEvents) {
@@ -233,9 +198,38 @@ export class Bridge {
             response.headers['content-length'] = String(bodyBuffer.length);
           }
 
+          const headers: Record<string, string> = {};
+          const cookies: string[] = [];
+
+          // Iterate over all headers and normalize them (to strings) and filter our cookies
+          for (const headerKey in response.headers) {
+            const headerValue = response.headers[headerKey];
+
+            // Filter out cookies
+            if (headerKey === 'set-cookie' && headerValue) {
+              cookies.push(...headerValue);
+              continue;
+            }
+
+            // Transform multi value headers to comma separated headers
+            // ['value1', 'value2'] => 'value1,value2'
+            // TODO: Seems like headers are already comma separated when they
+            //       arrive here (comment this out and run unit tests)
+            //       So we should find out if this is the general behavior of Node.js
+            if (Array.isArray(headerValue)) {
+              headers[headerKey] = headerValue.join(',');
+              continue;
+            }
+
+            if (headerValue) {
+              headers[headerKey] = headerValue as string;
+            }
+          }
+
           resolve({
+            cookies,
             statusCode: response.statusCode || 200,
-            headers: response.headers,
+            headers,
             body: bodyBuffer.toString('base64'),
             isBase64Encoded: true,
           });
