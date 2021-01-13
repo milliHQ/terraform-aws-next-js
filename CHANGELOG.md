@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 (January 13, 2021)
+
+### Terraform module
+
+- Adds `cloudfront_hosted_zone_id` output ([#30](https://github.com/dealmore/terraform-aws-next-js/pull/30)).
+
 ## 0.5.0 (January 03, 2021)
 
 Happy New Year! 🍾  
