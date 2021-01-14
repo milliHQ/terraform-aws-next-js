@@ -196,6 +196,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | lambda\_policy\_json | An additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
 | lambda\_runtime | Lambda Function runtime | `string` | `"nodejs12.x"` | no |
 | lambda\_timeout | The max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
+| lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws_iam_role access for the lambda. | `string` | `null` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 
 ## Outputs
