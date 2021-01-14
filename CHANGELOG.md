@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.2 (January 14, 2021)
+
+### Terraform module
+
+- Adds `tags` variable to set tags on supported AWS resources ([#34](https://github.com/dealmore/terraform-aws-next-js/pull/34))
+- Adds `lambda_role_permissions_boundary` variable for setting a permission boundary for the Lambda role ([#33](https://github.com/dealmore/terraform-aws-next-js/pull/33))
+
 ## 0.5.1 (January 13, 2021)
 
 ### Terraform module
