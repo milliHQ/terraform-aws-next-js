@@ -60,3 +60,8 @@ variable "cloudfront_viewer_certificate_arn" {
 variable "cloudfront_minimum_protocol_version" {
   type = string
 }
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}

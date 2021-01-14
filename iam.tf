@@ -23,6 +23,8 @@ resource "aws_iam_role" "lambda" {
   permissions_boundary = var.lambda_role_permissions_boundary
 
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  tags        = var.tags
 }
 
 #############################
@@ -34,6 +36,8 @@ resource "aws_cloudwatch_log_group" "this" {
 
   name              = "/aws/lambda/${random_id.function_name[each.key].hex}"
   retention_in_days = 14
+
+  tags              = var.tags
 }
 
 data "aws_iam_policy_document" "lambda_logging" {

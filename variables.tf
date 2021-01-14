@@ -33,6 +33,12 @@ variable "expire_static_assets" {
   default     = 30
 }
 
+variable "tags" {
+  description = " The tag metadata to label resources with that support tags."
+  type    = map(string)
+  default = {}
+}
+
 ###################
 # Lambdas (Next.js)
 ###################

@@ -14,6 +14,7 @@ resource "aws_s3_bucket" "static_upload" {
   bucket_prefix = "next-tf-deploy-source"
   acl           = "private"
   force_destroy = true
+  tags          = var.tags
 
   # We are using versioning here to ensure that no file gets overridden at upload
   versioning {
@@ -52,6 +53,7 @@ resource "aws_s3_bucket" "static_deploy" {
   bucket_prefix = "next-tf-static-deploy"
   acl           = "private"
   force_destroy = true
+  tags          = var.tags
 
   lifecycle_rule {
     id      = "Expire static assets"
@@ -165,6 +167,7 @@ module "deploy_trigger" {
   memory_size   = 1024
   timeout       = 60
   publish       = true
+  tags          = var.tags
 
   create_package         = false
   local_existing_package = module.lambda_content.abs_path

@@ -43,6 +43,7 @@ module "statics_deploy" {
   debug_use_local_packages = var.debug_use_local_packages
   cloudfront_id            = module.proxy.cloudfront_id
   cloudfront_arn           = module.proxy.cloudfront_arn
+  tags                     = var.tags
 }
 
 # Lambda
@@ -57,6 +58,7 @@ resource "aws_lambda_function" "this" {
   runtime       = lookup(each.value, "runtime", var.lambda_runtime)
   memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
   timeout       = var.lambda_timeout
+  tags          = var.tags
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
@@ -115,6 +117,8 @@ module "api_gateway" {
   create_api_domain_name = false
 
   integrations = local.integrations
+
+  tags = var.tags
 }
 
 #######
@@ -138,6 +142,7 @@ module "proxy" {
   cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
   debug_use_local_packages            = var.debug_use_local_packages
+  tags                                = var.tags
 
   providers = {
     aws = aws.global_region

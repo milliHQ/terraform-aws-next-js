@@ -9,3 +9,8 @@ variable "proxy_config_json" {
 variable "deployment_name" {
   type = string
 }
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}

@@ -12,6 +12,7 @@ resource "aws_s3_bucket" "proxy_config" {
   bucket_prefix = "next-tf-proxy-config"
   acl           = "private"
   force_destroy = true
+  tags          = var.tags
 }
 
 data "aws_iam_policy_document" "cf_access" {
@@ -41,6 +42,7 @@ resource "aws_s3_bucket_object" "proxy_config" {
   content       = var.proxy_config_json
   content_type  = "application/json"
   cache_control = "max-age=${local.proxy_config_max_age}"
+  tags          = var.tags
 
   etag = md5(var.proxy_config_json)
 }
@@ -58,6 +60,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   is_ipv6_enabled = true
   comment         = "${var.deployment_name} - Proxy-Config"
   price_class     = var.cloudfront_price_class
+  tags            = var.tags
 
   origin {
     domain_name = aws_s3_bucket.proxy_config.bucket_regional_domain_name

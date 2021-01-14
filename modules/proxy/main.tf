@@ -21,6 +21,7 @@ module "proxy_config" {
   cloudfront_price_class = var.cloudfront_price_class
   proxy_config_json      = var.proxy_config_json
   deployment_name        = var.deployment_name
+  tags                   = var.tags
 }
 
 #############
@@ -47,6 +48,8 @@ module "edge_proxy" {
   local_existing_package = module.proxy_package.abs_path
 
   cloudwatch_logs_retention_in_days = 30
+
+  tags          = var.tags
 }
 
 ############
@@ -60,6 +63,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   price_class     = var.cloudfront_price_class
   aliases         = var.cloudfront_alias_domains
   default_root_object = "index"
+  tags            = var.tags
 
   # Static deployment S3 bucket
   origin {
