@@ -20,6 +20,8 @@ resource "aws_iam_role" "lambda" {
   name        = random_id.function_name[each.key].hex
   description = "Managed by Terraform Next.js"
 
+  permissions_boundary = var.lambda_role_permissions_boundary
+
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
