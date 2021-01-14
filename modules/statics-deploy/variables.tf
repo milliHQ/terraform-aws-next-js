@@ -25,3 +25,8 @@ variable "cloudfront_arn" {
   description = "The ARN of the CloudFront distribution where the route invalidations should be sent to."
   type        = string
 }
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
