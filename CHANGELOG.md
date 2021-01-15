@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3 (January 15, 2021)
+
+### Terraform module
+
+- Fix: Pass permissions boundary to edge proxy lambda ([#35](https://github.com/dealmore/terraform-aws-next-js/pull/35))
+
 ## 0.5.2 (January 14, 2021)
 
 ### Terraform module
