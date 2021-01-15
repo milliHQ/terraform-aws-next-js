@@ -15,7 +15,7 @@ test('port binding', async () => {
   server.close();
 });
 
-test('`APIGatewayProxyEvent` normalizing', async () => {
+test('`APIGatewayProxyEvent` normalizing 1', async () => {
   const server = new Server((req, res) => {
     res.setHeader('Set-Cookie', 'abc');
     res.setHeader('x-some-multi-header', ['d', 'e', 'f']);
@@ -34,12 +34,15 @@ test('`APIGatewayProxyEvent` normalizing', async () => {
   const result = await bridge.launcher(
     {
       headers: { foo: 'bar', multi: 'a,b,c' },
-      rawPath: '/apigateway',
+      rawPath: '/__NEXT_PAGE_LAMBDA_0/test/a/b/c/',
       requestContext: {
         http: {
           method: 'GET',
-          path: '/',
+          path: '/__NEXT_PAGE_LAMBDA_0/test/a/b/c/',
         },
+      },
+      pathParameters: {
+        proxy: 'test/a/b/c/',
       },
       body: null,
     },
@@ -60,8 +63,7 @@ test('`APIGatewayProxyEvent` normalizing', async () => {
 
   const body = JSON.parse(Buffer.from(result.body, 'base64').toString());
   expect(body.method).toBe('GET');
-  // TODO: Understand the change from path (v1.0) to rawPath (v2.0)
-  expect(body.path).toBe('/apigateway');
+  expect(body.path).toBe('/test/a/b/c/');
   expect(body.headers.foo).toBe('bar');
   expect(body.headers.multi).toEqual('a,b,c');
   expect(context.callbackWaitsForEmptyEventLoop).toBe(false);
@@ -81,17 +83,15 @@ test('consumeEvent', async () => {
   const context = { callbackWaitsForEmptyEventLoop: true };
   await bridge.launcher(
     {
-      body: JSON.stringify({
-        headers: { foo: 'baz' },
-        requestContext: {
-          http: {
-            method: 'POST',
-            path: '/nowproxy',
-          },
+      headers: { foo: 'baz' },
+      requestContext: {
+        http: {
+          method: 'POST',
+          path: '/nowproxy',
         },
-        rawPath: '/nowproxy',
-        body: 'body=1',
-      }),
+      },
+      rawPath: '/nowproxy',
+      body: 'body=1',
     },
     context
   );
@@ -126,24 +126,33 @@ test('invalid request headers', async () => {
   const context = { callbackWaitsForEmptyEventLoop: true };
   const result = await bridge.launcher(
     {
-      Action: 'Invoke',
+      requestContext: {
+        http: {
+          method: 'GET',
+          path: '/nowproxy',
+        },
+      },
+      rawPath: '/nowproxy',
+      headers: { foo: 'baz\n', ok: 'true' },
       body: JSON.stringify({
         method: 'GET',
-        headers: { foo: 'baz\n', ok: 'true' },
         path: '/nowproxy',
         body: 'body=1',
       }),
+      pathParameters: {
+        proxy: 'nowproxy',
+      },
     },
     context
   );
-  assert.equal(result.isBase64Encoded, true);
-  assert.equal(result.statusCode, 200);
+  expect(result.isBase64Encoded).toBe(true);
+  expect(result.statusCode).toBe(200);
   const body = JSON.parse(Buffer.from(result.body, 'base64').toString());
-  assert.equal(body.method, 'GET');
-  assert.equal(body.path, '/nowproxy');
-  assert.equal(body.headers.ok, 'true');
+  expect(body.method).toBe('GET');
+  expect(body.path).toBe('/nowproxy');
+  expect(body.headers.ok).toBe('true');
   assert(!body.headers.foo);
-  assert.equal(context.callbackWaitsForEmptyEventLoop, false);
+  expect(context.callbackWaitsForEmptyEventLoop).toBe(false);
 
   server.close();
 });

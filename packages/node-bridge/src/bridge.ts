@@ -14,7 +14,6 @@ import {
 import { URLSearchParams } from 'url';
 
 export interface NowProxyRequest {
-  isApiGateway?: boolean;
   method: string;
   path: string;
   headers: IncomingHttpHeaders;
@@ -57,24 +56,31 @@ function normalizeAPIGatewayProxyEvent(
   let bodyBuffer: Buffer | null;
   const {
     requestContext: {
-      http: { method, path },
+      http: { method },
     },
-    headers,
+    headers = {},
     body,
     queryStringParameters,
-    rawPath,
+    pathParameters = {},
+    cookies,
   } = event;
-  // Trims the resource from the path
-  const normalizedRawPath = rawPath.endsWith('/{proxy+}')
-    ? rawPath.substring(0, rawPath.length - 9)
-    : rawPath;
-  const trimmedPath = path.slice(normalizedRawPath.length) || '/';
+  // Since we always use a path like
+  // `/__NEXT_PAGE_LAMBDA_0/{proxy+}`
+  // proxy is always the absolute path without the resource
+  // e.g. `/__NEXT_PAGE_LAMBDA_0/test` => proxy: `test`
+  const trimmedPath = pathParameters.proxy ? `/${pathParameters.proxy}` : '/';
 
   // API Gateway cuts the query string from the path
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   // TODO: Move to Vercel trusted params in future
   const params = new URLSearchParams(queryStringParameters).toString();
   const parameterizedPath = params ? `${trimmedPath}?${params}` : trimmedPath;
+
+  // API Gateway 2.0 payload splits cookie header from the rest,
+  // so we need to readd them
+  if (cookies) {
+    headers['cookie'] = cookies.join(', ');
+  }
 
   if (body) {
     if (event.isBase64Encoded) {
@@ -87,7 +93,6 @@ function normalizeAPIGatewayProxyEvent(
   }
 
   return {
-    isApiGateway: true,
     method,
     path: parameterizedPath,
     headers,
@@ -172,7 +177,7 @@ export class Bridge {
     const { port } = await this.listening;
 
     const normalizedEvent = normalizeAPIGatewayProxyEvent(event);
-    const { isApiGateway, method, path, headers, body } = normalizedEvent;
+    const { method, path, headers, body } = normalizedEvent;
 
     if (this.shouldStoreEvents) {
       const reqId = `${this.reqIdSeed++}`;
@@ -190,24 +195,27 @@ export class Bridge {
         response.on('error', reject);
         response.on('end', () => {
           const bodyBuffer = Buffer.concat(respBodyChunks);
-          delete response.headers.connection;
 
-          if (isApiGateway) {
-            delete response.headers['content-length'];
-          } else if (response.headers['content-length']) {
-            response.headers['content-length'] = String(bodyBuffer.length);
-          }
-
-          const headers: Record<string, string> = {};
+          const _headers: Record<string, string> = {};
           const cookies: string[] = [];
 
           // Iterate over all headers and normalize them (to strings) and filter our cookies
           for (const headerKey in response.headers) {
             const headerValue = response.headers[headerKey];
 
+            // 'content-length' is calculated by API Gateway
+            if (headerKey === 'content-length') {
+              continue;
+            }
+
             // Filter out cookies
             if (headerKey === 'set-cookie' && headerValue) {
-              cookies.push(...headerValue);
+              if (typeof headerValue === 'string') {
+                cookies.push(headerValue);
+              } else {
+                cookies.push(...headerValue);
+              }
+
               continue;
             }
 
@@ -217,19 +225,19 @@ export class Bridge {
             //       arrive here (comment this out and run unit tests)
             //       So we should find out if this is the general behavior of Node.js
             if (Array.isArray(headerValue)) {
-              headers[headerKey] = headerValue.join(',');
+              _headers[headerKey] = headerValue.join(', ');
               continue;
             }
 
             if (headerValue) {
-              headers[headerKey] = headerValue as string;
+              _headers[headerKey] = headerValue as string;
             }
           }
 
           resolve({
             cookies,
             statusCode: response.statusCode || 200,
-            headers,
+            headers: _headers,
             body: bodyBuffer.toString('base64'),
             isBase64Encoded: true,
           });
