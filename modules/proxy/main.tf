@@ -43,6 +43,7 @@ module "edge_proxy" {
   description   = "Managed by Terraform-next.js"
   handler       = "handler.handler"
   runtime       = var.lambda_default_runtime
+  role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
   local_existing_package = module.proxy_package.abs_path
