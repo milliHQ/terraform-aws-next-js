@@ -16,6 +16,10 @@ import * as util from 'util';
 import { ConfigOutput } from '../types';
 import { removeRoutesByPrefix } from '../utils/routes';
 
+// Config file version (For detecting incompatibility issues in Terraform)
+// See: https://github.com/dealmore/terraform-aws-next-js/issues/5
+const TF_NEXT_VERSION = 1;
+
 type Lambdas = Record<string, Lambda>;
 type Prerenders = Record<string, Prerender>;
 type StaticWebsiteFiles = Record<string, FileFsRef>;
@@ -83,6 +87,7 @@ function writeOutput(props: OutputProps) {
     buildId: props.buildId,
     prerenders: props.prerenders,
     staticFilesArchive: 'static-website-files.zip',
+    version: TF_NEXT_VERSION,
   };
 
   for (const [key, lambda] of Object.entries(props.lambdas)) {
