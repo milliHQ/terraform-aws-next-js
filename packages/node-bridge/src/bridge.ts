@@ -11,7 +11,6 @@ import {
   OutgoingHttpHeaders,
   request,
 } from 'http';
-import { URLSearchParams } from 'url';
 
 export interface NowProxyRequest {
   method: string;
@@ -58,9 +57,9 @@ function normalizeAPIGatewayProxyEvent(
     requestContext: {
       http: { method },
     },
+    rawQueryString,
     headers = {},
     body,
-    queryStringParameters,
     pathParameters = {},
     cookies,
   } = event;
@@ -73,8 +72,9 @@ function normalizeAPIGatewayProxyEvent(
   // API Gateway cuts the query string from the path
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   // TODO: Move to Vercel trusted params in future
-  const params = new URLSearchParams(queryStringParameters).toString();
-  const parameterizedPath = params ? `${trimmedPath}?${params}` : trimmedPath;
+  const parameterizedPath = rawQueryString
+    ? `${trimmedPath}?${rawQueryString}`
+    : trimmedPath;
 
   // API Gateway 2.0 payload splits cookie header from the rest,
   // so we need to readd them
