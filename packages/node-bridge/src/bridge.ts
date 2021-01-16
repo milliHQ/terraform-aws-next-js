@@ -1,21 +1,18 @@
 /// <reference types="node" />
 import { AddressInfo } from 'net';
-import { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyStructuredResultV2,
+  Context,
+} from 'aws-lambda';
 import {
   Server,
   IncomingHttpHeaders,
   OutgoingHttpHeaders,
   request,
 } from 'http';
-import { URLSearchParams } from 'url';
-
-interface NowProxyEvent {
-  Action: string;
-  body: string;
-}
 
 export interface NowProxyRequest {
-  isApiGateway?: boolean;
   method: string;
   path: string;
   headers: IncomingHttpHeaders;
@@ -52,49 +49,38 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-function normalizeNowProxyEvent(event: NowProxyEvent): NowProxyRequest {
-  let bodyBuffer: Buffer | null;
-  const { method, path, headers, encoding, body } = JSON.parse(event.body);
-
-  if (body) {
-    if (encoding === 'base64') {
-      bodyBuffer = Buffer.from(body, encoding);
-    } else if (encoding === undefined) {
-      bodyBuffer = Buffer.from(body);
-    } else {
-      throw new Error(`Unsupported encoding: ${encoding}`);
-    }
-  } else {
-    bodyBuffer = Buffer.alloc(0);
-  }
-
-  return { isApiGateway: false, method, path, headers, body: bodyBuffer };
-}
-
 function normalizeAPIGatewayProxyEvent(
-  event: APIGatewayProxyEvent
+  event: APIGatewayProxyEventV2
 ): NowProxyRequest {
   let bodyBuffer: Buffer | null;
   const {
-    httpMethod: method,
-    path,
-    headers,
+    requestContext: {
+      http: { method },
+    },
+    rawQueryString,
+    headers = {},
     body,
-    multiValueQueryStringParameters,
-    resource = '',
+    pathParameters = {},
+    cookies,
   } = event;
-  // Trims the resource from the path
-  const normalizedResource = resource.endsWith('/{proxy+}')
-    ? resource.substring(0, resource.length - 9)
-    : resource;
-  const trimmedPath = path.slice(normalizedResource.length) || '/';
+  // Since we always use a path like
+  // `/__NEXT_PAGE_LAMBDA_0/{proxy+}`
+  // proxy is always the absolute path without the resource
+  // e.g. `/__NEXT_PAGE_LAMBDA_0/test` => proxy: `test`
+  const trimmedPath = pathParameters.proxy ? `/${pathParameters.proxy}` : '/';
 
-  // API Gateway 1.0 format cuts the query string from the path
+  // API Gateway cuts the query string from the path
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-  const params = new URLSearchParams(
-    multiValueQueryStringParameters || {}
-  ).toString();
-  const parameterizedPath = params ? `${trimmedPath}?${params}` : trimmedPath;
+  // TODO: Move to Vercel trusted params in future
+  const parameterizedPath = rawQueryString
+    ? `${trimmedPath}?${rawQueryString}`
+    : trimmedPath;
+
+  // API Gateway 2.0 payload splits cookie header from the rest,
+  // so we need to readd them
+  if (cookies) {
+    headers['cookie'] = cookies.join(', ');
+  }
 
   if (body) {
     if (event.isBase64Encoded) {
@@ -107,28 +93,12 @@ function normalizeAPIGatewayProxyEvent(
   }
 
   return {
-    isApiGateway: true,
     method,
     path: parameterizedPath,
     headers,
     body: bodyBuffer,
   };
 }
-
-function normalizeEvent(
-  event: NowProxyEvent | APIGatewayProxyEvent
-): NowProxyRequest {
-  if ('Action' in event) {
-    if (event.Action === 'Invoke') {
-      return normalizeNowProxyEvent(event);
-    } else {
-      throw new Error(`Unexpected event.Action: ${event.Action}`);
-    }
-  } else {
-    return normalizeAPIGatewayProxyEvent(event);
-  }
-}
-
 export class Bridge {
   private server: ServerLike | null;
   private listening: Promise<AddressInfo>;
@@ -200,14 +170,14 @@ export class Bridge {
   }
 
   async launcher(
-    event: NowProxyEvent | APIGatewayProxyEvent,
+    event: APIGatewayProxyEventV2,
     context: Pick<Context, 'callbackWaitsForEmptyEventLoop'>
-  ): Promise<NowProxyResponse> {
+  ): Promise<APIGatewayProxyStructuredResultV2> {
     context.callbackWaitsForEmptyEventLoop = false;
     const { port } = await this.listening;
 
-    const normalizedEvent = normalizeEvent(event);
-    const { isApiGateway, method, path, headers, body } = normalizedEvent;
+    const normalizedEvent = normalizeAPIGatewayProxyEvent(event);
+    const { method, path, headers, body } = normalizedEvent;
 
     if (this.shouldStoreEvents) {
       const reqId = `${this.reqIdSeed++}`;
@@ -225,17 +195,49 @@ export class Bridge {
         response.on('error', reject);
         response.on('end', () => {
           const bodyBuffer = Buffer.concat(respBodyChunks);
-          delete response.headers.connection;
 
-          if (isApiGateway) {
-            delete response.headers['content-length'];
-          } else if (response.headers['content-length']) {
-            response.headers['content-length'] = String(bodyBuffer.length);
+          const _headers: Record<string, string> = {};
+          const cookies: string[] = [];
+
+          // Iterate over all headers and normalize them (to strings) and filter our cookies
+          for (const headerKey in response.headers) {
+            const headerValue = response.headers[headerKey];
+
+            // 'content-length' is calculated by API Gateway
+            if (headerKey === 'content-length') {
+              continue;
+            }
+
+            // Filter out cookies
+            if (headerKey === 'set-cookie' && headerValue) {
+              if (typeof headerValue === 'string') {
+                cookies.push(headerValue);
+              } else {
+                cookies.push(...headerValue);
+              }
+
+              continue;
+            }
+
+            // Transform multi value headers to comma separated headers
+            // ['value1', 'value2'] => 'value1,value2'
+            // TODO: Seems like headers are already comma separated when they
+            //       arrive here (comment this out and run unit tests)
+            //       So we should find out if this is the general behavior of Node.js
+            if (Array.isArray(headerValue)) {
+              _headers[headerKey] = headerValue.join(', ');
+              continue;
+            }
+
+            if (headerValue) {
+              _headers[headerKey] = headerValue as string;
+            }
           }
 
           resolve({
+            cookies,
             statusCode: response.statusCode || 200,
-            headers: response.headers,
+            headers: _headers,
             body: bodyBuffer.toString('base64'),
             isBase64Encoded: true,
           });

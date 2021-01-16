@@ -1,0 +1,12 @@
+{
+  "name": "fixture-02",
+  "version": "0.0.0",
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "tf-next": "*"
+  }
+}

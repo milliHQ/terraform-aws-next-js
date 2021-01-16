@@ -93,14 +93,12 @@ export async function generateSAM({ lambdas, cwd }: Props): Promise<SAM> {
         Timeout: 29, // Max timeout from API Gateway
         Events: {
           Api: {
-            Type: 'Api', // TODO: Change to HttpApi (Make sure AWS SAM has min required version)
-            // https://github.com/aws/aws-sam-cli/pull/1942
-            // https://github.com/aws/serverless-application-model/blob/master/versions/2016-10-31.md#httpapi
+            Type: 'HttpApi',
             Properties: {
               Path: `${lambda.route}/{proxy+}`,
               Method: 'any',
               TimeoutInMillis: 29000, // Max timeout
-              PayloadFormatVersion: '1.0',
+              PayloadFormatVersion: '2.0',
             },
           },
         },

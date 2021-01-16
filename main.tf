@@ -99,7 +99,7 @@ locals {
   integration_values = flatten([
     for integration_key, integration in local.lambdas : {
       lambda_arn             = aws_lambda_function.this[integration_key].arn
-      payload_format_version = "1.0"
+      payload_format_version = "2.0"
       timeout_milliseconds   = var.lambda_timeout * 1000
     }
   ])
