@@ -20,4 +20,5 @@ export interface ConfigOutput {
       lambda: string;
     }
   >;
+  version: number;
 }

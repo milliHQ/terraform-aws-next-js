@@ -6,8 +6,9 @@ locals {
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   # Build the proxy config JSON
-  static_routes_json = lookup(local.config_file, "staticRoutes", [])
-  routes_json        = lookup(local.config_file, "routes", [])
+  config_file_version = lookup(local.config_file, "version", 0)
+  static_routes_json  = lookup(local.config_file, "staticRoutes", [])
+  routes_json         = lookup(local.config_file, "routes", [])
   lambda_routes_json = flatten([
     for integration_key, integration in local.lambdas : [
       lookup(integration, "route", "/")
@@ -132,6 +133,7 @@ module "proxy" {
   static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
   static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
   proxy_config_json             = local.proxy_config_json
+  proxy_config_version          = local.config_file_version
 
   # Forwarding variables
   deployment_name                     = var.deployment_name
