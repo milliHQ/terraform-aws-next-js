@@ -124,5 +124,47 @@ describe('Proxy', () => {
         })
       );
     });
+
+    test('/unknown-route-with-tailing-slash/: Redirect tailing slash of unknown route', () => {
+      const route = proxy.route('/unknown-route-with-tailing-slash/');
+      expect(route).toEqual(
+        expect.objectContaining({
+          found: true,
+          dest: '/unknown-route-with-tailing-slash/',
+          status: 308,
+          headers: {
+            Location: '/unknown-route-with-tailing-slash',
+          },
+        })
+      );
+    });
+  });
+
+  describe('Proxy::Routing 004', () => {
+    let proxy: Proxy;
+
+    beforeAll(() => {
+      // Initialize proxy
+      const config = require('./res/config-004.json') as ProxyConfig;
+      proxy = new Proxy(
+        config.routes,
+        config.lambdaRoutes,
+        config.staticRoutes
+      );
+    });
+
+    test('/unknown-route-with-tailing-slash/: Redirect tailing slash of unknown route', () => {
+      const route = proxy.route('/unknown-route-with-tailing-slash/');
+      expect(route).toEqual(
+        expect.objectContaining({
+          found: true,
+          dest: '/unknown-route-with-tailing-slash/',
+          status: 308,
+          headers: {
+            Location: '/unknown-route-with-tailing-slash',
+          },
+        })
+      );
+    });
   });
 });

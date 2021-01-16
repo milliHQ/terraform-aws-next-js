@@ -126,6 +126,11 @@ export class Proxy {
         continue;
       }
 
+      // Skip resource phase entirely because we don't support it
+      if (phase === 'resource') {
+        continue;
+      }
+
       // Special case to allow redirect to kick in when a continue route was touched before
       if (phase === 'error' && isContinue) {
         break;
