@@ -1,11 +1,11 @@
 /* eslint-env jest */
-const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const fetch = require('../../../../../test/lib/deployment/fetch-retry');
 
 module.exports = function (ctx) {
   it('should revalidate content properly from dynamic pathname', async () => {
     // wait for revalidation to expire
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     const res = await fetch(`${ctx.deploymentUrl}/regenerated/blue`);
     expect(res.status).toBe(200);
@@ -15,7 +15,7 @@ module.exports = function (ctx) {
     expect($('#slug').text()).toBe('blue');
 
     // wait for revalidation to occur
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     const res2 = await fetch(`${ctx.deploymentUrl}/regenerated/blue`);
     expect(res2.status).toBe(200);
@@ -27,7 +27,7 @@ module.exports = function (ctx) {
 
   it('should revalidate content properly from /_next/data dynamic pathname', async () => {
     // wait for revalidation to expire
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     const res = await fetch(
       `${ctx.deploymentUrl}/_next/data/testing-build-id/regenerated/blue.json`
@@ -40,7 +40,7 @@ module.exports = function (ctx) {
     expect(isNaN(initialTime)).toBe(false);
 
     // wait for revalidation to occur
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     const res2 = await fetch(
       `${ctx.deploymentUrl}/_next/data/testing-build-id/regenerated/blue.json`

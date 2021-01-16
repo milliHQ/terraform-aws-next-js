@@ -381,6 +381,14 @@ export async function build({
       console.log(`Running "install" command: \`${installCommand}\`...`);
       await execCommand(installCommand, {
         ...spawnOpts,
+
+        // Yarn v2 PnP mode may be activated, so force
+        // "node-modules" linker style
+        env: {
+          YARN_NODE_LINKER: 'node-modules',
+          ...spawnOpts.env,
+        },
+
         cwd: entryPath,
       });
     } else {
@@ -410,13 +418,18 @@ export async function build({
   }
 
   const memoryToConsume = Math.floor(os.totalmem() / 1024 ** 2) - 128;
-  const env: { [key: string]: string | undefined } = { ...spawnOpts.env };
+  const env: typeof process.env = { ...spawnOpts.env };
   env.NODE_OPTIONS = `--max_old_space_size=${memoryToConsume}`;
 
   if (buildCommand) {
     // Add `node_modules/.bin` to PATH
     const nodeBinPath = await getNodeBinPath({ cwd: entryPath });
     env.PATH = `${nodeBinPath}${path.delimiter}${env.PATH}`;
+
+    // Yarn v2 PnP mode may be activated, so force "node-modules" linker style
+    if (!env.YARN_NODE_LINKER) {
+      env.YARN_NODE_LINKER = 'node-modules';
+    }
 
     debug(
       `Added "${nodeBinPath}" to PATH env because a build command was used.`
@@ -445,7 +458,10 @@ export async function build({
     nextVersion
   );
   const imagesManifest = await getImagesManifest(entryPath, outputDirectory);
-  const prerenderManifest = await getPrerenderManifest(entryPath);
+  const prerenderManifest = await getPrerenderManifest(
+    entryPath,
+    outputDirectory
+  );
   const headers: Route[] = [];
   const rewrites: Route[] = [];
   let redirects: Route[] = [];
@@ -718,6 +734,11 @@ export async function build({
         // with that routing section
         ...rewrites,
 
+        // make sure 404 page is used when a directory is matched without
+        // an index page
+        { handle: 'resource' },
+        { src: path.join('/', entryDirectory, '.*'), status: 404 },
+
         // We need to make sure to 404 for /_next after handle: miss since
         // handle: miss is called before rewrites and to prevent rewriting
         // /_next
@@ -754,6 +775,7 @@ export async function build({
             'cache-control': `public,max-age=${MAX_AGE_ONE_YEAR},immutable`,
           },
           continue: true,
+          important: true,
         },
 
         // error handling
@@ -1015,7 +1037,7 @@ export async function build({
 
       if (
         initialRevalidate === false &&
-        !canUsePreviewMode &&
+        (!canUsePreviewMode || (hasPages404 && routeKey === '/404')) &&
         !prerenderManifest.fallbackRoutes[route] &&
         !prerenderManifest.blockingFallbackRoutes[route]
       ) {
@@ -1067,19 +1089,25 @@ export async function build({
         console.time(tracingLabel);
       }
 
+      const nftCache = Object.create(null);
+
       const {
         fileList: apiFileList,
         reasons: apiReasons,
       } = await nodeFileTrace(apiPages, {
         base: baseDir,
         processCwd: entryPath,
+        cache: nftCache,
       });
+
+      debug(`node-file-trace result for api routes: ${apiFileList}`);
 
       const { fileList, reasons: nonApiReasons } = await nodeFileTrace(
         nonApiPages,
         {
           base: baseDir,
           processCwd: entryPath,
+          cache: nftCache,
         }
       );
 
@@ -1803,7 +1831,11 @@ export async function build({
           });
         }
 
-        if (!canUsePreviewMode) {
+        // If revalidate isn't enabled we force the /404 route to be static
+        // to match next start behavior otherwise getStaticProps would be
+        // recalled for each 404 URL path since Prerender is cached based
+        // on the URL path
+        if (!canUsePreviewMode || (hasPages404 && routeKey === '/404')) {
           htmlFsRef.contentType = htmlContentType;
           prerenders[outputPathPage] = htmlFsRef;
           prerenders[outputPathData] = jsonFsRef;
@@ -1924,7 +1956,25 @@ export async function build({
     path.join(entryPath, outputDirectory, 'static')
   );
   const staticFolderFiles = await glob('**', path.join(entryPath, 'static'));
-  const publicFolderFiles = await glob('**', path.join(entryPath, 'public'));
+
+  let publicFolderFiles: Files = {};
+  let publicFolderPath: string | undefined;
+
+  if (await pathExists(path.join(entryPath, 'public'))) {
+    publicFolderPath = path.join(entryPath, 'public');
+  } else if (
+    // check at the same level as the output directory also
+    await pathExists(path.join(entryPath, outputDirectory, '../public'))
+  ) {
+    publicFolderPath = path.join(entryPath, outputDirectory, '../public');
+  }
+
+  if (publicFolderPath) {
+    debug(`Using public folder at ${publicFolderPath}`);
+    publicFolderFiles = await glob('**/*', publicFolderPath);
+  } else {
+    debug('No public folder found');
+  }
 
   const staticFiles = Object.keys(nextStaticFiles).reduce(
     (mappedFiles, file) => ({
@@ -1945,10 +1995,7 @@ export async function build({
   const publicDirectoryFiles = Object.keys(publicFolderFiles).reduce(
     (mappedFiles, file) => ({
       ...mappedFiles,
-      [path.join(
-        entryDirectory,
-        file.replace(/^public[/\\]+/, '')
-      )]: publicFolderFiles[file],
+      [path.join(entryDirectory, file)]: publicFolderFiles[file],
     }),
     {}
   );
@@ -2016,7 +2063,6 @@ export async function build({
   const { i18n } = routesManifest || {};
 
   const trailingSlashRedirects: Route[] = [];
-  let trailingSlash = false;
 
   redirects = redirects.filter(_redir => {
     const redir = _redir as Source;
@@ -2032,9 +2078,6 @@ export async function build({
     if (redir.status === 308 && (location === '/$1' || location === '/$1/')) {
       // we set continue here to prevent the redirect from
       // moving underneath i18n routes
-      if (location === '/$1/') {
-        trailingSlash = true;
-      }
       redir.continue = true;
       trailingSlashRedirects.push(redir);
       return false;
@@ -2081,13 +2124,6 @@ export async function build({
       - Builder rewrites
     */
     routes: [
-      ...(trailingSlash
-        ? [
-            {
-              src: '^/\\.well-known(?:/.*)?$',
-            },
-          ]
-        : []),
       // force trailingSlashRedirect to the very top so it doesn't
       // conflict with i18n routes that don't have or don't have the
       // trailing slash
@@ -2251,6 +2287,11 @@ export async function build({
       // with that routing section
       ...rewrites,
 
+      // make sure 404 page is used when a directory is matched without
+      // an index page
+      { handle: 'resource' },
+      { src: path.join('/', entryDirectory, '.*'), status: 404 },
+
       // We need to make sure to 404 for /_next after handle: miss since
       // handle: miss is called before rewrites and to prevent rewriting /_next
       { handle: 'miss' },
@@ -2330,6 +2371,7 @@ export async function build({
           'cache-control': `public,max-age=${MAX_AGE_ONE_YEAR},immutable`,
         },
         continue: true,
+        important: true,
       },
 
       // error handling
@@ -2372,9 +2414,13 @@ export async function build({
                         ),
 
                         status: 404,
-                        headers: {
-                          'x-nextjs-page': page404Path,
-                        },
+                        ...(static404Page
+                          ? {}
+                          : {
+                              headers: {
+                                'x-nextjs-page': page404Path,
+                              },
+                            }),
                       }
                     : {
                         src: path.join('/', entryDirectory, '.*'),
