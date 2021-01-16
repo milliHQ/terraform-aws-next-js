@@ -14,7 +14,7 @@
     "react-dom": "latest"
   },
   "devDependencies": {
-    "tf-next": "^0.2.0"
+    "tf-next": "latest"
   },
   "license": "MIT"
 }
