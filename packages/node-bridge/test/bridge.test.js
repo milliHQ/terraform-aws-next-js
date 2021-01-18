@@ -112,7 +112,7 @@ test('[APIGatewayProxyEvent] cookie handling', async () => {
   const body = JSON.parse(Buffer.from(result.body, 'base64').toString());
   expect(body.method).toBe('POST');
   expect(body.path).toBe('/');
-  expect(body.headers.cookie).toBe('cookie-1, cookie-2, cookie-3');
+  expect(body.headers.cookie).toBe('cookie-1; cookie-2; cookie-3');
 
   server.close();
 });
