@@ -168,6 +168,7 @@ module "deploy_trigger" {
   timeout       = 60
   publish       = true
   tags          = var.tags
+  role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
   local_existing_package = module.lambda_content.abs_path

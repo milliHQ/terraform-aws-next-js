@@ -30,3 +30,8 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "lambda_role_permissions_boundary" {
+  type    = string
+  default = null
+}

@@ -45,6 +45,7 @@ module "statics_deploy" {
   cloudfront_id            = module.proxy.cloudfront_id
   cloudfront_arn           = module.proxy.cloudfront_arn
   tags                     = var.tags
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 }
 
 # Lambda
