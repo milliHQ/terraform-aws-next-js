@@ -370,10 +370,10 @@
   resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.7.3.tgz#e2ac44f7582819bb531a17190206f0f63f4b3338"
   integrity sha512-y6wQCjxonNeggWZwvK51z/4Cl/3ka5ySAenUo67wM16PrWc92pFEiYaSiObOO/mvVlBJHqCtROEdcoyRab64wg==
 
-"@dealmore/next-tf@2.7.8":
-  version "2.7.8"
-  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.7.8.tgz#7af5ab34857990736acf44bcce64bdc676786164"
-  integrity sha512-Ck05kxO6JaKt8CYzdemC1nvENTF1fpnLmYiBH16+AHF8oD66Q1Dz1n4SvkHVVUD39F6EKtA/htcc1PZQxphfcA==
+"@dealmore/next-tf@2.7.9":
+  version "2.7.9"
+  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.7.9.tgz#2be65191f7942872fdd2857fb758cf954a35a0e1"
+  integrity sha512-njsTD2vI5wm+eFFb4kzx4nY+JsgKW2WorPxR8Fadvq/zeWx3SS5IzO95GJrmsNd1UjR8rEgeJT/xitrlqAb6pg==
 
 "@hapi/accept@5.0.1":
   version "5.0.1"

@@ -6,6 +6,10 @@
 
 - Fix: Correctly propagate the permissions boundary (`lambda_role_permissions_boundary`) to all Lambda & Lambda@Edge functions ([#38](https://github.com/dealmore/terraform-aws-next-js/pull/38))
 
+### tf-next (0.4.1)
+
+- Fix: Request cookie header should be semi-colon delimitated ([#39](https://github.com/dealmore/terraform-aws-next-js/pull/39))
+
 ## 0.6.0 (January 16, 2021)
 
 **⚠️ Breaking Changes ⚠️**
