@@ -91,7 +91,7 @@ test('[APIGatewayProxyEvent] cookie handling', async () => {
 
   const result = await bridge.launcher(
     {
-      cookies: ['cookie-1, cookie-2', 'cookie-3'],
+      cookies: ['cookie-1; cookie-2', 'cookie-3'],
       rawPath: '/__NEXT_PAGE_LAMBDA_0/',
       requestContext: {
         http: {
