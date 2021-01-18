@@ -79,7 +79,7 @@ function normalizeAPIGatewayProxyEvent(
   // API Gateway 2.0 payload splits cookie header from the rest,
   // so we need to readd them
   if (cookies) {
-    headers['cookie'] = cookies.join(', ');
+    headers['cookie'] = cookies.join('; ');
   }
 
   if (body) {
