@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.2 (January 19, 2021)
+
+### Terraform module
+
+- Bump internal module version of `terraform-aws-modules/lambda/aws`: 1.31.0 -> 1.34.0  
+  This should fix an issue when performing a direct upgrade from `v0.3.0` to `v0.6.x`
+
 ## 0.6.1 (January 18, 2021)
 
 ### Terraform module
