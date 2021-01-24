@@ -143,7 +143,8 @@ resource "aws_iam_policy" "access_static_deploy" {
 ########
 
 module "lambda_content" {
-  source = "../file-from-npm"
+  source  = "dealmore/download/npm"
+  version = "1.0.0"
 
   module_name    = "@dealmore/terraform-next-deploy-trigger"
   module_version = var.deploy_trigger_module_version
