@@ -1,15 +1,19 @@
 {
   "name": "@dealmore/terraform-next-node-bridge",
-  "version": "0.0.0",
-  "license": "MIT",
-  "main": "./index.js",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dealmore/terraform-next.js.git",
+    "directory": "packages/node-bridge"
+  },
+  "main": "./dist/bridge.js",
+  "types": "./dist/bridge.d.ts",
   "files": [
-    "bridge.*",
-    "index.js"
+    "dist/*"
   ],
   "scripts": {
-    "build": "tsc",
-    "test-integration-once": "jest --env node --verbose --runInBand --bail"
+    "build": "tsc"
   },
   "devDependencies": {}
 }
