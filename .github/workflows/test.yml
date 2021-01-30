@@ -31,7 +31,7 @@ jobs:
           path: |
             .yarn
             **/node_modules
-          key: ${{ runner.os }}-test
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 
       - name: Jest
         run: |
@@ -50,7 +50,7 @@ jobs:
           path: |
             .yarn
             **/node_modules
-          key: ${{ runner.os }}-test
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 
       - name: Yarn install
         run: yarn --frozen-lockfile --cache-folder .yarn
@@ -79,9 +79,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
       AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
     steps:
-      - name: Setup Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
       - name: Setup AWS SAM
         run: |
           brew tap aws/tap
