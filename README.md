@@ -211,6 +211,31 @@ You can create a `.terraformignore` in the root of your project and add the foll
 <!--- END_TF_DOCS --->
 <!-- prettier-ignore-end -->
 
+## FAQ
+
+### How to improve CloudFront cache hit rates?
+
+By default, the CloudFront distribution calculates the cache key bases on the requested **path**, **all query string parameters**, **all header values** and **all cookies** sent by a client.
+So two requests for the same resource, e.g. `/about-us` but with different header values, e.g. `{ 'accept': '*/*' }` and `{ 'accept': 'text/html' }` would produce 2 origin requests (cache misses).
+
+We decided to use this as a default value for security reasons: Imagine you use an authentication based on the `Authorization` header. If CloudFront would not make a distinction based on the header here, a guest could potentially receive a cached result from a logged in user.
+
+Anyway if you only use specific headers for authentication or no authentication at all, it makes sense to optimize the caching behavior. You can control this by setting the variable `cloudfront_cache_headers`:
+
+```tf
+module "tf_next" {
+  source = "dealmore/next-js/aws"
+  ...
+  cloudfront_cache_headers = ["*"]  # Cache key is calculated from all headers
+  cloudfront_cache_headers = null   # Headers are not considered for cache key
+  cloudfront_cache_headers = [      # Only Headers in the list are considered
+    "Authorization"                 # for cache key calculation
+  ]
+}
+```
+
+_Please note that this setting only affects the caching on Lambda (SSR or API) routes!_
+
 ## Known issues
 
 Under the hood this module uses a lot of [Vercel's](https://github.com/vercel/vercel/) build pipeline.
