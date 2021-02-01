@@ -147,10 +147,6 @@ module "proxy" {
   debug_use_local_packages            = var.debug_use_local_packages
   tags                                = var.tags
   lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary
-
-  providers = {
-    aws = aws.global_region
-  }
 }
 
 ################
