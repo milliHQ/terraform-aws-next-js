@@ -5,7 +5,6 @@
   "license": "Apache-2.0",
   "workspaces": [
     "packages/*",
-    "examples/*",
     "test/fixtures/*"
   ],
   "scripts": {

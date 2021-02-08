@@ -358,11 +358,6 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@dealmore/next-tf@2.7.3":
-  version "2.7.3"
-  resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.7.3.tgz#e2ac44f7582819bb531a17190206f0f63f4b3338"
-  integrity sha512-y6wQCjxonNeggWZwvK51z/4Cl/3ka5ySAenUo67wM16PrWc92pFEiYaSiObOO/mvVlBJHqCtROEdcoyRab64wg==
-
 "@dealmore/next-tf@2.7.9":
   version "2.7.9"
   resolved "https://registry.yarnpkg.com/@dealmore/next-tf/-/next-tf-2.7.9.tgz#2be65191f7942872fdd2857fb758cf954a35a0e1"
@@ -5410,21 +5405,6 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
-
-tf-next@latest:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/tf-next/-/tf-next-0.3.0.tgz#719125ffdd6a326965def619889bf7f78791d793"
-  integrity sha512-0xM19WDqunIEFaXYV3tTMrh5STaaL6LgDGydXROR98slzp283UR9o2Dagfx8tX56oC2xhO67WmsNZrZ9298j9Q==
-  dependencies:
-    "@dealmore/next-tf" "2.7.3"
-    "@vercel/build-utils" "^2.6.0"
-    "@vercel/frameworks" "^0.0.15"
-    "@vercel/routing-utils" "^1.9.1"
-    archiver "^5.1.0"
-    fs-extra "^9.0.1"
-    glob "^7.1.6"
-    tmp "^0.2.1"
-    yargs "^15.3.1"
 
 throat@^5.0.0:
   version "5.0.0"
