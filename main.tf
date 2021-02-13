@@ -6,6 +6,7 @@ locals {
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   # Build the proxy config JSON
+  config_file_images  = lookup(local.config_file, "images", {})
   config_file_version = lookup(local.config_file, "version", 0)
   static_routes_json  = lookup(local.config_file, "staticRoutes", [])
   routes_json         = lookup(local.config_file, "routes", [])
@@ -39,12 +40,12 @@ resource "random_id" "function_name" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive     = local.static_files_archive
-  expire_static_assets     = var.expire_static_assets
-  debug_use_local_packages = var.debug_use_local_packages
-  cloudfront_id            = module.proxy.cloudfront_id
-  cloudfront_arn           = module.proxy.cloudfront_arn
-  tags                     = var.tags
+  static_files_archive             = local.static_files_archive
+  expire_static_assets             = var.expire_static_assets
+  debug_use_local_packages         = var.debug_use_local_packages
+  cloudfront_id                    = module.proxy.cloudfront_id
+  cloudfront_arn                   = module.proxy.cloudfront_arn
+  tags                             = var.tags
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 }
 
@@ -123,9 +124,87 @@ module "api_gateway" {
   tags = var.tags
 }
 
-#######
-# Proxy
-#######
+############
+# Next/Image
+############
+
+# Permission for image optimizer to fetch images from S3 deployment
+data "aws_iam_policy_document" "access_static_deployment" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${module.statics_deploy.static_bucket_arn}/*"]
+  }
+}
+
+module "next_image" {
+  count = var.create_image_optimization ? 1 : 0
+
+  source  = "dealmore/next-js-image-optimization/aws"
+  version = "2.0.0"
+
+  cloudfront_create_distribution = false
+
+  # tf-next does not distinct between image and device sizes, because they
+  # are eventually merged together on the image optimizer.
+  # So we only use a single key (next_image_domains) to pass ALL (image &
+  # device) sizes to the optimizer and by setting the other
+  # (next_image_device_sizes) to an empty array which prevents the optimizer
+  # from adding the default device settings
+  next_image_domains      = lookup(local.config_file_images, "domains", [])
+  next_image_image_sizes  = lookup(local.config_file_images, "sizes", [])
+  next_image_device_sizes = []
+
+  source_bucket_id = module.statics_deploy.static_bucket_id
+
+  lambda_attach_policy_json        = true
+  lambda_policy_json               = data.aws_iam_policy_document.access_static_deployment.json
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+}
+
+##################
+# CloudFront Proxy
+##################
+locals {
+  next_image_cloudfront_origins = var.create_image_optimization ? [module.next_image[0].cloudfront_origin_image_optimizer] : []
+  proxy_cloudfront_origins = var.cloudfront_origins != null ? merge(
+    local.next_image_cloudfront_origins,
+    var.cloudfront_origins
+  ) : local.next_image_cloudfront_origins
+
+  # Custom CloudFront beheaviour for image optimization
+  next_image_custom_behavior = var.create_image_optimization ? [{
+    path_pattern     = "/_next/image*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = module.next_image[0].cloudfront_origin_image_optimizer.origin_id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 31536000
+
+    forwarded_values = {
+      cookies = {
+        forward = "none"
+      }
+
+      headers = module.next_image[0].cloudfront_allowed_headers
+
+      query_string            = true
+      query_string_cache_keys = module.next_image[0].cloudfront_allowed_query_string_keys
+    }
+  }] : []
+
+  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? merge(
+    local.next_image_custom_behavior,
+    var.cloudfront_custom_behaviors
+  ) : local.next_image_custom_behavior
+}
 
 module "proxy" {
   source = "./modules/proxy"
@@ -139,8 +218,8 @@ module "proxy" {
   # Forwarding variables
   deployment_name                     = var.deployment_name
   cloudfront_price_class              = var.cloudfront_price_class
-  cloudfront_origins                  = var.cloudfront_origins
-  cloudfront_custom_behaviors         = var.cloudfront_custom_behaviors
+  cloudfront_origins                  = local.proxy_cloudfront_origins
+  cloudfront_custom_behaviors         = local.cloudfront_custom_behaviors
   cloudfront_alias_domains            = var.domain_names
   cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version

@@ -20,5 +20,9 @@ export interface ConfigOutput {
       lambda: string;
     }
   >;
+  images?: {
+    domains: string[];
+    sizes: number[];
+  };
   version: number;
 }

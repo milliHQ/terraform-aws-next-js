@@ -37,6 +37,10 @@ interface PrerenderOutputProps {
 
 interface OutputProps {
   buildId: string;
+  images?: {
+    domains: string[];
+    sizes: number[];
+  };
   routes: Route[];
   lambdas: Lambdas;
   prerenders: Record<string, PrerenderOutputProps>;
@@ -88,6 +92,7 @@ function writeOutput(props: OutputProps) {
     prerenders: props.prerenders,
     staticFilesArchive: 'static-website-files.zip',
     version: TF_NEXT_VERSION,
+    images: props.images,
   };
 
   for (const [key, lambda] of Object.entries(props.lambdas)) {
@@ -231,6 +236,7 @@ async function buildCommand({
       lambdas,
       staticWebsiteFiles,
       outputDir: outputDir,
+      images: buildResult.images,
     };
     await writeOutput(buildOutput);
 
