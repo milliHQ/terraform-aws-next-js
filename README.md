@@ -189,24 +189,25 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
-| cloudfront\_minimum\_protocol\_version | The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
+| cloudfront\_minimum\_protocol\_version | Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
 | cloudfront\_origins | n/a | `list(any)` | `null` | no |
-| cloudfront\_price\_class | The price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
+| cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
 | cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
 | create\_domain\_name\_records | Controls whether Route 53 records for the for the domain\_names should be created. | `bool` | `true` | no |
+| create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
-| deployment\_name | Identifier for the deployment group (Added to Comments). | `string` | `"Terraform-next.js"` | no |
+| deployment\_name | Identifier for the deployment group (alphanumeric characters, underscores, hyphens, slashes, hash signs and dots are allowed). | `string` | `"tf-next"` | no |
 | domain\_names | Alternative domain names for the CloudFront distribution. | `list(string)` | `[]` | no |
 | domain\_zone\_names | n/a | `list(string)` | `[]` | no |
-| expire\_static\_assets | The number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
-| lambda\_environment\_variables | A map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
+| expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
+| lambda\_environment\_variables | Map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
 | lambda\_memory\_size | Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `1024` | no |
-| lambda\_policy\_json | An additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
+| lambda\_policy\_json | Additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
 | lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws\_iam\_role access for the lambda | `string` | `null` | no |
 | lambda\_runtime | Lambda Function runtime | `string` | `"nodejs12.x"` | no |
-| lambda\_timeout | The max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
+| lambda\_timeout | Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
-| tags | The tag metadata to label resources with that support tags. | `map(string)` | `{}` | no |
+| tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
 
 ## Outputs
 
