@@ -13,6 +13,7 @@ Some features are still under development, here is a list of features that are c
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;Automatic expiration of old static assets
 - ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites) & [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
+- ✅ &nbsp;[Image Component & Image Optimization](https://nextjs.org/docs/basic-features/image-optimization) support
 - 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
 - 🚧 &nbsp;[AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
 
@@ -37,13 +38,18 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
   The proxy handler analyzes the incoming requests and determines from which source a request should be served.
   Static generated sites are fetched from the S3 bucket ([`II`](#II-s3-static-content)) and dynamic content is served from the Next.js Lambdas ([`V`](#V-next-js-lambdas)).
 
-* **`IV.` API Gateway**<a id="IV-api-gateway"></a>
+- **`IV.` API Gateway**<a id="IV-api-gateway"></a>
 
   The [HTTP API Gateway](https://aws.amazon.com/api-gateway/) distributes the incoming traffic on the existing Next.js Lambdas ([`V`](#V-next-js-lambdas)). It uses a cost efficient HTTP API for this.
 
-* **`V.` Shared Next.js Lambda functions**<a id="V-next-js-lambdas"></a>
+- **`V.` Shared Next.js Lambda functions**<a id="V-next-js-lambdas"></a>
 
   These are the Next.js Lambdas which are doing the server-side rendering. They are composed, so a single lambda can serve multiple SSR-pages.
+
+- **Terraform Next.js Image Optimization**
+
+  The [image optimization](https://nextjs.org/docs/basic-features/image-optimization) is triggered by routes with the prefix `/_next/image/*`.
+  It is a serverless task provided by our [Terraform Next.js Image Optimization module for AWS](https://registry.terraform.io/modules/dealmore/next-js-image-optimization/aws).
 
 - **Static Content Deployment**
 
@@ -55,6 +61,8 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
   After the successful deployment a CloudFront [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html) is created to propagate the route changes to every edge location.
 
 - **Proxy Config Distribution**
+
+  This is a second CloudFront distribution that serves a special JSON file that the Proxy ([`III`](#III-lambda-edge-proxy)) fetches as configuration (Contains information about routes).
 
 ## Usage
 

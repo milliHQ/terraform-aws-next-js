@@ -22,3 +22,7 @@ module "tf_next" {
   # source = "../../.."
   # debug_use_local_packages = true
 }
+
+output "cloudfront_domain_name" {
+  value = module.tf_next.cloudfront_domain_name
+}

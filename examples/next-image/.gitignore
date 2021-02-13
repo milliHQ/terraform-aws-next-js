@@ -32,3 +32,11 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+
+# tf-next
+/.tf-next/
