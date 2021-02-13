@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.7.0 (February 13, 2021)
+
+This release brings support for [Next.js image optimization](https://nextjs.org/docs/basic-features/image-optimization) 📸.  
+No extra config is needed, simply update the Terraform module and the `tf-next` package to the latest version!  
+Check out our example for more information: [Next image component example](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/next-image)
+
+You can always opt-out from creating resources for image optimization by setting `create_image_optimization = false`.
+
+### Terraform module
+
+- Adds support for `next/image` component ([#28](https://github.com/dealmore/terraform-aws-next-js/issues/28), [#51](https://github.com/dealmore/terraform-aws-next-js/pull/51))
+- Refactoring: Outsources a previously private Terraform module, that is now used across multiple projects. Is now avaiable here: [NPM Download Terraform module
+  ](https://registry.terraform.io/modules/dealmore/download/npm) ([#41](https://github.com/dealmore/terraform-aws-next-js/issues/41))
+
+### tf-next (0.5.0)
+
+- Adds support for `next/image` component ([#28](https://github.com/dealmore/terraform-aws-next-js/issues/28), [#51](https://github.com/dealmore/terraform-aws-next-js/pull/51))
+
+### Proxy (0.5.0)
+
+- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/dealmore/terraform-aws-next-js/issues/43))
+
+### Deploy trigger (0.2.0)
+
+- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/dealmore/terraform-aws-next-js/issues/43))
+
 ## 0.6.2 (January 19, 2021)
 
 ### Terraform module
