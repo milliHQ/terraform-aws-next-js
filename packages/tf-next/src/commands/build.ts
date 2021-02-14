@@ -102,7 +102,7 @@ function writeOutput(props: OutputProps) {
 
     config.lambdas[key] = {
       handler: lambda.handler,
-      runtime: lambda.runtime,
+      runtime: lambda.runtime as 'nodejs12.x',
       filename: path.relative(props.outputDir, zipFilename),
       route: normalizeRoute(route),
     };
