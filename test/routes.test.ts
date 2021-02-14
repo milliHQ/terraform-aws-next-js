@@ -3,10 +3,14 @@ import * as path from 'path';
 import { parse as parseJSON } from 'hjson';
 import { ConfigOutput } from 'tf-next/src/types';
 import { CloudFrontResultResponse } from 'aws-lambda';
-
-import { generateSAM, SAM as LambdaSAM } from './lib/generateAppModel';
-import { generateProxySAM, SAM as ProxySAM } from './lib/generateProxyModel';
-import { normalizeCloudFrontHeaders } from './lib/utils';
+import {
+  generateSAM,
+  LambdaSAM,
+  generateProxySAM,
+  ProxySAM,
+  normalizeCloudFrontHeaders,
+  ConfigLambda,
+} from '@dealmore/sammy';
 
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const pathToProxyPackage = path.join(__dirname, '../packages/proxy/dist.zip');
@@ -45,16 +49,46 @@ describe('Test proxy config', () => {
         ) as ProbeFile;
 
         // Generate SAM for SSR (Lambda)
+        const lambdas: Record<string, ConfigLambda> = {};
+        for (const [key, lambda] of Object.entries(config.lambdas)) {
+          lambdas[key] = {
+            ...lambda,
+            route: `${lambda.route}/{proxy+}`,
+            memorySize: 1024,
+          };
+        }
+
         lambdaSAM = await generateSAM({
-          lambdas: config.lambdas,
+          lambdas,
           cwd: path.join(pathToFixture, '.next-tf'),
+          onData(data) {
+            console.log(data.toString());
+          },
+          onError(data) {
+            console.log(data.toString());
+          },
         });
         await lambdaSAM.start();
 
         // Generate SAM for Proxy (Lambda@Edge)
+        const proxyConfig = {
+          routes: config.routes,
+          staticRoutes: config.staticRoutes,
+          lambdaRoutes: Object.values(config.lambdas).map(
+            (lambda) => lambda.route
+          ),
+          prerenders: config.prerenders,
+        };
+
         proxySAM = await generateProxySAM({
           pathToProxyPackage,
-          config,
+          proxyConfig: JSON.stringify(proxyConfig),
+          onData(data) {
+            console.log(data.toString());
+          },
+          onError(data) {
+            console.log(data.toString());
+          },
         });
         await proxySAM.start();
       });

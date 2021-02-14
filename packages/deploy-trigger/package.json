@@ -26,7 +26,8 @@
     "archiver": "^5.1.0",
     "aws-sdk": "*",
     "ncc-zip": "^1.0.0",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "unzipper": "^0.10.11"
   },
   "files": [
     "dist.zip",
