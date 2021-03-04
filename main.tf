@@ -240,7 +240,7 @@ module "proxy" {
 data "aws_route53_zone" "alias_domains" {
   count = var.create_domain_name_records ? length(var.domain_zone_names) : 0
 
-  name = var.domain_zone_names[count.index]
+  zone_id = var.domain_zone_names[count.index]
 }
 
 resource "aws_route53_record" "alias_domains" {
