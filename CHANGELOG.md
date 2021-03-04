@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2 (March 04, 2021)
+
+### Terraform module
+
+- Fix for invalid function argument error introduced by `0.7.1` release ([#59](https://github.com/dealmore/terraform-aws-next-js/issues/59))
+
 ## 0.7.1 (March 04, 2021)
 
 ### Terraform module
