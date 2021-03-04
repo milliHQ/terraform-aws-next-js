@@ -11,6 +11,12 @@ terraform {
 }
 
 provider "aws" {
+  region = "us-west-2"
+}
+
+# CloudFront works only with certs stored in us-east-1
+provider "aws" {
+  alias  = "cloudfront_cert_region"
   region = "us-east-1"
 }
 
@@ -36,6 +42,10 @@ module "cloudfront_cert" {
 
   tags = {
     Name = "CloudFront ${local.custom_domain}"
+  }
+
+  providers = {
+    aws = aws.cloudfront_cert_region
   }
 }
 
