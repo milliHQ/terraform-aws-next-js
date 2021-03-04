@@ -13,6 +13,12 @@ variable "create_image_optimization" {
   default     = true
 }
 
+variable "image_optimization_version" {
+  description = "Next.js version from where you want to use the image optimizer from. Supports semver ranges."
+  type        = string
+  default     = null
+}
+
 variable "domain_names" {
   description = "Alternative domain names for the CloudFront distribution."
   type        = list(string)

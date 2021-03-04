@@ -143,6 +143,7 @@ module "next_image" {
   version = "2.0.0"
 
   cloudfront_create_distribution = false
+  next_image_version             = var.image_optimization_version
 
   # tf-next does not distinct between image and device sizes, because they
   # are eventually merged together on the image optimizer.
