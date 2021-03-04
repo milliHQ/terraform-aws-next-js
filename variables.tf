@@ -16,7 +16,7 @@ variable "create_image_optimization" {
 variable "image_optimization_version" {
   description = "Next.js version from where you want to use the image optimizer from. Supports semver ranges."
   type        = string
-  default     = null
+  default     = "10.0.5-beta2"
 }
 
 variable "domain_names" {
