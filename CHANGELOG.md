@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 (March 04, 2021)
+
+### Terraform module
+
+- Add option to set the image optimizer version ([#58](https://github.com/dealmore/terraform-aws-next-js/issues/58))
+
 ## 0.7.0 (February 13, 2021)
 
 This release brings support for [Next.js image optimization](https://nextjs.org/docs/basic-features/image-optimization) 📸.  
