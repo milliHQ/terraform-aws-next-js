@@ -111,7 +111,7 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "0.5.0"
+  version = "0.11.0"
 
   name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
@@ -140,7 +140,7 @@ module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
   source  = "dealmore/next-js-image-optimization/aws"
-  version = "2.0.0"
+  version = "2.0.1"
 
   cloudfront_create_distribution = false
   next_image_version             = var.image_optimization_version
