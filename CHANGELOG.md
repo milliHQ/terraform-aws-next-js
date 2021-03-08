@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.3 (March 08, 2021)
+
+### Terraform module
+
+- Bump internal module `terraform-aws-modules/apigateway-v2/aws` from `0.5.0` to `0.11.0` ([#68](https://github.com/dealmore/terraform-aws-next-js/pull/68))
+- Bump internal module `dealmore/next-js-image-optimization/aws` from `2.0.0` to `2.0.1` ([#68](https://github.com/dealmore/terraform-aws-next-js/pull/68))
+
 ## 0.7.2 (March 04, 2021)
 
 ### Terraform module
