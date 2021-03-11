@@ -8,7 +8,7 @@ A zero-config Terraform module for self-hosting Next.js sites serverless on AWS 
 
 Some features are still under development, here is a list of features that are currently supported and what we plan to bring with the next releases:
 
-- ✅ &nbsp;Next.js `v9.5+` _(older Versions might work but are not actively supported)_
+- ✅ &nbsp;Next.js `v9.5+` & `v10+` _(older Versions might work but are not actively supported)_
 - ✅ &nbsp;Terraform `v0.13+`
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;Automatic expiration of old static assets
