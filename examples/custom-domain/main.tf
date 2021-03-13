@@ -62,7 +62,7 @@ module "tf_next" {
   #      domain_names[1] -> domain_zone_names[1]
   #      etc.
   domain_names      = [local.custom_domain]
-  domain_zone_names = [data.aws_route53_zone.custom_domain_zone.zone_id]
+  domain_zone_names = [data.aws_route53_zone.custom_domain_zone.name]
 
   # Tell CloudFront to use our created certificate
   cloudfront_viewer_certificate_arn = module.cloudfront_cert.this_acm_certificate_arn
