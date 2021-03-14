@@ -49,10 +49,6 @@ it(
     expect(output.__NEXT_PAGE_LAMBDA_0).toBeDefined();
     expect(output['404']).toBeDefined();
     expect(output['404'].type).toBe('FileFsRef');
-    expect(output['_next/data/testing-build-id/404.json']).toBeDefined();
-    expect(output['_next/data/testing-build-id/404.json'].type).toBe(
-      'FileFsRef'
-    );
     const filePaths = Object.keys(output);
     const serverlessError = filePaths.some(filePath =>
       filePath.match(/_error/)
