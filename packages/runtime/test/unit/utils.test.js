@@ -4,7 +4,7 @@ const {
   validateEntrypoint,
   normalizePackageJson,
   getNextConfig,
-} = require('@vercel/next/dist/utils');
+} = require('@dealmore/tf-next-runtime/dist/utils');
 const { FileRef } = require('@vercel/build-utils');
 
 describe('getNextConfig', () => {

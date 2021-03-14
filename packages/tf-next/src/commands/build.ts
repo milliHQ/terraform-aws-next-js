@@ -1,4 +1,4 @@
-import { build } from '@dealmore/next-tf';
+import { build } from '@dealmore/tf-next-runtime';
 import tmp from 'tmp';
 import {
   glob,

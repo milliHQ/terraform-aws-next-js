@@ -7,7 +7,7 @@
   "builds": [
     {
       "src": "packages/webapp/next.config.js",
-      "use": "@vercel/next"
+      "use": "@dealmore/tf-next-runtime"
     }
   ],
   "probes": [

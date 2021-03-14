@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
 jobs:
   test-integration:
     runs-on: ubuntu-latest
@@ -33,10 +36,14 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 
+      - name: Yarn install
+        run: yarn --frozen-lockfile --cache-folder .yarn
+
+      - name: Build runtime
+        run: yarn --cwd packages/runtime build
+
       - name: Jest
-        run: |
-          yarn --frozen-lockfile --cache-folder .yarn
-          yarn test
+        run: yarn test
 
   test-e2e-prepare:
     runs-on: ubuntu-latest
@@ -54,6 +61,9 @@ jobs:
 
       - name: Yarn install
         run: yarn --frozen-lockfile --cache-folder .yarn
+
+      - name: Build runtime
+        run: yarn --cwd packages/runtime build
 
       - name: Build tf-next
         run: yarn --cwd packages/tf-next build
