@@ -30,7 +30,7 @@ variable "proxy_module_version" {
 
 variable "lambda_default_runtime" {
   type    = string
-  default = "nodejs12.x"
+  default = "nodejs14.x"
 }
 
 variable "lambda_role_permissions_boundary" {

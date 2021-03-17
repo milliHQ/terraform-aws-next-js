@@ -164,7 +164,7 @@ module "deploy_trigger" {
   function_name             = random_id.function_name.hex
   description               = "Managed by Terraform-next.js"
   handler                   = "handler.handler"
-  runtime                   = "nodejs12.x"
+  runtime                   = "nodejs14.x"
   memory_size               = 1024
   timeout                   = 60
   publish                   = true
