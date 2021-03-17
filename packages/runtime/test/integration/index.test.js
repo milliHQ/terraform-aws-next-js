@@ -80,8 +80,7 @@ it(
     expect(output['another'].type).toBe('FileFsRef');
 
     expect(output['dynamic']).toBeDefined();
-    expect(output['dynamic'].type).toBe('Prerender');
-    expect(output['dynamic'].lambda).toBeDefined();
+    expect(output['dynamic'].type).toBe('FileFsRef');
   },
   FOUR_MINUTES
 );
