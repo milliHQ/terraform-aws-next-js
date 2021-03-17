@@ -10,10 +10,6 @@ variable "static_bucket_endpoint" {
   type = string
 }
 
-variable "cloudfront_price_class" {
-  type = string
-}
-
 variable "proxy_config_json" {
   type = string
 }
@@ -32,20 +28,22 @@ variable "proxy_module_version" {
   default = "0.5.0"
 }
 
-variable "debug_use_local_packages" {
-  type    = bool
-  default = false
-}
-
 variable "lambda_default_runtime" {
   type    = string
   default = "nodejs12.x"
 }
 
-variable "deployment_name" {
-  type = string
+variable "lambda_role_permissions_boundary" {
+  type    = string
+  default = null
 }
 
+############
+# CloudFront
+############
+variable "cloudfront_price_class" {
+  type = string
+}
 variable "cloudfront_origins" {
   type    = list(any)
   default = null
@@ -70,12 +68,30 @@ variable "cloudfront_minimum_protocol_version" {
   type = string
 }
 
+variable "cloudfront_origin_request_policy_id" {
+  type = string
+}
+
+variable "cloudfront_cache_policy_id" {
+  type = string
+}
+
+##########
+# Labeling
+##########
+variable "deployment_name" {
+  type = string
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
 }
 
-variable "lambda_role_permissions_boundary" {
-  type    = string
-  default = null
+#######
+# Debug
+#######
+variable "debug_use_local_packages" {
+  type    = bool
+  default = false
 }

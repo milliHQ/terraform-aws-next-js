@@ -141,10 +141,9 @@ module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
   source  = "dealmore/next-js-image-optimization/aws"
-  version = "2.0.1"
+  version = "~> 10.0.5"
 
   cloudfront_create_distribution = false
-  next_image_version             = var.image_optimization_version
 
   # tf-next does not distinct between image and device sizes, because they
   # are eventually merged together on the image optimizer.
@@ -181,31 +180,63 @@ locals {
     path_pattern     = "/_next/image*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = module.next_image[0].cloudfront_origin_image_optimizer.origin_id
+    target_origin_id = module.next_image[0].cloudfront_origin_id
 
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
 
-    min_ttl     = 0
-    default_ttl = 86400
-    max_ttl     = 31536000
-
-    forwarded_values = {
-      cookies = {
-        forward = "none"
-      }
-
-      headers = module.next_image[0].cloudfront_allowed_headers
-
-      query_string            = true
-      query_string_cache_keys = module.next_image[0].cloudfront_allowed_query_string_keys
-    }
+    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
+    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
   }] : []
 
   cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? merge(
     local.next_image_custom_behavior,
     var.cloudfront_custom_behaviors
   ) : local.next_image_custom_behavior
+}
+
+resource "random_id" "policy_name" {
+  prefix      = "${var.deployment_name}-"
+  byte_length = 4
+}
+
+# Managed origin request policy
+data "aws_cloudfront_origin_request_policy" "managed_all_viewer" {
+  name = "Managed-AllViewer"
+}
+
+resource "aws_cloudfront_cache_policy" "this" {
+  name    = "${random_id.policy_name.hex}-cache"
+  comment = "Managed by Terraform Next.js"
+
+  # Default values (Should be provided by origin)
+  min_ttl     = 0
+  default_ttl = 86400
+  max_ttl     = 31536000
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "all"
+    }
+
+    headers_config {
+      header_behavior = length(var.cloudfront_cache_key_headers) == 0 ? "none" : "whitelist"
+
+      dynamic "headers" {
+        for_each = length(var.cloudfront_cache_key_headers) == 0 ? [] : [true]
+        content {
+          items = var.cloudfront_cache_key_headers
+        }
+      }
+    }
+
+    query_strings_config {
+      query_string_behavior = "all"
+    }
+
+    enable_accept_encoding_gzip   = true
+    enable_accept_encoding_brotli = true
+  }
 }
 
 module "proxy" {
@@ -225,6 +256,8 @@ module "proxy" {
   cloudfront_alias_domains            = var.domain_names
   cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
+  cloudfront_origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_all_viewer.id
+  cloudfront_cache_policy_id          = aws_cloudfront_cache_policy.this.id
   debug_use_local_packages            = var.debug_use_local_packages
   tags                                = var.tags
   lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary

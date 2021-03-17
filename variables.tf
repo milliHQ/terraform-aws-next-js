@@ -13,12 +13,6 @@ variable "create_image_optimization" {
   default     = true
 }
 
-variable "image_optimization_version" {
-  description = "Next.js version from where you want to use the image optimizer from. Supports semver ranges."
-  type        = string
-  default     = "10.0.5-beta2"
-}
-
 variable "domain_names" {
   description = "Alternative domain names for the CloudFront distribution."
   type        = list(string)
@@ -116,6 +110,12 @@ variable "cloudfront_origins" {
 variable "cloudfront_custom_behaviors" {
   type    = list(any)
   default = null
+}
+
+variable "cloudfront_cache_key_headers" {
+  description = "Header keys that should be used to calculate the cache key in CloudFront."
+  type        = list(string)
+  default     = ["Authorization"]
 }
 
 ##########
