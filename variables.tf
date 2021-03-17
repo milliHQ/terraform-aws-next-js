@@ -54,7 +54,7 @@ variable "lambda_environment_variables" {
 variable "lambda_runtime" {
   description = "Lambda Function runtime"
   type        = string
-  default     = "nodejs12.x"
+  default     = "nodejs14.x"
 }
 
 variable "lambda_memory_size" {

@@ -12,7 +12,7 @@ env:
 jobs:
   test-integration:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambdaci:nodejs12.x
+    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
     services:
       s3:
         image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
@@ -47,7 +47,7 @@ jobs:
 
   test-e2e-prepare:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambdaci:nodejs12.x
+    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
     steps:
       - uses: actions/checkout@v2
 
