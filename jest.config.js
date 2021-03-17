@@ -14,4 +14,5 @@ module.exports = {
     '<rootDir>/packages/**/__tests__/**/*.[jt]s?(x)',
     '<rootDir>/packages/**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  testPathIgnorePatterns: ['<rootDir>/packages/runtime/test/test.js'],
 };
