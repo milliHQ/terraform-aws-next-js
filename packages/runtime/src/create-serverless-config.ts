@@ -43,7 +43,8 @@ function getDefaultData(target: string) {
 export default async function createServerlessConfig(
   workPath: string,
   entryPath: string,
-  nextVersion: string | undefined
+  nextVersion: string | undefined,
+  nextConfigFilename: string = 'next.config.js'
 ) {
   let target = 'serverless';
   if (nextVersion) {
@@ -57,9 +58,9 @@ export default async function createServerlessConfig(
     ) {}
   }
 
-  const primaryConfigPath = path.join(entryPath, 'next.config.js');
-  const secondaryConfigPath = path.join(workPath, 'next.config.js');
-  const backupConfigName = `next.config.__vercel_builder_backup__.js`;
+  const primaryConfigPath = path.join(entryPath, nextConfigFilename);
+  const secondaryConfigPath = path.join(workPath, nextConfigFilename);
+  const backupConfigName = `${nextConfigFilename}.__vercel_builder_backup__.js`;
 
   const hasPrimaryConfig = fs.existsSync(primaryConfigPath);
   const hasSecondaryConfig = fs.existsSync(secondaryConfigPath);

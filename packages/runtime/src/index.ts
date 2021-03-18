@@ -104,6 +104,23 @@ const nowDevChildProcesses = new Set<ChildProcess>();
 const MAX_AGE_ONE_YEAR = 31536000;
 
 /**
+ * Determine the filename of the config file
+ */
+function getNextConfigFilename(pkg: PackageJson) {
+  const allPackages = Object.keys({
+    ...pkg.dependencies,
+    ...pkg.devDependencies,
+  });
+
+  // Blitz.js requires the config named as `blitz.config.js`
+  if (allPackages.indexOf('blitz') !== -1) {
+    return 'blitz.config.js';
+  }
+
+  return 'next.config.js';
+}
+
+/**
  * Read package.json from files
  */
 async function readPackageJson(entryPath: string): Promise<PackageJson> {
@@ -414,7 +431,8 @@ export async function build({
   }
 
   if (!isLegacy) {
-    await createServerlessConfig(workPath, entryPath, nextVersion);
+    const nextConfigFilename = getNextConfigFilename(pkg);
+    await createServerlessConfig(workPath, entryPath, nextVersion, nextConfigFilename);
   }
 
   const memoryToConsume = Math.floor(os.totalmem() / 1024 ** 2) - 128;
