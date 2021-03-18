@@ -35,3 +35,8 @@ variable "lambda_role_permissions_boundary" {
   type    = string
   default = null
 }
+
+variable "use_awscli_for_static_upload" {
+  type    = bool
+  default = false
+}

@@ -161,14 +161,14 @@ module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "1.34.0"
 
-  function_name = random_id.function_name.hex
-  description   = "Managed by Terraform-next.js"
-  handler       = "handler.handler"
-  runtime       = "nodejs12.x"
-  memory_size   = 1024
-  timeout       = 60
-  publish       = true
-  tags          = var.tags
+  function_name             = random_id.function_name.hex
+  description               = "Managed by Terraform-next.js"
+  handler                   = "handler.handler"
+  runtime                   = "nodejs12.x"
+  memory_size               = 1024
+  timeout                   = 60
+  publish                   = true
+  tags                      = var.tags
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
@@ -202,7 +202,24 @@ module "deploy_trigger" {
 # Upload static files to s3
 ###########################
 
+resource "null_resource" "static_s3_upload_awscli" {
+  count = var.use_awscli_for_static_upload ? 1 : 0
+  triggers = {
+    static_files_archive = filemd5(var.static_files_archive)
+  }
+
+  provisioner "local-exec" {
+    command = "aws s3 cp --region ${aws_s3_bucket.static_upload.region} ${abspath(var.static_files_archive)} s3://${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
+  }
+
+  # Make sure this only runs when the bucket and the lambda trigger are setup
+  depends_on = [
+    aws_s3_bucket_notification.on_create
+  ]
+}
+
 resource "null_resource" "static_s3_upload" {
+  count = var.use_awscli_for_static_upload ? 0 : 1
   triggers = {
     static_files_archive = filemd5(var.static_files_archive)
   }
