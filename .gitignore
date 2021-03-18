@@ -9,3 +9,6 @@ node_modules
 # Build output
 .next
 .next-tf
+
+# Temp files
+*.swp*

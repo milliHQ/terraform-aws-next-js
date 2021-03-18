@@ -42,6 +42,12 @@ variable "expire_static_assets" {
   default     = 30
 }
 
+variable "use_awscli_for_static_upload" {
+  description = "Use AWS CLI when uploading static resources to S3 instead of default Bash script. Some cases may fail with 403 Forbidden when using the Bash script."
+  type        = bool
+  default     = false
+}
+
 ###################
 # Lambdas (Next.js)
 ###################

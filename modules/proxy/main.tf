@@ -40,10 +40,10 @@ module "edge_proxy" {
 
   lambda_at_edge = true
 
-  function_name = random_id.function_name.hex
-  description   = "Managed by Terraform-next.js"
-  handler       = "handler.handler"
-  runtime       = var.lambda_default_runtime
+  function_name             = random_id.function_name.hex
+  description               = "Managed by Terraform-next.js"
+  handler                   = "handler.handler"
+  runtime                   = var.lambda_default_runtime
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
@@ -51,7 +51,7 @@ module "edge_proxy" {
 
   cloudwatch_logs_retention_in_days = 30
 
-  tags          = var.tags
+  tags = var.tags
 }
 
 ############
@@ -59,13 +59,13 @@ module "edge_proxy" {
 ############
 
 resource "aws_cloudfront_distribution" "distribution" {
-  enabled         = true
-  is_ipv6_enabled = true
-  comment         = "${var.deployment_name} - Main"
-  price_class     = var.cloudfront_price_class
-  aliases         = var.cloudfront_alias_domains
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "${var.deployment_name} - Main"
+  price_class         = var.cloudfront_price_class
+  aliases             = var.cloudfront_alias_domains
   default_root_object = "index"
-  tags            = var.tags
+  tags                = var.tags
 
   # Static deployment S3 bucket
   origin {

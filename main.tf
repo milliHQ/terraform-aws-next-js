@@ -47,6 +47,7 @@ module "statics_deploy" {
   cloudfront_arn                   = module.proxy.cloudfront_arn
   tags                             = var.tags
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+  use_awscli_for_static_upload     = var.use_awscli_for_static_upload
 }
 
 # Lambda
