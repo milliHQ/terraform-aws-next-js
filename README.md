@@ -174,20 +174,21 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Version |
 |------|---------|
 | terraform | >= 0.13 |
-| aws | >= 3.27.0 |
+| aws | >= 3.28.0 |
 | random | >= 2.3.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 3.27.0 |
+| aws | >= 3.28.0 |
 | random | >= 2.3.0 |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| cloudfront\_cache\_key\_headers | Header keys that should be used to calculate the cache key in CloudFront. | `list(string)` | <pre>[<br>  "Authorization"<br>]</pre> | no |
 | cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
 | cloudfront\_minimum\_protocol\_version | Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
 | cloudfront\_origins | n/a | `list(any)` | `null` | no |
@@ -200,7 +201,6 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | domain\_names | Alternative domain names for the CloudFront distribution. | `list(string)` | `[]` | no |
 | domain\_zone\_names | n/a | `list(string)` | `[]` | no |
 | expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
-| image\_optimization\_version | Next.js version from where you want to use the image optimizer from. Supports semver ranges. | `string` | `"10.0.5-beta2"` | no |
 | lambda\_environment\_variables | Map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
 | lambda\_memory\_size | Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `1024` | no |
 | lambda\_policy\_json | Additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
