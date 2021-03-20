@@ -468,3 +468,16 @@ it(
   },
   FOUR_MINUTES
 );
+
+it(
+  'Should should run the postinstall script',
+  async () => {
+    const {
+      workPath,
+      buildResult: { output },
+    } = await runBuildLambda(path.join(__dirname, 'postinstall'));
+
+    expect(output['prisma.txt']).toBeDefined();
+  },
+  FOUR_MINUTES
+);
