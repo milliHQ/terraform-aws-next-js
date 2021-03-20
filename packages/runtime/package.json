@@ -1,6 +1,6 @@
 {
   "name": "@dealmore/tf-next-runtime",
-  "version": "2.7.9",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "main": "./dist/index",
   "homepage": "https://vercel.com/docs/runtimes#official-runtimes/next-js",

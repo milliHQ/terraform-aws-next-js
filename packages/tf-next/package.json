@@ -1,6 +1,6 @@
 {
   "name": "tf-next",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "CLI build tool for AWS Next.js Terraform module.",
   "homepage": "https://registry.terraform.io/modules/dealmore/next-js/aws",
   "main": "index.js",
@@ -19,8 +19,8 @@
     "postpack": "rm ./LICENSE"
   },
   "dependencies": {
-    "@dealmore/tf-next-runtime": "2.7.9",
-    "@vercel/build-utils": "^2.10.1",
+    "@dealmore/tf-next-runtime": "1.0.0",
+    "@vercel/build-utils": "2.10.1",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.10.1",
     "archiver": "^5.1.0",
