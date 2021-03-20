@@ -250,6 +250,20 @@ export async function build({
   const nodeVersion = await getNodeVersion(entryPath, undefined, config, meta);
   const spawnOpts = getSpawnOptions(meta, nodeVersion);
 
+  // Add Vercel build environment variables that some dependencies need
+  // to determine a Vercel like build environment
+  spawnOpts.env = {
+    ...spawnOpts.env,
+    NOW_BUILDER: '1',
+    VERCEL: '1',
+    // Next.js changed the default output folder beginning with
+    // 10.0.8-canary.15 from `.next/serverless` to `.next/server`.
+    // This is an opt-out of this behavior until we support it.
+    // https://github.com/dealmore/terraform-aws-next-js/issues/86
+    // https://github.com/vercel/next.js/pull/22731
+    NEXT_PRIVATE_TARGET: 'experimental-serverless-trace',
+  };
+
   const nowJsonPath = await findUp(['now.json', 'vercel.json'], {
     cwd: entryPath,
   });
