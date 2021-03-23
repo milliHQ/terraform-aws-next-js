@@ -262,6 +262,9 @@ export async function build({
     // https://github.com/dealmore/terraform-aws-next-js/issues/86
     // https://github.com/vercel/next.js/pull/22731
     NEXT_PRIVATE_TARGET: 'experimental-serverless-trace',
+    // We override init CWD here with the entrypoint to ensure that applications
+    // can get the CWD from the download directory root
+    INIT_CWD: entryPath,
   };
 
   const nowJsonPath = await findUp(['now.json', 'vercel.json'], {
