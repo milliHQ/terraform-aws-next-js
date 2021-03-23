@@ -478,6 +478,9 @@ it(
     } = await runBuildLambda(path.join(__dirname, 'postinstall'));
 
     expect(output['prisma.txt']).toBeDefined();
+    expect(fs.existsSync(path.join(workPath, 'public/init-cwd.txt'))).toBe(
+      true
+    );
   },
   FOUR_MINUTES
 );
