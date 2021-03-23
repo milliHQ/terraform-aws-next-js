@@ -2,6 +2,10 @@
 
 ## 0.8.0 - Unreleased
 
+### tf-next (0.6.1)
+
+- Ensure that `INIT_CWD` environment variable is set to the correct working directory ([#87](https://github.com/dealmore/terraform-aws-next-js/pull/87))
+
 ### tf-next (0.6.0)
 
 - Allows dependencies (e.g. Prisma & Blitz.js) to correctly detect the build environment ([#70](https://github.com/dealmore/terraform-aws-next-js/issues/70), [#73](https://github.com/dealmore/terraform-aws-next-js/issues/73), [#85](https://github.com/dealmore/terraform-aws-next-js/pull/85))
