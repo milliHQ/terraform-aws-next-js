@@ -1,13 +1,9 @@
 export type ExpireValue = number | 'never';
 
-interface Build {
-  files: string[];
-  expiredAt?: string;
-}
-
 export interface ManifestFile {
   buildId: string[];
   expiredAt?: string;
+  eTag?: string;
 }
 
 export interface Manifest {
@@ -15,4 +11,9 @@ export interface Manifest {
   currentBuild: string;
   // All files that are currently managed by the manifest
   files: Record<string, ManifestFile>;
+}
+
+export interface FileResult {
+  key: string;
+  eTag: string;
 }

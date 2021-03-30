@@ -4,6 +4,7 @@ import { getType } from 'mime';
 
 import { deploymentConfigurationKey } from './constants';
 import { generateRandomBuildId } from './utils';
+import { FileResult } from './types';
 
 // Metadata Key where the buildId is stored
 const BuildIdMetaDataKey = 'x-amz-meta-tf-next-build-id';
@@ -27,7 +28,7 @@ interface Props {
 }
 
 interface Response {
-  files: string[];
+  files: FileResult[];
   buildId: string;
 }
 
@@ -66,8 +67,6 @@ export async function deployTrigger({
     .pipe(unzipper.Parse({ forceStream: true }));
 
   const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
-  // Keep track of all files that are processed
-  const files: string[] = [];
 
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
@@ -93,7 +92,6 @@ export async function deployTrigger({
 
       // Sorry, but you cannot override the manifest
       if (fileName !== deploymentConfigurationKey) {
-        files.push(fileName);
         uploads.push(s3.upload(uploadParams).promise());
       }
     } else {
@@ -101,7 +99,9 @@ export async function deployTrigger({
     }
   }
 
-  await Promise.all(uploads);
+  const files = (await Promise.all(uploads)).map((obj) => {
+    return { key: obj.Key, eTag: obj.ETag };
+  });
 
   // Cleanup
   await s3.deleteObject(params).promise();

@@ -18,14 +18,22 @@ import {
 
 describe('deploy-trigger', () => {
   let s3: S3;
+  let bucket: BucketHandler;
 
   beforeAll(() => {
     // Initialize the local S3 client
     s3 = generateS3ClientForTesting();
   });
 
+  beforeEach(async () => {
+    bucket = await createBucket(s3);
+  });
+
+  afterEach(async () => {
+    await bucket.destroy();
+  });
+
   describe('update manifest', () => {
-    let bucket: BucketHandler;
     const toBeExpiredFiles = [
       // Static routes
       'a',
@@ -38,8 +46,7 @@ describe('deploy-trigger', () => {
     ];
     let manifest: Manifest;
 
-    beforeAll(async () => {
-      bucket = await createBucket(s3);
+    beforeEach(async () => {
       await addFilesToS3Bucket(s3, bucket.bucketName, toBeExpiredFiles);
       manifest = await getOrCreateManifest(
         s3,
@@ -52,28 +59,27 @@ describe('deploy-trigger', () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     });
 
-    afterAll(async () => {
-      await bucket.destroy();
-    });
-
     test('should expire files', async () => {
       const buildId = generateRandomBuildId();
       const files = [
         // Replace route
-        'a',
+        {
+          key: 'a',
+          eTag: '1',
+        },
         // Delete route
         // /b/c -> delete
         // Add new route
-        'd',
+        { key: 'd', eTag: '1' },
         // Keep asset
-        '_next/a.js',
+        { key: '_next/a.js', eTag: '1' },
         // Remove asset
         // /_next/b.js -> expire
         // New asset
-        '_next/c.js',
+        { key: '_next/c.js', eTag: '1' },
 
         // Index route
-        'e/f/index',
+        { key: 'e/f/index', eTag: '1' },
       ];
 
       // Get the soon to be expired files before the update
@@ -172,5 +178,92 @@ describe('deploy-trigger', () => {
         ).toThrow();
       }
     });
+  });
+
+  test('Should not invalidate files with the same eTag that are part of current and old deployment', async () => {
+    const staticFileKey = 'static-file.txt';
+
+    // Upload initial build files
+    await Promise.all([
+      s3
+        .putObject({
+          Bucket: bucket.bucketName,
+          Key: staticFileKey,
+          Body: 'static-content',
+        })
+        .promise(),
+      s3
+        .putObject({
+          Bucket: bucket.bucketName,
+          Key: 'dynamic-route',
+          Body: 'dynamic-content-1',
+        })
+        .promise(),
+    ]);
+
+    const initialETag = (
+      await s3
+        .getObject({
+          Bucket: bucket.bucketName,
+          Key: staticFileKey,
+        })
+        .promise()
+    ).ETag;
+    expect(initialETag).toBeDefined();
+
+    const manifest = await getOrCreateManifest(
+      s3,
+      bucket.bucketName,
+      deploymentConfigurationKey
+    );
+
+    // Reupload static and changed dynamic content
+    // Upload initial build files
+    await Promise.all([
+      s3
+        .putObject({
+          Bucket: bucket.bucketName,
+          Key: staticFileKey,
+          Body: 'static-content',
+        })
+        .promise(),
+      s3
+        .putObject({
+          Bucket: bucket.bucketName,
+          Key: 'dynamic-route',
+          Body: 'dynamic-content-2',
+        })
+        .promise(),
+    ]);
+
+    const updatedETag = (
+      await s3
+        .getObject({
+          Bucket: bucket.bucketName,
+          Key: staticFileKey,
+        })
+        .promise()
+    ).ETag;
+    expect(updatedETag).toBeDefined();
+    expect(initialETag).toEqual(updatedETag);
+
+    const buildId = generateRandomBuildId();
+
+    const { manifest: updatedManifest, invalidate } = await updateManifest({
+      s3,
+      bucket: bucket.bucketName,
+      buildId,
+      deploymentConfigurationKey,
+      expireAfterDays: 30,
+      files: [
+        { key: staticFileKey, eTag: initialETag! }, // same eTag
+        { key: 'dynamic-route', eTag: 'changedETag' }, // changed eTag
+      ],
+      manifest,
+    });
+
+    expect(updatedManifest.currentBuild).toBe(buildId);
+    // Should only
+    expect(invalidate.sort()).toEqual(['/dynamic-route*'].sort());
   });
 });

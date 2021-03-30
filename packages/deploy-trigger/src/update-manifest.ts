@@ -1,7 +1,7 @@
 import { S3 } from 'aws-sdk';
 
 import { expireTagKey, expireTagValue } from './constants';
-import { ExpireValue, Manifest, ManifestFile } from './types';
+import { ExpireValue, FileResult, Manifest, ManifestFile } from './types';
 
 async function expireFiles(s3: S3, bucketId: string, files: string[]) {
   // Set the expiration tags on the expired files
@@ -88,7 +88,7 @@ async function deleteFiles(s3: S3, bucketId: string, files: string[]) {
   }
 }
 
-function getInvalidationKeys(files: Set<string>) {
+function getInvalidationKeys(files: string[]) {
   const invalidations: string[] = [];
 
   for (const file of files) {
@@ -124,7 +124,7 @@ interface Props {
   s3: S3;
   bucket: string;
   buildId: string;
-  files: string[];
+  files: FileResult[];
   expireAfterDays: ExpireValue;
   deploymentConfigurationKey: string;
   manifest: Manifest;
@@ -156,9 +156,10 @@ export async function updateManifest({
   const expire: string[] = [];
   const deleted: string[] = [];
   const restore: string[] = [];
+  const unchangedFiles = new Set<string>();
 
   const newManifestFiles: Record<string, ManifestFile> = {};
-  const { currentBuild: oldBuildId, files: manifestFiles } = manifest;
+  const { files: manifestFiles } = manifest;
   const now = new Date();
   const minExpireDate =
     expireAfterDays !== 'never'
@@ -166,13 +167,18 @@ export async function updateManifest({
       : now;
 
   // Merge old and new file keys
-  const allFiles = new Set([...files, ...Object.keys(manifestFiles)]);
+  const fileKeys = files.map(({ key }) => key);
+  // Convert to Set -> make sure we have unique keys
+  const allFiles = new Set([...fileKeys, ...Object.keys(manifestFiles)]);
 
   for (const fileKey of allFiles) {
     // New file
     if (!(fileKey in manifestFiles)) {
+      const file = files.find(({ key }) => key === fileKey);
+
       newManifestFiles[fileKey] = {
         buildId: [buildId],
+        eTag: file?.eTag,
       };
       continue;
     }
@@ -181,7 +187,8 @@ export async function updateManifest({
     let isDeleted = false;
 
     // Get the files that can be expired
-    if (!files.find((key) => key === fileKey)) {
+    const changedFile = files.find(({ key }) => key === fileKey);
+    if (changedFile === undefined) {
       // If the file it is not present in the current build
 
       // Check if the file is already expired
@@ -199,6 +206,12 @@ export async function updateManifest({
     } else {
       // If the file already exists and is also present in the current build
       file.buildId.push(buildId);
+
+      if (file.eTag === changedFile.eTag) {
+        unchangedFiles.add(fileKey);
+      } else {
+        file.eTag = changedFile.eTag;
+      }
 
       if (file.expiredAt) {
         // If the file was already expired we have to undo it
@@ -241,7 +254,11 @@ export async function updateManifest({
   await deleteFiles(s3, bucket, deleted);
 
   // Calculate the invalidation keys for CloudFront
-  const invalidate = getInvalidationKeys(allFiles);
+  // Check from eTag which files have changed
+  const changedFiles = Array.from(allFiles).filter(
+    (fileKey) => !unchangedFiles.has(fileKey)
+  );
+  const invalidate = getInvalidationKeys(changedFiles);
 
   // Write the new manifest to the bucket
   await s3

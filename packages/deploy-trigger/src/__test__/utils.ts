@@ -94,7 +94,7 @@ export async function generateZipBundle(filesNames: string[]) {
   });
 }
 
-export async function addFilesToS3Bucket(
+export function addFilesToS3Bucket(
   s3: S3,
   bucketId: string,
   fileNames: string[]
@@ -102,12 +102,14 @@ export async function addFilesToS3Bucket(
   const promises = [];
 
   for (const fileName of fileNames) {
+    // Fill with random body to create different etags in S3
+    const body = crypto.randomBytes(20).toString('hex');
     promises.push(
       s3
         .putObject({
           Bucket: bucketId,
           Key: fileName,
-          Body: '',
+          Body: body,
         })
         .promise()
     );

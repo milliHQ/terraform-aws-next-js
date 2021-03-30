@@ -1,11 +1,14 @@
 import { S3 } from 'aws-sdk';
 
 import { manifestVersion } from './constants';
-import { Manifest, ManifestFile } from './types';
+import { FileResult, Manifest, ManifestFile } from './types';
 import { generateRandomBuildId } from './utils';
 
-async function getAllObjectKeysFromBucket(s3: S3, bucketId: string) {
-  let keys: string[] = [];
+async function getAllObjectsFromBucket(
+  s3: S3,
+  bucketId: string
+): Promise<FileResult[]> {
+  let keys: FileResult[] = [];
   let hasMore = true;
   let ContinuationToken: string | undefined;
 
@@ -15,7 +18,10 @@ async function getAllObjectKeysFromBucket(s3: S3, bucketId: string) {
       .promise();
 
     if (response.Contents) {
-      const _keys = response.Contents.map((entry) => entry.Key!);
+      const _keys = response.Contents.map((entry) => ({
+        key: entry.Key!,
+        eTag: entry.ETag!,
+      }));
       keys = keys.concat(_keys);
     }
 
@@ -56,13 +62,14 @@ export async function getOrCreateManifest(
   }
 
   // Create a new manifest with existing files from the bucket
-  const fileKeys = await getAllObjectKeysFromBucket(s3, bucketId);
+  const fileKeys = await getAllObjectsFromBucket(s3, bucketId);
   const newBuildId = generateRandomBuildId();
 
   const files: Record<string, ManifestFile> = {};
   for (const fileKey of fileKeys) {
-    files[fileKey] = {
+    files[fileKey.key] = {
       buildId: [newBuildId],
+      eTag: fileKey.eTag,
     };
   }
 
