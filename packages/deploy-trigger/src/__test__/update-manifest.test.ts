@@ -20,13 +20,16 @@ describe('deploy-trigger', () => {
   let s3: S3;
   let bucket: BucketHandler;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     // Initialize the local S3 client
     s3 = generateS3ClientForTesting();
+  });
+
+  beforeEach(async () => {
     bucket = await createBucket(s3);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await bucket.destroy();
   });
 
@@ -43,7 +46,7 @@ describe('deploy-trigger', () => {
     ];
     let manifest: Manifest;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await addFilesToS3Bucket(s3, bucket.bucketName, toBeExpiredFiles);
       manifest = await getOrCreateManifest(
         s3,
