@@ -194,6 +194,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | cloudfront\_origins | n/a | `list(any)` | `null` | no |
 | cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
 | cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
+| cloudfront\_geo\_restriction | Options to control distribution of content, object with restriction_type and locations. | `object({ restriction_type = string, locations = list(string) })` | `{ restriction_type = "none", locations = [] }` | no |
 | create\_domain\_name\_records | Controls whether Route 53 records for the for the domain\_names should be created. | `bool` | `true` | no |
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
