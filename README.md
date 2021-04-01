@@ -237,6 +237,12 @@ So issues that exist on Vercel are likely to occur on this project too.
 
   After running the initial `terraform destroy` command (that failed) wait ~1 hour and run the command again.
   This time it should run successfully and delete the rest of the stack.
+  
+- Installation in a workspace folder [Issue](https://github.com/dealmore/terraform-aws-next-js/issues/93) fails because `node_modules` can't be resolved.
+
+  **Workaround:**
+
+  Run the build from your `workspace-root` by doing `yarn workspace my-project tf-next build`
 
 ## License
 
