@@ -263,7 +263,7 @@ module "proxy" {
   lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary
 
   providers = {
-    aws = aws.global_region
+    aws.global_region = aws.global_region
   }
 }
 
