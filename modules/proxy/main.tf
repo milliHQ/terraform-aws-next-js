@@ -52,6 +52,10 @@ module "edge_proxy" {
   cloudwatch_logs_retention_in_days = 30
 
   tags = var.tags
+
+  providers = {
+    aws = aws.global_region
+  }
 }
 
 ############
@@ -196,7 +200,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       for_each = list(var.cloudfront_geo_restriction)
       content {
         restriction_type = geo_restriction.value["restriction_type"]
-        locations = geo_restriction.value["locations"]
+        locations        = geo_restriction.value["locations"]
       }
     }
   }

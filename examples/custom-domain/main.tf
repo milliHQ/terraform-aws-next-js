@@ -10,13 +10,16 @@ terraform {
   }
 }
 
+# Main region where the resources should be created in
+# Should be close to the location of your viewers
 provider "aws" {
   region = "us-west-2"
 }
 
-# CloudFront works only with certs stored in us-east-1
+# Provider used for creating the Lambda@Edge function which must be deployed
+# to us-east-1 region (Should not be changed)
 provider "aws" {
-  alias  = "cloudfront_cert_region"
+  alias  = "global_region"
   region = "us-east-1"
 }
 
@@ -44,8 +47,9 @@ module "cloudfront_cert" {
     Name = "CloudFront ${local.custom_domain}"
   }
 
+  # CloudFront works only with certs stored in us-east-1
   providers = {
-    aws = aws.cloudfront_cert_region
+    aws = aws.global_region
   }
 }
 
@@ -67,6 +71,9 @@ module "tf_next" {
   # Tell CloudFront to use our created certificate
   cloudfront_viewer_certificate_arn = module.cloudfront_cert.this_acm_certificate_arn
 
+  providers = {
+    aws.global_region = aws.global_region
+  }
 }
 
 output "cloudfront_domain_name" {
