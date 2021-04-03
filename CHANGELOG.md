@@ -10,6 +10,12 @@
 
 - Allows dependencies (e.g. Prisma & Blitz.js) to correctly detect the build environment ([#70](https://github.com/dealmore/terraform-aws-next-js/issues/70), [#73](https://github.com/dealmore/terraform-aws-next-js/issues/73), [#85](https://github.com/dealmore/terraform-aws-next-js/pull/85))
 
+## 0.7.4 (April 03, 2021)
+
+### Terraform module
+
+- Use `concat` instead of `merge` for custom CloudFront origins and cache behaviors ([#66](https://github.com/dealmore/terraform-aws-next-js/issues/66), [#105](https://github.com/dealmore/terraform-aws-next-js/pull/105))
+
 ## 0.7.3 (March 08, 2021)
 
 ### Terraform module
