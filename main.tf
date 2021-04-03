@@ -170,7 +170,7 @@ module "next_image" {
 ##################
 locals {
   next_image_cloudfront_origins = var.create_image_optimization ? [module.next_image[0].cloudfront_origin_image_optimizer] : []
-  proxy_cloudfront_origins = var.cloudfront_origins != null ? merge(
+  proxy_cloudfront_origins = var.cloudfront_origins != null ? concat(
     local.next_image_cloudfront_origins,
     var.cloudfront_origins
   ) : local.next_image_cloudfront_origins
@@ -201,7 +201,7 @@ locals {
     }
   }] : []
 
-  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? merge(
+  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? concat(
     local.next_image_custom_behavior,
     var.cloudfront_custom_behaviors
   ) : local.next_image_custom_behavior
