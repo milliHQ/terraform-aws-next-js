@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.4 (April 03, 2021)
+
+### Terraform module
+
+- Use `concat` instead of `merge` for custom CloudFront origins and cache behaviors ([#66](https://github.com/dealmore/terraform-aws-next-js/issues/66), [#105](https://github.com/dealmore/terraform-aws-next-js/pull/105))
+
 ## 0.7.3 (March 08, 2021)
 
 ### Terraform module
