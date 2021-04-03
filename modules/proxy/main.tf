@@ -23,6 +23,10 @@ module "proxy_config" {
   proxy_config_json      = var.proxy_config_json
   deployment_name        = var.deployment_name
   tags                   = var.tags
+
+  providers = {
+    aws.global_region = aws.global_region
+  }
 }
 
 #############
