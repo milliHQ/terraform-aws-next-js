@@ -9,6 +9,7 @@ locals {
 ########
 
 resource "aws_s3_bucket" "proxy_config" {
+  provider      = aws.global_region
   bucket_prefix = "next-tf-proxy-config"
   acl           = "private"
   force_destroy = true
@@ -28,8 +29,9 @@ data "aws_iam_policy_document" "cf_access" {
 }
 
 resource "aws_s3_bucket_policy" "origin_access" {
-  bucket = aws_s3_bucket.proxy_config.id
-  policy = data.aws_iam_policy_document.cf_access.json
+  provider = aws.global_region
+  bucket   = aws_s3_bucket.proxy_config.id
+  policy   = data.aws_iam_policy_document.cf_access.json
 }
 
 #####################
@@ -37,6 +39,7 @@ resource "aws_s3_bucket_policy" "origin_access" {
 #####################
 
 resource "aws_s3_bucket_object" "proxy_config" {
+  provider      = aws.global_region
   bucket        = aws_s3_bucket.proxy_config.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json
