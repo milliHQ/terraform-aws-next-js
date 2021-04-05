@@ -1,4 +1,0 @@
-{
-  "version": 2,
-  "builds": [{ "src": "package.json", "use": "@dealmore/tf-next-runtime" }]
-}
