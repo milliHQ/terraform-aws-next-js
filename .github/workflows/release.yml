@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Do a full checkout (all branches)
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: dealmore/gh-action-terraform-module-release@v1.0.0
+        with:
+          upstream-branch: main
+          release-branch: release
+          release-tag: ${{ github.event.inputs.tag }}
+          exclude: '["packages/**/*", "test/**/*", "package.json", "yarn.lock"]'
