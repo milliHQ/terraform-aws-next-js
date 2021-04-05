@@ -1,6 +1,44 @@
 # Changelog
 
-## 0.8.0 - Unreleased
+## 0.8.0 - (April 05, 2021)
+
+This release enables Brotli in addition to gzip as default compression method.
+
+**⚠️ Breaking Changes ⚠️**
+
+Before upgrading make sure that you define a new alias `global_region` for the AWS Provider in the `us-east-1` region.
+This provider alias is used to create the Lambda@Edge function that must be created in `us-east-1`.
+
+```diff
+# main.tf
+provider "aws" {
+  region = "us-west-2"
+}
+
++ provider "aws" {
++   alias  = "global_region"
++   region = "us-east-1"
++ }
+
+module "tf_next" {
+  source = "dealmore/next-js/aws"
+
++ providers = {
++   aws.global_region = aws.global_region
++ }
+}
+```
+
+### Terraform module
+
+- Removes internal AWS provider for `us-east-1` region ([#50](https://github.com/dealmore/terraform-aws-next-js/issues/50), [#101](https://github.com/dealmore/terraform-aws-next-js/pull/101))
+- Enable Brotli compression for CloudFront ([#8](https://github.com/dealmore/terraform-aws-next-js/issues/8), [#82](https://github.com/dealmore/terraform-aws-next-js/pull/82))
+- Adds `cloudfront_geo_restriction` variable ([#97](https://github.com/dealmore/terraform-aws-next-js/pull/97))
+- Use `nodejs14.x` as default runtime for Lambda ([#67](https://github.com/dealmore/terraform-aws-next-js/pull/67), [#80](https://github.com/dealmore/terraform-aws-next-js/issues/80), [#81](https://github.com/dealmore/terraform-aws-next-js/pull/81))
+
+### Deploy trigger (0.3.0)
+
+- CloudFront invalidations for static files (e.g. static prerendered HTML or files from `public/`) are only issues if the eTag of the file changes ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#91](https://github.com/dealmore/terraform-aws-next-js/pull/91))
 
 ### tf-next (0.6.1)
 
