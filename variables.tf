@@ -112,6 +112,12 @@ variable "cloudfront_custom_behaviors" {
   default = null
 }
 
+variable "cloudfront_origin_headers" {
+  description = "Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront_cache_key_headers."
+  type        = list(string)
+  default     = []
+}
+
 variable "cloudfront_cache_key_headers" {
   description = "Header keys that should be used to calculate the cache key in CloudFront."
   type        = list(string)
@@ -122,14 +128,14 @@ variable "cloudfront_geo_restriction" {
   description = "Options to control distribution of content, object with restriction_type and locations."
   type = object({
     restriction_type = string,
-    locations = list(string),
+    locations        = list(string),
   })
   default = {
     restriction_type = "none"
-    locations = []
+    locations        = []
   }
   validation {
-    condition = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
+    condition     = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
     error_message = "The restriction_type must be \"none\", \"blacklist\", or \"whitelist\"."
   }
 }

@@ -200,9 +200,28 @@ resource "random_id" "policy_name" {
   byte_length = 4
 }
 
-# Managed origin request policy
-data "aws_cloudfront_origin_request_policy" "managed_all_viewer" {
-  name = "Managed-AllViewer"
+resource "aws_cloudfront_origin_request_policy" "this" {
+  name    = "${random_id.policy_name.hex}-origin"
+  comment = "Managed by Terraform Next.js"
+
+  cookies_config {
+    cookie_behavior = "all"
+  }
+
+  headers_config {
+    header_behavior = length(var.cloudfront_origin_headers) == 0 ? "none" : "whitelist"
+
+    dynamic "headers" {
+      for_each = length(var.cloudfront_origin_headers) == 0 ? [] : [true]
+      content {
+        items = var.cloudfront_origin_headers
+      }
+    }
+  }
+
+  query_strings_config {
+    query_string_behavior = "all"
+  }
 }
 
 resource "aws_cloudfront_cache_policy" "this" {
@@ -256,7 +275,7 @@ module "proxy" {
   cloudfront_alias_domains            = var.domain_names
   cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
-  cloudfront_origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_all_viewer.id
+  cloudfront_origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
   cloudfront_cache_policy_id          = aws_cloudfront_cache_policy.this.id
   debug_use_local_packages            = var.debug_use_local_packages
   tags                                = var.tags
