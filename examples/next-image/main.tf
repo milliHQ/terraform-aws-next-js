@@ -23,15 +23,14 @@ provider "aws" {
 module "tf_next" {
   source = "dealmore/next-js/aws"
 
-  next_tf_dir     = var.next_tf_dir
-  deployment_name = var.deployment_name
+  deployment_name = "terraform-next-js-example-image"
 
   providers = {
     aws.global_region = aws.global_region
   }
 
   # Uncomment when using in the cloned monorepo for tf-next development
-  # source = "../../.."
+  # source = "../.."
   # debug_use_local_packages = true
 }
 
