@@ -186,14 +186,14 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Version |
 |------|---------|
 | terraform | >= 0.13 |
-| aws | >= 3.28.0 |
+| aws | >= 3.34.0 |
 | random | >= 2.3.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 3.28.0 |
+| aws | >= 3.34.0 |
 | random | >= 2.3.0 |
 
 ## Inputs
@@ -202,8 +202,9 @@ You can create a `.terraformignore` in the root of your project and add the foll
 |------|-------------|------|---------|:--------:|
 | cloudfront\_cache\_key\_headers | Header keys that should be used to calculate the cache key in CloudFront. | `list(string)` | <pre>[<br>  "Authorization"<br>]</pre> | no |
 | cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
-| cloudfront\_geo\_restriction | Options to control distribution of content, object with restriction\_type and locations. | <pre>object({<br>    restriction_type = string,<br>    locations = list(string),<br>  })</pre> | <pre>{<br>  "locations": [],<br>  "restriction_type": "none"<br>}</pre> | no |
+| cloudfront\_geo\_restriction | Options to control distribution of content, object with restriction\_type and locations. | <pre>object({<br>    restriction_type = string,<br>    locations        = list(string),<br>  })</pre> | <pre>{<br>  "locations": [],<br>  "restriction_type": "none"<br>}</pre> | no |
 | cloudfront\_minimum\_protocol\_version | Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
+| cloudfront\_origin\_headers | Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront\_cache\_key\_headers. | `list(string)` | `[]` | no |
 | cloudfront\_origins | n/a | `list(any)` | `null` | no |
 | cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
 | cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
