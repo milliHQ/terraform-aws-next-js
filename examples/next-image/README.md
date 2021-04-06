@@ -39,7 +39,7 @@ terraform plan    # (Optional) See what resources Terraform will create
 terraform apply   # Deploy the Next.js app to your AWS account
 ```
 
-After the deployent was successful, you should see the following output:
+After the deployment was successful, you should see the following output:
 
 ```sh
 > Apply complete!
