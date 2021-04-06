@@ -12,9 +12,11 @@ import * as path from 'path';
 import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
 import * as util from 'util';
+import findWorkspaceRoot from 'find-yarn-workspace-root';
 
 import { ConfigOutput } from '../types';
 import { removeRoutesByPrefix } from '../utils/routes';
+import { findEntryPoint } from '../utils';
 
 // Config file version (For detecting incompatibility issues in Terraform)
 // See: https://github.com/dealmore/terraform-aws-next-js/issues/5
@@ -27,7 +29,12 @@ type StaticWebsiteFiles = Record<string, FileFsRef>;
 function getFiles(basePath: string) {
   return glob('**', {
     cwd: basePath,
-    ignore: ['node_modules/**', '.next/**', '.next-tf/**'],
+    ignore: [
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/.next-tf/**',
+      '**/.git/**',
+    ],
   });
 }
 
@@ -158,17 +165,20 @@ async function buildCommand({
       ? tmp.dirSync({ unsafeCleanup: deleteBuildCache })
       : null;
 
-  const entryPath = cwd;
-  const entrypoint = 'package.json';
-  const workPath = mode === 'download' ? tmpDir!.name : cwd;
+  const workspaceRoot = findWorkspaceRoot(cwd);
+  const repoRootPath = workspaceRoot ?? cwd;
+  const workPath = mode === 'download' ? tmpDir!.name : repoRootPath;
   const outputDir = path.join(cwd, '.next-tf');
 
   // Ensure that the output dir exists
   fs.ensureDirSync(outputDir);
 
-  const files = await getFiles(entryPath);
+  const files = await getFiles(repoRootPath);
 
   try {
+    // Entrypoint is the relative path to the package.json or next.config.js
+    // from repoRootPath
+    const entrypoint = findEntryPoint(repoRootPath, cwd);
     const lambdas: Lambdas = {};
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
@@ -186,8 +196,11 @@ async function buildCommand({
     });
 
     // Get BuildId
+    // TODO: Should be part of buildResult since it's already there
+    const entryDirectory = path.dirname(entrypoint);
+    const entryPath = path.join(workPath, entryDirectory);
     const buildId = await fs.readFile(
-      path.join(workPath, '.next', 'BUILD_ID'),
+      path.join(entryPath, '.next', 'BUILD_ID'),
       'utf8'
     );
 
