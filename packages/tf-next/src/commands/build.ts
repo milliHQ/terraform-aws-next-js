@@ -185,7 +185,8 @@ async function buildCommand({
 
     const buildResult = await build({
       files,
-      workPath,
+      workPath: cwd,
+      base: workPath,
       entrypoint,
       config: { sharedLambdas: true },
       meta: {
