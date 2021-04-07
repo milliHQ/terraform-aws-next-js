@@ -185,8 +185,8 @@ async function buildCommand({
 
     const buildResult = await build({
       files,
-      workPath: cwd,
-      base: workPath,
+      workPath: mode === 'download' ? tmpDir!.name : cwd,
+      base: mode === 'download' ? tmpDir!.name : repoRootPath,
       entrypoint,
       config: { sharedLambdas: true },
       meta: {
