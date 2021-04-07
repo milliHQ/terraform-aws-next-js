@@ -7,11 +7,11 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const tmp = require('tmp');
 const fs = require('fs-extra');
+const { parse: parseJSON } = require('hjson');
 
 const DEBUG = false;
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const yarnCommand = 'yarnpkg';
-const tfNextBuildPath = path.dirname(require.resolve(`tf-next/package.json`));
 
 // Get subdirs from a given path
 const getDirs = async (_path) => {
@@ -37,7 +37,8 @@ async function buildFixtures(debug = false) {
     path.resolve(pathToFixtures, _path)
   );
 
-  async function build(buildPath) {
+  async function build(buildPath, workPath, buildPackage) {
+    const tfNextBuildPath = path.dirname(require.resolve(buildPackage));
     const command = 'node';
     const args = [tfNextBuildPath, 'build'];
 
@@ -51,9 +52,13 @@ async function buildFixtures(debug = false) {
     const workDir = tmpDir.name;
     await fs.copy(buildPath, workDir);
 
+    // If `tf-next` is executed inside a monorepo, the workPath can be changed
+    // to a subdirectory
+    const realWorkDir = path.join(workDir, workPath);
+
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, {
-        cwd: workDir,
+        cwd: realWorkDir,
         stdio: debug ? 'inherit' : 'ignore',
       });
 
@@ -70,7 +75,7 @@ async function buildFixtures(debug = false) {
     }).then(() => {
       // Copy .next-tf directory back to the original place
       return fs.copy(
-        path.join(workDir, '.next-tf'),
+        path.join(realWorkDir, '.next-tf'),
         path.join(buildPath, '.next-tf')
       );
     });
@@ -79,7 +84,19 @@ async function buildFixtures(debug = false) {
   // Build all fixtures sequentially
   for (const fixture of fixtures) {
     console.log(`Building fixture "${fixture}"`);
-    await build(fixture);
+
+    // Read probes.json
+    const probesJson = parseJSON(
+      fs.readFileSync(path.join(fixture, 'probes.json')).toString('utf-8')
+    );
+
+    for (const buildItem of probesJson.builds) {
+      const { src, use } = buildItem;
+      const workPath = path.dirname(
+        path.relative(fixture, path.join(fixture, src))
+      );
+      await build(fixture, workPath, use);
+    }
   }
 }
 
