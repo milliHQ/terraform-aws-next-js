@@ -167,7 +167,6 @@ async function buildCommand({
 
   const workspaceRoot = findWorkspaceRoot(cwd);
   const repoRootPath = workspaceRoot ?? cwd;
-  const workPath = mode === 'download' ? tmpDir!.name : repoRootPath;
   const outputDir = path.join(cwd, '.next-tf');
 
   // Ensure that the output dir exists
@@ -178,7 +177,7 @@ async function buildCommand({
   try {
     // Entrypoint is the relative path to the package.json or next.config.js
     // from repoRootPath
-    const entrypoint = findEntryPoint(repoRootPath, cwd);
+    const entrypoint = 'package.json';
     const lambdas: Lambdas = {};
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
@@ -198,10 +197,8 @@ async function buildCommand({
 
     // Get BuildId
     // TODO: Should be part of buildResult since it's already there
-    const entryDirectory = path.dirname(entrypoint);
-    const entryPath = path.join(workPath, entryDirectory);
     const buildId = await fs.readFile(
-      path.join(entryPath, '.next', 'BUILD_ID'),
+      path.join(mode === 'download' ? tmpDir!.name : cwd, '.next', 'BUILD_ID'),
       'utf8'
     );
 
