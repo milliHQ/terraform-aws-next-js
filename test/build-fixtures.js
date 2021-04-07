@@ -5,10 +5,13 @@
 const { readdir, stat } = require('fs').promises;
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
+const tmp = require('tmp');
+const fs = require('fs-extra');
 
 const DEBUG = false;
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const yarnCommand = 'yarnpkg';
+const tfNextBuildPath = path.dirname(require.resolve(`tf-next/package.json`));
 
 // Get subdirs from a given path
 const getDirs = async (_path) => {
@@ -34,13 +37,23 @@ async function buildFixtures(debug = false) {
     path.resolve(pathToFixtures, _path)
   );
 
-  function build(buildPath) {
-    const command = yarnCommand;
-    const args = ['tf-next', 'build'];
+  async function build(buildPath) {
+    const command = 'node';
+    const args = [tfNextBuildPath, 'build'];
+
+    // Copy the files first in a tmp dir from where the build starts
+    // This must happen in order to find the correct workspace root
+    // Otherwise the script would falsely assume that the workspace root
+    // of this project would be the correct workspace root
+    const tmpDir = tmp.dirSync({
+      unsafeCleanup: true,
+    });
+    const workDir = tmpDir.name;
+    await fs.copy(buildPath, workDir);
 
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, {
-        cwd: buildPath,
+        cwd: workDir,
         stdio: debug ? 'inherit' : 'ignore',
       });
 
@@ -51,8 +64,15 @@ async function buildFixtures(debug = false) {
           });
           return;
         }
+
         resolve();
       });
+    }).then(() => {
+      // Copy .next-tf directory back to the original place
+      return fs.copy(
+        path.join(workDir, '.next-tf'),
+        path.join(buildPath, '.next-tf')
+      );
     });
   }
 
