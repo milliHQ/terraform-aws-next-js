@@ -179,7 +179,7 @@ async function buildCommand({
   try {
     // Entrypoint is the relative path to the package.json or next.config.js
     // from repoRootPath
-    const entrypoint = 'package.json';
+    const entrypoint = workspaceRoot ? path.join(path.relative(workspaceRoot, cwd), 'package.json') : 'package.json';
     const lambdas: Lambdas = {};
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
@@ -187,7 +187,6 @@ async function buildCommand({
     const buildResult = await build({
       files,
       workPath: mode === 'download' ? tmpDir!.name : cwd,
-      base: mode === 'download' ? tmpDir!.name : repoRootPath,
       entrypoint,
       config: { sharedLambdas: true, installCommand },
       meta: {
