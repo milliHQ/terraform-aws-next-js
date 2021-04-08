@@ -1,5 +1,5 @@
 import { S3Handler } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
+import { AWSError, S3, STS } from 'aws-sdk';
 
 import { deployTrigger } from './deploy-trigger';
 import { ExpireValue } from './types';
@@ -7,6 +7,8 @@ import { updateManifest } from './update-manifest';
 import { deploymentConfigurationKey } from './constants';
 import { getOrCreateManifest } from './get-or-create-manifest';
 import { createInvalidation } from './create-invalidation';
+import { AssumeRoleResponse } from 'aws-sdk/clients/sts';
+import { PromiseResult } from 'aws-sdk/lib/request';
 
 // Default value after how many days an old deployment should be expired
 const defaultExpireAfterDays = 30;
@@ -34,7 +36,23 @@ function parseExpireAfterDays() {
 }
 
 export const handler: S3Handler = async function (event) {
-  const s3 = new S3({ apiVersion: '2006-03-01' });
+  const client = new STS({ apiVersion: '2006-03-01' });
+  const roleToAssume = process.env.AWS_ROLE;
+  let role: PromiseResult<AssumeRoleResponse, AWSError> | undefined;
+  if (roleToAssume) {
+    role = await (client.assumeRole({
+      RoleArn: roleToAssume,
+      RoleSessionName: 'TF-Next-Deploy-trigger',
+      DurationSeconds: 900,
+    }).promise());
+  }
+
+  const credentials = role ? role.Credentials : undefined;
+  const s3 = new S3({ apiVersion: '2006-03-01', credentials: credentials ? {
+    accessKeyId: credentials.AccessKeyId,
+    secretAccessKey: credentials.SecretAccessKey,
+    sessionToken: credentials.SessionToken
+  } : undefined });
   const deployBucket = process.env.TARGET_BUCKET;
   const distributionId = process.env.DISTRIBUTION_ID;
   const expireAfterDays: ExpireValue = parseExpireAfterDays();
@@ -47,7 +65,7 @@ export const handler: S3Handler = async function (event) {
   const manifest = await getOrCreateManifest(
     s3,
     deployBucket,
-    deploymentConfigurationKey
+    deploymentConfigurationKey,
   );
 
   // Unpack the package

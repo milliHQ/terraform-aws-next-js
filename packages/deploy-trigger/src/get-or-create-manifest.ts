@@ -1,4 +1,4 @@
-import { S3 } from 'aws-sdk';
+import aws, { S3 } from 'aws-sdk';
 
 import { manifestVersion } from './constants';
 import { FileResult, Manifest, ManifestFile } from './types';
@@ -14,7 +14,7 @@ async function getAllObjectsFromBucket(
 
   while (hasMore) {
     const response = await s3
-      .listObjectsV2({ Bucket: bucketId, ContinuationToken })
+      .listObjectsV2({ Bucket: bucketId, ContinuationToken, })
       .promise();
 
     if (response.Contents) {
@@ -37,7 +37,7 @@ async function getAllObjectsFromBucket(
 export async function getOrCreateManifest(
   s3: S3,
   bucketId: string,
-  deploymentConfigurationKey: string
+  deploymentConfigurationKey: string,
 ): Promise<Manifest> {
   let manifest: Manifest | undefined;
 
@@ -46,6 +46,7 @@ export async function getOrCreateManifest(
       .getObject({
         Key: deploymentConfigurationKey,
         Bucket: bucketId,
+
       })
       .promise();
 
