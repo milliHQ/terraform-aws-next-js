@@ -189,7 +189,7 @@ async function buildCommand({
       workPath,
       entrypoint,
       repoRootPath: workspaceRoot ? workspaceRoot : undefined,
-      config: { sharedLambdas: true, installCommand },
+      config: { sharedLambdas: true },
       meta: {
         isDev: false,
         // @ts-ignore
