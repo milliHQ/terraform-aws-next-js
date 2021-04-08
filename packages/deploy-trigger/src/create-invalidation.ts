@@ -1,4 +1,4 @@
-import { CloudFront } from 'aws-sdk';
+import { CloudFront, STS } from 'aws-sdk';
 
 import { generateRandomId } from './utils';
 
@@ -21,10 +21,16 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 
 export async function createInvalidation(
   distributionId: string,
-  invalidationPaths: string[]
+  invalidationPaths: string[],
+  credentials?: STS.Credentials
 ) {
   const cloudFront = new CloudFront({
     apiVersion: '2020-05-31',
+    credentials: credentials ? {
+      accessKeyId: credentials.AccessKeyId,
+      secretAccessKey: credentials.SecretAccessKey,
+      sessionToken: credentials.SessionToken
+    } : undefined
   });
 
   const invalidationChunks = chunkArray(

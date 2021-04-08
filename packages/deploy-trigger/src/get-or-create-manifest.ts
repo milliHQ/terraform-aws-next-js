@@ -1,4 +1,4 @@
-import aws, { S3 } from 'aws-sdk';
+import { S3 } from 'aws-sdk';
 
 import { manifestVersion } from './constants';
 import { FileResult, Manifest, ManifestFile } from './types';

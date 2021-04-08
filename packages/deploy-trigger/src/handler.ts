@@ -89,5 +89,5 @@ export const handler: S3Handler = async function (event) {
   });
 
   // Invalidate the paths from the CloudFront distribution
-  await createInvalidation(distributionId, invalidate);
+  await createInvalidation(distributionId, invalidate, credentials);
 };
