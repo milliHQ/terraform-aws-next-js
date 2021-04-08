@@ -80,7 +80,6 @@ interface BuildParamsMeta {
 
 interface BuildParamsType extends BuildOptions {
   files: Files;
-  base: string;
   entrypoint: string;
   workPath: string;
   meta: BuildParamsMeta;
@@ -217,7 +216,6 @@ function startDevServer(entryPath: string, runtimeEnv: EnvConfig) {
 
 export async function build({
   files,
-  base,
   workPath,
   repoRootPath,
   entrypoint,
@@ -1114,7 +1112,7 @@ export async function build({
         fileList: apiFileList,
         reasons: apiReasons,
       } = await nodeFileTrace(apiPages, {
-        base,
+        base: baseDir,
         processCwd: entryPath,
         cache: nftCache,
       });
@@ -1124,7 +1122,7 @@ export async function build({
       const { fileList, reasons: nonApiReasons } = await nodeFileTrace(
         nonApiPages,
         {
-          base,
+          base: baseDir,
           processCwd: entryPath,
           cache: nftCache,
         }
