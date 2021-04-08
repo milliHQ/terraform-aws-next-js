@@ -9,7 +9,7 @@ const tmp = require('tmp');
 const fs = require('fs-extra');
 const { parse: parseJSON } = require('hjson');
 
-const DEBUG = false;
+const DEBUG = true;
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const yarnCommand = 'yarnpkg';
 
@@ -33,9 +33,9 @@ async function buildProxy(debug = false) {
 }
 
 async function buildFixtures(debug = false) {
-  const fixtures = (await getDirs(pathToFixtures)).map((_path) =>
-    path.resolve(pathToFixtures, _path)
-  );
+  const fixtures = (await getDirs(pathToFixtures))
+    .filter((path) => path.startsWith('03'))
+    .map((_path) => path.resolve(pathToFixtures, _path));
 
   async function build(buildPath, workPath, buildPackage) {
     const tfNextBuildPath = path.dirname(require.resolve(buildPackage));
@@ -101,7 +101,7 @@ async function buildFixtures(debug = false) {
 }
 
 async function main() {
-  await buildProxy(DEBUG);
+  // await buildProxy(DEBUG);
   await buildFixtures(DEBUG);
 }
 

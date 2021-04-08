@@ -6,6 +6,7 @@ import {
   FileFsRef,
   streamToBuffer,
   Prerender,
+  download,
 } from '@vercel/build-utils';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -26,8 +27,8 @@ type Lambdas = Record<string, Lambda>;
 type Prerenders = Record<string, Prerender>;
 type StaticWebsiteFiles = Record<string, FileFsRef>;
 
-function getFiles(basePath: string) {
-  return glob('**', {
+async function checkoutFiles(basePath: string, targetPath: string) {
+  const files = await glob('**', {
     cwd: basePath,
     ignore: [
       '**/node_modules/**',
@@ -36,6 +37,8 @@ function getFiles(basePath: string) {
       '**/.git/**',
     ],
   });
+
+  return download(files, targetPath);
 }
 
 interface PrerenderOutputProps {
@@ -167,25 +170,41 @@ async function buildCommand({
 
   const workspaceRoot = findWorkspaceRoot(cwd);
   const repoRootPath = workspaceRoot ?? cwd;
-  const workPath = mode === 'download' ? tmpDir!.name : repoRootPath;
+  const relativeWorkPath = path.relative(repoRootPath, cwd);
+  const workPath =
+    mode === 'download' ? path.join(tmpDir!.name, relativeWorkPath) : cwd;
   const outputDir = path.join(cwd, '.next-tf');
 
   // Ensure that the output dir exists
   fs.ensureDirSync(outputDir);
 
-  const files = await getFiles(repoRootPath);
+  if (mode === 'download') {
+    console.log('Checkout files...');
+    await checkoutFiles(repoRootPath, tmpDir!.name);
+  }
 
   try {
-    // Entrypoint is the relative path to the package.json or next.config.js
+    // Entrypoint is the path to the `package.json` or `next.config.js` file
     // from repoRootPath
-    const entrypoint = findEntryPoint(repoRootPath, cwd);
+    const entrypoint = findEntryPoint(workPath);
     const lambdas: Lambdas = {};
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
 
-    const buildResult = await build({
-      files,
+    console.log({
+      entrypoint,
       workPath,
+      repoRootPath,
+    });
+    console.log(
+      'relative',
+      path.relative(tmpDir!.name, path.join(workPath, path.dirname(entrypoint)))
+    );
+
+    const buildResult = await build({
+      files: {},
+      workPath,
+      repoRootPath: mode === 'download' ? tmpDir!.name : repoRootPath,
       entrypoint,
       config: { sharedLambdas: true },
       meta: {
