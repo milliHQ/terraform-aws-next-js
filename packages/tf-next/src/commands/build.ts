@@ -145,6 +145,7 @@ interface BuildProps {
   skipDownload?: boolean;
   logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
+  installCommand?: string;
   cwd: string;
   target?: 'AWS';
 }
@@ -152,6 +153,7 @@ interface BuildProps {
 async function buildCommand({
   skipDownload = false,
   logLevel,
+  installCommand,
   deleteBuildCache = true,
   cwd,
   target = 'AWS',
@@ -187,7 +189,7 @@ async function buildCommand({
       workPath: mode === 'download' ? tmpDir!.name : cwd,
       base: mode === 'download' ? tmpDir!.name : repoRootPath,
       entrypoint,
-      config: { sharedLambdas: true },
+      config: { sharedLambdas: true, installCommand },
       meta: {
         isDev: false,
         // @ts-ignore
