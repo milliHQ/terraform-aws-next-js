@@ -145,7 +145,6 @@ interface BuildProps {
   skipDownload?: boolean;
   logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
-  installCommand?: string;
   cwd: string;
   target?: 'AWS';
 }
@@ -153,7 +152,6 @@ interface BuildProps {
 async function buildCommand({
   skipDownload = false,
   logLevel,
-  installCommand,
   deleteBuildCache = true,
   cwd,
   target = 'AWS',
@@ -200,6 +198,7 @@ async function buildCommand({
     });
 
     // Get BuildId
+    // TODO: Should be part of buildResult since it's already there
     const entryDirectory = path.dirname(entrypoint);
     const entryPath = path.join(workPath, entryDirectory);
     const buildId = await fs.readFile(
