@@ -169,8 +169,9 @@ async function buildCommand({
 
   const workspaceRoot = findWorkspaceRoot(cwd);
   const repoRootPath = workspaceRoot ?? cwd;
-  const outputDir = path.join(cwd, '.next-tf');
-  const workPath = mode === 'download' ? tmpDir!.name : repoRootPath;
+  // TODO: temp to see if my assumption about location of .next-tf in tests is correct
+  const outputDir = path.join(repoRootPath, '.next-tf');
+  const workPath = mode === 'download' ? tmpDir!.name : cwd;
 
   // Ensure that the output dir exists
   fs.ensureDirSync(outputDir);
