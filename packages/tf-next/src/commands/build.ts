@@ -188,6 +188,7 @@ async function buildCommand({
       files,
       workPath: mode === 'download' ? tmpDir!.name : cwd,
       entrypoint,
+      repoRootPath: workspaceRoot,
       config: { sharedLambdas: true, installCommand },
       meta: {
         isDev: false,
