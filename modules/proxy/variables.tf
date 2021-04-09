@@ -82,14 +82,14 @@ variable "cloudfront_geo_restriction" {
   description = "Options to control distribution of content, object with restriction_type and locations."
   type = object({
     restriction_type = string,
-    locations = list(string),
+    locations        = list(string),
   })
   default = {
     restriction_type = "none"
-    locations = []
+    locations        = []
   }
   validation {
-    condition = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
+    condition     = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
     error_message = "The restriction_type must be \"none\", \"blacklist\", or \"whitelist\"."
   }
 }
