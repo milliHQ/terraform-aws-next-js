@@ -6,15 +6,18 @@ import {
   FileFsRef,
   streamToBuffer,
   Prerender,
+  download,
 } from '@vercel/build-utils';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
 import * as util from 'util';
+import findWorkspaceRoot from 'find-yarn-workspace-root';
 
 import { ConfigOutput } from '../types';
 import { removeRoutesByPrefix } from '../utils/routes';
+import { findEntryPoint } from '../utils';
 
 // Config file version (For detecting incompatibility issues in Terraform)
 // See: https://github.com/dealmore/terraform-aws-next-js/issues/5
@@ -24,11 +27,18 @@ type Lambdas = Record<string, Lambda>;
 type Prerenders = Record<string, Prerender>;
 type StaticWebsiteFiles = Record<string, FileFsRef>;
 
-function getFiles(basePath: string) {
-  return glob('**', {
+async function checkoutFiles(basePath: string, targetPath: string) {
+  const files = await glob('**', {
     cwd: basePath,
-    ignore: ['node_modules/**', '.next/**', '.next-tf/**'],
+    ignore: [
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/.next-tf/**',
+      '**/.git/**',
+    ],
   });
+
+  return download(files, targetPath);
 }
 
 interface PrerenderOutputProps {
@@ -102,7 +112,7 @@ function writeOutput(props: OutputProps) {
 
     config.lambdas[key] = {
       handler: lambda.handler,
-      runtime: lambda.runtime as 'nodejs12.x',
+      runtime: lambda.runtime as 'nodejs12.x' | 'nodejs14.x',
       filename: path.relative(props.outputDir, zipFilename),
       route: normalizeRoute(route),
     };
@@ -158,24 +168,34 @@ async function buildCommand({
       ? tmp.dirSync({ unsafeCleanup: deleteBuildCache })
       : null;
 
-  const entryPath = cwd;
-  const entrypoint = 'package.json';
-  const workPath = mode === 'download' ? tmpDir!.name : cwd;
+  const workspaceRoot = findWorkspaceRoot(cwd);
+  const repoRootPath = workspaceRoot ?? cwd;
+  const relativeWorkPath = path.relative(repoRootPath, cwd);
+  const workPath =
+    mode === 'download' ? path.join(tmpDir!.name, relativeWorkPath) : cwd;
   const outputDir = path.join(cwd, '.next-tf');
 
   // Ensure that the output dir exists
   fs.ensureDirSync(outputDir);
 
-  const files = await getFiles(entryPath);
+  if (mode === 'download') {
+    console.log('Checking out files...');
+    await checkoutFiles(repoRootPath, tmpDir!.name);
+  }
 
   try {
+    // Entrypoint is the path to the `package.json` or `next.config.js` file
+    // from repoRootPath
+    const entrypoint = findEntryPoint(workPath);
     const lambdas: Lambdas = {};
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
 
     const buildResult = await build({
-      files,
+      // files normally would contain build cache
+      files: {},
       workPath,
+      repoRootPath: mode === 'download' ? tmpDir!.name : repoRootPath,
       entrypoint,
       config: { sharedLambdas: true },
       meta: {
@@ -186,8 +206,11 @@ async function buildCommand({
     });
 
     // Get BuildId
+    // TODO: Should be part of buildResult since it's already there
+    const entryDirectory = path.dirname(entrypoint);
+    const entryPath = path.join(workPath, entryDirectory);
     const buildId = await fs.readFile(
-      path.join(workPath, '.next', 'BUILD_ID'),
+      path.join(entryPath, '.next', 'BUILD_ID'),
       'utf8'
     );
 

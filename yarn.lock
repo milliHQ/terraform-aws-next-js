@@ -396,12 +396,12 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@dealmore/sammy@^1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-1.5.0.tgz#c8c788ba20897e458d082e434f7714dfadde1109"
-  integrity sha512-rpoAHgB4ItpFvsswq/0Np9QHHVqbWy3Yfz+Es45uknnqQKRK88aMjjNOBSJukaWTnJ+kb+TzSQnb+don+/RPBQ==
+"@dealmore/sammy@^1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-1.6.0.tgz#10c9c9fac88cbb62f3ea996272d0302140e9d2b8"
+  integrity sha512-8k7bWAfp1tC6ohG29HZdcbZ7J83gnCr3Bc5yjSyI81r6tlaArRFFfj3Gi5Ja6BlDSst04/C+t1oeWYqlYfANjg==
   dependencies:
-    aws-sdk "^2.771.0"
+    aws-sdk "^2.804.0"
     change-case "^4.1.2"
     get-port "^5.1.1"
     node-fetch "^2.6.1"
@@ -1352,7 +1352,7 @@ available-typed-arrays@^1.0.2:
   dependencies:
     array-filter "^1.0.0"
 
-aws-sdk@*, aws-sdk@2.804.0, aws-sdk@^2.771.0:
+aws-sdk@*, aws-sdk@2.804.0, aws-sdk@^2.804.0:
   version "2.804.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.804.0.tgz#ff7e6f91b86b4878ec69e3de895c10eb8203fc4b"
   integrity sha512-a02pZdjL06MunElAZPPEjpghOp/ZA+16f+t4imh1k9FCDpsNVQrT23HRq/PMvRADA5uZZRkYwX8r9o6oH/1RlA==
@@ -2696,6 +2696,13 @@ find-up@4.1.0, find-up@^4.0.0, find-up@^4.1.0:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
 
+find-yarn-workspace-root@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/find-yarn-workspace-root/-/find-yarn-workspace-root-2.0.0.tgz#f47fb8d239c900eb78179aa81b66673eac88f7bd"
+  integrity sha512-1IMnbjt4KzsQfnhnzNd8wUEgXZ44IzZaZmnLYx7D5FZlaHt2gW20Cri8Q+E/t5tIj4+epTBub+2Zxu/vNILzqQ==
+  dependencies:
+    micromatch "^4.0.2"
+
 for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -2759,6 +2766,16 @@ fs-extra@^9.0.1:
     graceful-fs "^4.2.0"
     jsonfile "^6.0.1"
     universalify "^1.0.0"
+
+fs-extra@^9.1.0:
+  version "9.1.0"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-9.1.0.tgz#5954460c764a8da2094ba3554bf839e6b9a7c86d"
+  integrity sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==
+  dependencies:
+    at-least-node "^1.0.0"
+    graceful-fs "^4.2.0"
+    jsonfile "^6.0.1"
+    universalify "^2.0.0"
 
 fs-minipass@^1.2.5:
   version "1.2.7"
@@ -6188,6 +6205,11 @@ universalify@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/universalify/-/universalify-1.0.0.tgz#b61a1da173e8435b2fe3c67d29b9adf8594bd16d"
   integrity sha512-rb6X1W158d7pRQBg5gkR8uPaSfiids68LTJQYOtEUhoJUWBdaQHsuT/EUduxXYxcrt4r5PJ4fuHW1MHT6p0qug==
+
+universalify@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/universalify/-/universalify-2.0.0.tgz#75a4984efedc4b08975c5aeb73f530d02df25717"
+  integrity sha512-hAZsKq7Yy11Zu1DE0OzWjw7nnLZmJZYTDZZyEFHZdUhV8FkH5MCfoU1XMaxXovpyW5nq5scPqq0ZDP9Zyl04oQ==
 
 unpipe@1.0.0:
   version "1.0.0"

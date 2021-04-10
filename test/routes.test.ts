@@ -53,7 +53,11 @@ describe('Test proxy config', () => {
         for (const [key, lambda] of Object.entries(config.lambdas)) {
           lambdas[key] = {
             ...lambda,
-            route: `${lambda.route}/{proxy+}`,
+            route: undefined,
+            routes: {
+              ApiRoot: `${lambda.route}/`,
+              Api: `${lambda.route}/{proxy+}`,
+            },
             memorySize: 1024,
           };
         }
@@ -127,8 +131,19 @@ describe('Test proxy config', () => {
                 .sendApiGwRequest(requestPath, {
                   headers,
                 })
-                .then((res) => res.text())
-                .then((text) => Buffer.from(text, 'base64').toString('utf-8'));
+                .then((res) => {
+                  const headers = res.headers;
+
+                  return res.text();
+                })
+                .then((text) => {
+                  // If text is already JSON we dont need to parse base64
+                  if (text.startsWith('{')) {
+                    return text;
+                  }
+
+                  return Buffer.from(text, 'base64').toString('utf-8');
+                });
 
               if (probe.mustContain) {
                 expect(lambdaResponse).toContain(probe.mustContain);

@@ -1,4 +1,5 @@
 {
+  "builds": [{ "src": "package.json", "use": "tf-next" }],
   "probes": [
     {
       "path": "/api",
