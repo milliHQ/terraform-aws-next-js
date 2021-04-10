@@ -2,6 +2,10 @@
 
 ## 0.9.0 - (Unreleased)
 
+## tf-next (0.7.0)
+
+- Adds support for yarn workspaces ([#93](https://github.com/dealmore/terraform-aws-next-js/issues/93), [#107](https://github.com/dealmore/terraform-aws-next-js/pull/107))
+
 ### Runtime (1.1.0)
 
 - Bump @vercel/nft from 0.9.5 to 0.10.0 ([#112](https://github.com/dealmore/terraform-aws-next-js/pull/112))
