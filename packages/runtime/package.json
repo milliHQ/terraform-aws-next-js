@@ -1,9 +1,9 @@
 {
   "name": "@dealmore/tf-next-runtime",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "license": "Apache-2.0",
   "main": "./dist/index",
-  "homepage": "https://vercel.com/docs/runtimes#official-runtimes/next-js",
+  "homepage": "https://registry.terraform.io/modules/dealmore/next-js/aws",
   "scripts": {
     "build": "./build.sh",
     "test-integration-once": "jest --env node --verbose --runInBand --bail",
@@ -11,8 +11,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vercel/vercel.git",
-    "directory": "packages/now-next"
+    "url": "https://github.com/dealmore/terraform-aws-next-js.git",
+    "directory": "packages/runtime"
   },
   "files": [
     "dist"

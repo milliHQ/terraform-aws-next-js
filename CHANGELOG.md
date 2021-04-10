@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - (Unreleased)
+
+### Runtime (1.1.0)
+
+- Bump @vercel/nft from 0.9.5 to 0.10.0 ([#112](https://github.com/dealmore/terraform-aws-next-js/pull/112))
+
 ## 0.8.0 - (April 05, 2021)
 
 This release enables Brotli in addition to gzip as default compression method.
