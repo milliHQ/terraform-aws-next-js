@@ -53,6 +53,7 @@ describe('Test proxy config', () => {
         for (const [key, lambda] of Object.entries(config.lambdas)) {
           lambdas[key] = {
             ...lambda,
+            route: undefined,
             routes: {
               ApiRoot: `${lambda.route}/`,
               Api: `${lambda.route}/{proxy+}`,
