@@ -179,7 +179,7 @@ async function buildCommand({
   fs.ensureDirSync(outputDir);
 
   if (mode === 'download') {
-    console.log('Checkout files...');
+    console.log('Checking out files...');
     await checkoutFiles(repoRootPath, tmpDir!.name);
   }
 
@@ -191,17 +191,8 @@ async function buildCommand({
     const prerenders: Prerenders = {};
     const staticWebsiteFiles: StaticWebsiteFiles = {};
 
-    console.log({
-      entrypoint,
-      workPath,
-      repoRootPath,
-    });
-    console.log(
-      'relative',
-      path.relative(tmpDir!.name, path.join(workPath, path.dirname(entrypoint)))
-    );
-
     const buildResult = await build({
+      // files normally would contain build cache
       files: {},
       workPath,
       repoRootPath: mode === 'download' ? tmpDir!.name : repoRootPath,

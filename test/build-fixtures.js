@@ -9,7 +9,7 @@ const tmp = require('tmp');
 const fs = require('fs-extra');
 const { parse: parseJSON } = require('hjson');
 
-const DEBUG = true;
+const DEBUG = false;
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const yarnCommand = 'yarnpkg';
 
