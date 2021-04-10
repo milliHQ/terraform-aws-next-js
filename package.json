@@ -4,8 +4,7 @@
   "private": true,
   "license": "Apache-2.0",
   "workspaces": [
-    "packages/*",
-    "test/fixtures/*"
+    "packages/*"
   ],
   "scripts": {
     "test:prepare": "docker-compose up -d",
