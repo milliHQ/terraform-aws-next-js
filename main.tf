@@ -141,7 +141,7 @@ module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
   source  = "dealmore/next-js-image-optimization/aws"
-  version = "~> 10.0.5"
+  version = "~> 10.0.8"
 
   cloudfront_create_distribution = false
 

@@ -159,7 +159,7 @@ resource "random_id" "function_name" {
 
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "1.34.0"
+  version = "1.47.0"
 
   function_name             = random_id.function_name.hex
   description               = "Managed by Terraform-next.js"

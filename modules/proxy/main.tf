@@ -40,7 +40,7 @@ resource "random_id" "function_name" {
 
 module "edge_proxy" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "1.34.0"
+  version = "1.47.0"
 
   lambda_at_edge = true
 
@@ -200,12 +200,9 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 
   restrictions {
-    dynamic "geo_restriction" {
-      for_each = list(var.cloudfront_geo_restriction)
-      content {
-        restriction_type = geo_restriction.value["restriction_type"]
-        locations        = geo_restriction.value["locations"]
-      }
+    geo_restriction {
+      restriction_type = var.cloudfront_geo_restriction.restriction_type
+      locations        = var.cloudfront_geo_restriction.locations
     }
   }
 

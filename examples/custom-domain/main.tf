@@ -56,7 +56,7 @@ module "cloudfront_cert" {
 module "tf_next" {
   source = "dealmore/next-js/aws"
 
-  deployment_name = "custom-domain-example"
+  deployment_name = "terraform-next-js-example-custom-domain"
 
   # You can also attach multiple domains here since it accepts an array
   # Keep in mind that `domain_names` & `domain_zone_names` should always
