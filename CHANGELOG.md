@@ -10,6 +10,14 @@
 
 - Bump @vercel/nft from 0.9.5 to 0.10.0 ([#112](https://github.com/dealmore/terraform-aws-next-js/pull/112))
 
+## 0.8.1 - (April 27, 2021)
+
+### Terraform module
+
+- Fixes compatibility with Terraform 0.15 ([#115](https://github.com/dealmore/terraform-aws-next-js/issues/115), [#118](https://github.com/dealmore/terraform-aws-next-js/pull/118))
+- Bump AWS Lambda Terraform module from 1.34.0 to 1.47.0 ([#117](https://github.com/dealmore/terraform-aws-next-js/pull/117))
+- Bump Next.js Image Optimization module from 10.0.5 to 10.0.8 ([#116](https://github.com/dealmore/terraform-aws-next-js/pull/116))
+
 ## 0.8.0 - (April 05, 2021)
 
 This release enables Brotli in addition to gzip as default compression method.
