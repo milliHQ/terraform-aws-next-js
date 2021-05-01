@@ -1,9 +1,9 @@
 import { STATUS_CODES } from 'http';
 import {
-  CloudFrontRequestHandler,
   CloudFrontHeaders,
   CloudFrontRequest,
   CloudFrontResultResponse,
+  CloudFrontRequestEvent,
 } from 'aws-lambda';
 
 import {
@@ -13,7 +13,7 @@ import {
   RouteResult,
 } from './types';
 import { Proxy } from './proxy';
-import { fetchTimeout } from './util/fetch-timeout';
+import { fetchProxyConfig } from './util/fetch-proxy-config';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -29,15 +29,6 @@ function convertToCloudFrontHeaders(
   }
 
   return cloudFrontHeaders;
-}
-
-async function fetchProxyConfig(endpointUri: string) {
-  // Timeout the connection before 30000ms to be able to print an error message
-  // See Lambda@Edge Limits for origin-request event here:
-  // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-see-limits
-  return fetchTimeout(29500, endpointUri).then(
-    (res) => res.json() as Promise<ProxyConfig>
-  );
 }
 
 /**
@@ -102,7 +93,7 @@ function serveFromApiGateway(
   };
 }
 
-export const handler: CloudFrontRequestHandler = async (event) => {
+export async function handler(event: CloudFrontRequestEvent) {
   const { request } = event.Records[0].cf;
   const configEndpoint = request.origin!.s3!.customHeaders[
     'x-env-config-endpoint'
@@ -177,4 +168,4 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   }
 
   return request;
-};
+}
