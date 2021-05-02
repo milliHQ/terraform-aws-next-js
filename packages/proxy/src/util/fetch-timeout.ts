@@ -19,8 +19,7 @@ export async function fetchTimeout(timeout: number, url: string) {
   try {
     fetchResponse = await fetch(url, { signal: controller.signal });
   } catch (err) {
-    // @ts-ignore
-    if (err instanceof fetch.AbortError) {
+    if (err.name === 'AbortError') {
       error = new Error(`Timeout while fetching config from ${url}`);
     } else {
       error = err;

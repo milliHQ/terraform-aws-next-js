@@ -4,6 +4,7 @@ import {
   CloudFrontRequest,
   CloudFrontResultResponse,
   CloudFrontRequestEvent,
+  CloudFrontCustomOrigin,
 } from 'aws-lambda';
 
 import {
@@ -14,6 +15,7 @@ import {
 } from './types';
 import { Proxy } from './proxy';
 import { fetchProxyConfig } from './util/fetch-proxy-config';
+import { URL } from 'url';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -64,6 +66,39 @@ function isRedirect(
   }
 
   return false;
+}
+
+/**
+ * Converts the input URL into a CloudFront custom origin
+ * @param url
+ * @returns
+ */
+function createCustomOriginFromUrl(url: string): [CloudFrontCustomOrigin, URL] {
+  const _url = new URL(url);
+
+  // Protocol
+  const protocol = _url.protocol === 'http:' ? 'http' : 'https';
+
+  // Get the correct port
+  const port = _url.port
+    ? parseInt(_url.port, 10)
+    : protocol === 'http'
+    ? 80
+    : 443;
+
+  return [
+    {
+      domainName: _url.hostname,
+      path: '/',
+      customHeaders: {},
+      keepaliveTimeout: 5,
+      port,
+      protocol,
+      readTimeout: 30,
+      sslProtocols: ['TLSv1.2'],
+    },
+    _url,
+  ];
 }
 
 /**
@@ -144,6 +179,25 @@ export async function handler(event: CloudFrontRequestEvent) {
         path: proxyResult.dest,
       });
 
+      request.querystring = proxyResult.uri_args
+        ? proxyResult.uri_args.toString()
+        : '';
+    } else if (proxyResult.target === 'url') {
+      // Modify request to be served from external host
+      const [customOrigin, destUrl] = createCustomOriginFromUrl(
+        proxyResult.dest
+      );
+      request.origin = {
+        custom: customOrigin,
+      };
+
+      // Modify `Host` header to match the external host
+      headers.host = customOrigin.domainName;
+
+      // Modify URI to match the path
+      request.uri = destUrl.pathname;
+
+      // Append querystring if we have any
       request.querystring = proxyResult.uri_args
         ? proxyResult.uri_args.toString()
         : '';
