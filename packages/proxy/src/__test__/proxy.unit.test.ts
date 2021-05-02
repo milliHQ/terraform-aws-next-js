@@ -314,20 +314,20 @@ test('[proxy-unit] External rewrite', () => {
     },
   ] as Route[];
 
-  const result = new Proxy(routesConfig, [], []).route('/docs/hello/world');
+  const result = new Proxy(routesConfig, [], []).route('/docs/hello-world');
 
   expect(result).toEqual({
     found: true,
-    dest: 'http://example.com/docs/hello/world',
+    dest: 'http://example.com/docs/hello-world',
     continue: false,
     status: undefined,
     headers: {},
-    uri_args: new URLSearchParams(),
+    uri_args: new URLSearchParams(''),
     matched_route: routesConfig[0],
     matched_route_idx: 0,
     userDest: false,
-    isDestUrl: false,
+    isDestUrl: true,
     phase: undefined,
-    target: undefined,
+    target: 'url',
   });
 });
