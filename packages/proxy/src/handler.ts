@@ -1,21 +1,17 @@
 import { STATUS_CODES } from 'http';
 import {
   CloudFrontHeaders,
-  CloudFrontRequest,
   CloudFrontResultResponse,
   CloudFrontRequestEvent,
-  CloudFrontCustomOrigin,
 } from 'aws-lambda';
 
-import {
-  ProxyConfig,
-  HTTPHeaders,
-  ApiGatewayOriginProps,
-  RouteResult,
-} from './types';
+import { ProxyConfig, HTTPHeaders, RouteResult } from './types';
 import { Proxy } from './proxy';
 import { fetchProxyConfig } from './util/fetch-proxy-config';
-import { URL } from 'url';
+import {
+  createCustomOriginFromApiGateway,
+  createCustomOriginFromUrl,
+} from './util/custom-origin';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -68,66 +64,6 @@ function isRedirect(
   return false;
 }
 
-/**
- * Converts the input URL into a CloudFront custom origin
- * @param url
- * @returns
- */
-function createCustomOriginFromUrl(url: string): [CloudFrontCustomOrigin, URL] {
-  const _url = new URL(url);
-
-  // Protocol
-  const protocol = _url.protocol === 'http:' ? 'http' : 'https';
-
-  // Get the correct port
-  const port = _url.port
-    ? parseInt(_url.port, 10)
-    : protocol === 'http'
-    ? 80
-    : 443;
-
-  return [
-    {
-      domainName: _url.hostname,
-      path: '/',
-      customHeaders: {},
-      keepaliveTimeout: 5,
-      port,
-      protocol,
-      readTimeout: 30,
-      sslProtocols: ['TLSv1.2'],
-    },
-    _url,
-  ];
-}
-
-/**
- * Modifies the request that it is served by API Gateway (Lambda)
- */
-function serveFromApiGateway(
-  request: CloudFrontRequest,
-  apiEndpoint: string,
-  { path }: ApiGatewayOriginProps
-) {
-  request.origin = {
-    custom: {
-      domainName: apiEndpoint,
-      path,
-      customHeaders: {},
-      keepaliveTimeout: 5,
-      port: 443,
-      protocol: 'https',
-      readTimeout: 30,
-      sslProtocols: ['TLSv1.2'],
-    },
-  };
-
-  // Set Host header to the apiEndpoint
-  return {
-    host: apiEndpoint,
-  };
-}
-
 export async function handler(event: CloudFrontRequestEvent) {
   const { request } = event.Records[0].cf;
   const configEndpoint = request.origin!.s3!.customHeaders[
@@ -160,9 +96,17 @@ export async function handler(event: CloudFrontRequestEvent) {
   // Check if we have a prerender route
   // Bypasses proxy
   if (request.uri in proxyConfig.prerenders) {
-    headers = serveFromApiGateway(request, apiEndpoint, {
-      path: `/${proxyConfig.prerenders[request.uri].lambda}`,
-    });
+    // Modify request to be served from Api Gateway
+    const customOrigin = createCustomOriginFromApiGateway(
+      apiEndpoint,
+      `/${proxyConfig.prerenders[request.uri].lambda}`
+    );
+    request.origin = {
+      custom: customOrigin,
+    };
+
+    // Modify `Host` header to match the external host
+    headers.host = apiEndpoint;
   } else {
     // Handle by proxy
     const proxyResult = proxy.route(requestPath);
@@ -175,10 +119,19 @@ export async function handler(event: CloudFrontRequestEvent) {
 
     // Check if route is served by lambda
     if (proxyResult.target === 'lambda') {
-      headers = serveFromApiGateway(request, apiEndpoint, {
-        path: proxyResult.dest,
-      });
+      // Modify request to be served from Api Gateway
+      const customOrigin = createCustomOriginFromApiGateway(
+        apiEndpoint,
+        proxyResult.dest
+      );
+      request.origin = {
+        custom: customOrigin,
+      };
 
+      // Modify `Host` header to match the external host
+      headers.host = apiEndpoint;
+
+      // Append querystring if we have any
       request.querystring = proxyResult.uri_args
         ? proxyResult.uri_args.toString()
         : '';
