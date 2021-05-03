@@ -2,6 +2,10 @@
   "builds": [{ "src": "package.json", "use": "tf-next" }],
   "probes": [
     {
+      "path": "/docs/hello-world",
+      "destPath": "http://example.com/docs/hello-world"
+    },
+    {
       "path": "/redir1",
       "status": 308,
       "responseHeaders": {

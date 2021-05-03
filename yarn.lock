@@ -387,10 +387,10 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@dealmore/sammy@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-1.6.0.tgz#10c9c9fac88cbb62f3ea996272d0302140e9d2b8"
-  integrity sha512-8k7bWAfp1tC6ohG29HZdcbZ7J83gnCr3Bc5yjSyI81r6tlaArRFFfj3Gi5Ja6BlDSst04/C+t1oeWYqlYfANjg==
+"@dealmore/sammy@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-1.6.1.tgz#b5340a838b6220bde3d3a137d57c7a82ddedf365"
+  integrity sha512-KPt+yIt/A9IJ/TT41GvI5D2v2IOlK+hZElB20a5dnQX0F43vvNp8fg4rPJEh4ZrtOyYB2g1+cO5ontdd+0lkIg==
   dependencies:
     aws-sdk "^2.804.0"
     change-case "^4.1.2"
