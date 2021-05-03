@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { URL } from 'url';
 import { parse as parseJSON } from 'hjson';
 import { ConfigOutput } from 'tf-next/src/types';
 import { CloudFrontResultResponse } from 'aws-lambda';
@@ -22,6 +23,7 @@ interface ProbeFile {
     status?: number;
     statusDescription?: string;
     responseHeaders?: Record<string, string>;
+    destPath?: string;
   }[];
 }
 
@@ -33,6 +35,7 @@ describe('Test proxy config', () => {
       let probeFile: ProbeFile;
       let lambdaSAM: LambdaSAM;
       let proxySAM: ProxySAM;
+      let samEndpoint: string;
 
       beforeAll(async () => {
         // Get the config
@@ -72,7 +75,7 @@ describe('Test proxy config', () => {
             console.log(data.toString());
           },
         });
-        await lambdaSAM.start();
+        samEndpoint = await lambdaSAM.start();
 
         // Generate SAM for Proxy (Lambda@Edge)
         const proxyConfig = {
@@ -112,41 +115,60 @@ describe('Test proxy config', () => {
           if ('origin' in Request) {
             // Request
             if (Request.origin?.custom) {
-              // Request should be served by lambda (SSR)
-              const basePath = Request.origin.custom.path;
-              const { uri, querystring } = Request;
+              if (samEndpoint.includes(Request.origin.custom.domainName)) {
+                // Request should be served by lambda (SSR)
+                const basePath = Request.origin.custom.path;
+                const { uri, querystring } = Request;
 
-              // Merge request headers and custom headers from origin
-              const headers = {
-                ...normalizeCloudFrontHeaders(Request.headers),
-                ...normalizeCloudFrontHeaders(
-                  Request.origin.custom.customHeaders
-                ),
-              };
-              const requestPath = `${basePath}${uri}${
-                querystring !== '' ? `?${querystring}` : ''
-              }`;
+                // Merge request headers and custom headers from origin
+                const headers = {
+                  ...normalizeCloudFrontHeaders(Request.headers),
+                  ...normalizeCloudFrontHeaders(
+                    Request.origin.custom.customHeaders
+                  ),
+                };
+                const requestPath = `${basePath}${uri}${
+                  querystring !== '' ? `?${querystring}` : ''
+                }`;
 
-              const lambdaResponse = await lambdaSAM
-                .sendApiGwRequest(requestPath, {
-                  headers,
-                })
-                .then((res) => {
-                  const headers = res.headers;
+                const lambdaResponse = await lambdaSAM
+                  .sendApiGwRequest(requestPath, {
+                    headers,
+                  })
+                  .then((res) => {
+                    const headers = res.headers;
 
-                  return res.text();
-                })
-                .then((text) => {
-                  // If text is already JSON we dont need to parse base64
-                  if (text.startsWith('{')) {
-                    return text;
+                    return res.text();
+                  })
+                  .then((text) => {
+                    // If text is already JSON we dont need to parse base64
+                    if (text.startsWith('{')) {
+                      return text;
+                    }
+
+                    return Buffer.from(text, 'base64').toString('utf-8');
+                  });
+
+                if (probe.mustContain) {
+                  expect(lambdaResponse).toContain(probe.mustContain);
+                }
+              } else {
+                // Request is an external rewrite
+                if (probe.destPath) {
+                  const { custom: customOrigin } = Request.origin;
+                  const originRequest = new URL(
+                    `${customOrigin.protocol}://${customOrigin.domainName}${
+                      Request.uri
+                    }${Request.querystring ? `?${Request.querystring}` : ''}`
+                  );
+
+                  // Check for custom ports
+                  if (customOrigin.port !== 80 && customOrigin.port !== 443) {
+                    originRequest.port = customOrigin.port.toString();
                   }
 
-                  return Buffer.from(text, 'base64').toString('utf-8');
-                });
-
-              if (probe.mustContain) {
-                expect(lambdaResponse).toContain(probe.mustContain);
+                  expect(originRequest).toEqual(new URL(probe.destPath));
+                }
               }
             } else if (Request.origin?.s3) {
               // Request should be served by static file system (S3)

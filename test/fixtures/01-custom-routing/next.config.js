@@ -1,4 +1,14 @@
 module.exports = {
+  async rewrites() {
+    return [
+      // Rewriting to an external URL
+      {
+        source: '/docs/:slug',
+        destination: 'http://example.com/docs/:slug',
+      },
+    ];
+  },
+
   async redirects() {
     return [
       {

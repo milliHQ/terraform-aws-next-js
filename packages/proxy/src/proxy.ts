@@ -175,25 +175,8 @@ export class Proxy {
           isContinue = true;
         }
 
-        if (routeConfig.check && phase !== 'hit') {
-          if (!this.lambdaRoutes.has(destPath)) {
-            // When it is not a lambda route we cut the url_args
-            // for the next iteration
-            const nextUrl = parseUrl(destPath);
-            reqPathname = nextUrl.pathname!;
-
-            // Check if we have a static route
-            if (!this.staticRoutes.has(reqPathname)) {
-              appendURLSearchParams(searchParams, nextUrl.searchParams);
-              continue;
-            }
-          } else {
-            target = 'lambda';
-          }
-        }
-
+        // Check for external rewrite
         const isDestUrl = isURL(destPath);
-
         if (isDestUrl) {
           result = {
             found: true,
@@ -207,34 +190,7 @@ export class Proxy {
             matched_route_idx: routeIndex,
             phase,
             headers: combinedHeaders,
-            target,
-          };
-
-          if (isContinue) {
-            continue;
-          }
-
-          break;
-        } else {
-          if (!destPath.startsWith('/')) {
-            destPath = `/${destPath}`;
-          }
-
-          const destParsed = parseUrl(destPath);
-          appendURLSearchParams(searchParams, destParsed.searchParams);
-          result = {
-            found: true,
-            dest: destParsed.pathname || '/',
-            continue: isContinue,
-            userDest: Boolean(routeConfig.dest),
-            isDestUrl,
-            status: status,
-            uri_args: searchParams,
-            matched_route: routeConfig,
-            matched_route_idx: routeIndex,
-            phase,
-            headers: combinedHeaders,
-            target,
+            target: 'url',
           };
 
           if (isContinue) {
@@ -243,6 +199,50 @@ export class Proxy {
 
           break;
         }
+
+        if (routeConfig.check && phase !== 'hit') {
+          if (this.lambdaRoutes.has(destPath)) {
+            target = 'lambda';
+          } else {
+            // When it is not a lambda route we cut the url_args
+            // for the next iteration
+            const nextUrl = parseUrl(destPath);
+            reqPathname = nextUrl.pathname!;
+
+            // Check if we have a static route
+            if (!this.staticRoutes.has(reqPathname)) {
+              appendURLSearchParams(searchParams, nextUrl.searchParams);
+              continue;
+            }
+          }
+        }
+
+        if (!destPath.startsWith('/')) {
+          destPath = `/${destPath}`;
+        }
+
+        const destParsed = parseUrl(destPath);
+        appendURLSearchParams(searchParams, destParsed.searchParams);
+        result = {
+          found: true,
+          dest: destParsed.pathname || '/',
+          continue: isContinue,
+          userDest: Boolean(routeConfig.dest),
+          isDestUrl,
+          status: status,
+          uri_args: searchParams,
+          matched_route: routeConfig,
+          matched_route_idx: routeIndex,
+          phase,
+          headers: combinedHeaders,
+          target,
+        };
+
+        if (isContinue) {
+          continue;
+        }
+
+        break;
       }
     }
 

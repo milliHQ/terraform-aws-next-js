@@ -304,3 +304,30 @@ test('[proxy-unit] Redirect partial replace', () => {
     target: undefined,
   });
 });
+
+test('[proxy-unit] External rewrite', () => {
+  const routesConfig = [
+    {
+      src: '^\\/docs(?:\\/([^\\/]+?))$',
+      dest: 'http://example.com/docs/$1',
+      check: true,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route('/docs/hello-world');
+
+  expect(result).toEqual({
+    found: true,
+    dest: 'http://example.com/docs/hello-world',
+    continue: false,
+    status: undefined,
+    headers: {},
+    uri_args: new URLSearchParams(''),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: true,
+    phase: undefined,
+    target: 'url',
+  });
+});

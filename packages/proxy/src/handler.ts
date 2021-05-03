@@ -1,19 +1,17 @@
 import { STATUS_CODES } from 'http';
 import {
-  CloudFrontRequestHandler,
   CloudFrontHeaders,
-  CloudFrontRequest,
   CloudFrontResultResponse,
+  CloudFrontRequestEvent,
 } from 'aws-lambda';
 
-import {
-  ProxyConfig,
-  HTTPHeaders,
-  ApiGatewayOriginProps,
-  RouteResult,
-} from './types';
+import { ProxyConfig, HTTPHeaders, RouteResult } from './types';
 import { Proxy } from './proxy';
-import { fetchTimeout } from './util/fetch-timeout';
+import { fetchProxyConfig } from './util/fetch-proxy-config';
+import {
+  createCustomOriginFromApiGateway,
+  createCustomOriginFromUrl,
+} from './util/custom-origin';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -29,15 +27,6 @@ function convertToCloudFrontHeaders(
   }
 
   return cloudFrontHeaders;
-}
-
-async function fetchProxyConfig(endpointUri: string) {
-  // Timeout the connection before 30000ms to be able to print an error message
-  // See Lambda@Edge Limits for origin-request event here:
-  // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-see-limits
-  return fetchTimeout(29500, endpointUri).then(
-    (res) => res.json() as Promise<ProxyConfig>
-  );
 }
 
 /**
@@ -75,34 +64,7 @@ function isRedirect(
   return false;
 }
 
-/**
- * Modifies the request that it is served by API Gateway (Lambda)
- */
-function serveFromApiGateway(
-  request: CloudFrontRequest,
-  apiEndpoint: string,
-  { path }: ApiGatewayOriginProps
-) {
-  request.origin = {
-    custom: {
-      domainName: apiEndpoint,
-      path,
-      customHeaders: {},
-      keepaliveTimeout: 5,
-      port: 443,
-      protocol: 'https',
-      readTimeout: 30,
-      sslProtocols: ['TLSv1.2'],
-    },
-  };
-
-  // Set Host header to the apiEndpoint
-  return {
-    host: apiEndpoint,
-  };
-}
-
-export const handler: CloudFrontRequestHandler = async (event) => {
+export async function handler(event: CloudFrontRequestEvent) {
   const { request } = event.Records[0].cf;
   const configEndpoint = request.origin!.s3!.customHeaders[
     'x-env-config-endpoint'
@@ -134,9 +96,17 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   // Check if we have a prerender route
   // Bypasses proxy
   if (request.uri in proxyConfig.prerenders) {
-    headers = serveFromApiGateway(request, apiEndpoint, {
-      path: `/${proxyConfig.prerenders[request.uri].lambda}`,
-    });
+    // Modify request to be served from Api Gateway
+    const customOrigin = createCustomOriginFromApiGateway(
+      apiEndpoint,
+      `/${proxyConfig.prerenders[request.uri].lambda}`
+    );
+    request.origin = {
+      custom: customOrigin,
+    };
+
+    // Modify `Host` header to match the external host
+    headers.host = apiEndpoint;
   } else {
     // Handle by proxy
     const proxyResult = proxy.route(requestPath);
@@ -149,10 +119,38 @@ export const handler: CloudFrontRequestHandler = async (event) => {
 
     // Check if route is served by lambda
     if (proxyResult.target === 'lambda') {
-      headers = serveFromApiGateway(request, apiEndpoint, {
-        path: proxyResult.dest,
-      });
+      // Modify request to be served from Api Gateway
+      const customOrigin = createCustomOriginFromApiGateway(
+        apiEndpoint,
+        proxyResult.dest
+      );
+      request.origin = {
+        custom: customOrigin,
+      };
 
+      // Modify `Host` header to match the external host
+      headers.host = apiEndpoint;
+
+      // Append querystring if we have any
+      request.querystring = proxyResult.uri_args
+        ? proxyResult.uri_args.toString()
+        : '';
+    } else if (proxyResult.target === 'url') {
+      // Modify request to be served from external host
+      const [customOrigin, destUrl] = createCustomOriginFromUrl(
+        proxyResult.dest
+      );
+      request.origin = {
+        custom: customOrigin,
+      };
+
+      // Modify `Host` header to match the external host
+      headers.host = customOrigin.domainName;
+
+      // Modify URI to match the path
+      request.uri = destUrl.pathname;
+
+      // Append querystring if we have any
       request.querystring = proxyResult.uri_args
         ? proxyResult.uri_args.toString()
         : '';
@@ -177,4 +175,4 @@ export const handler: CloudFrontRequestHandler = async (event) => {
   }
 
   return request;
-};
+}
