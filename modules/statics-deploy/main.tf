@@ -1,9 +1,6 @@
 locals {
-  lambda_policies = [
-    aws_iam_policy.access_static_upload.arn,
-    aws_iam_policy.access_static_deploy.arn
-  ]
-  manifest_key = "_tf-next/deployment.json"
+  manifest_key   = "_tf-next/deployment.json"
+  lambda_timeout = 60
 }
 
 ########################
@@ -20,20 +17,6 @@ resource "aws_s3_bucket" "static_upload" {
   versioning {
     enabled = true
   }
-}
-
-data "aws_iam_policy_document" "access_static_upload" {
-  statement {
-    actions   = ["s3:GetObject", "s3:GetObjectVersion", "s3:DeleteObject", "s3:DeleteObjectVersion"]
-    resources = ["${aws_s3_bucket.static_upload.arn}/*"]
-  }
-}
-
-resource "aws_iam_policy" "access_static_upload" {
-  name_prefix = "next-tf"
-  description = "S3 access for ${aws_s3_bucket.static_upload.id} bucket"
-
-  policy = data.aws_iam_policy_document.access_static_upload.json
 }
 
 resource "aws_s3_bucket_notification" "on_create" {
@@ -104,9 +87,17 @@ resource "aws_s3_bucket_policy" "origin_access" {
   policy = data.aws_iam_policy_document.cf_access.json
 }
 
-# Lambda permissions for updating the static files bucket
-# and to create CloudFront invalidations
+########
+# Lambda
+########
 
+# TODO: Look into if it would be more sense to combine all policies here into
+# a single ressorce
+
+#
+# Lambda permissions for updating the static files bucket and to create
+# CloudFront invalidations
+#
 data "aws_iam_policy_document" "access_static_deploy" {
   statement {
     actions = [
@@ -138,9 +129,80 @@ resource "aws_iam_policy" "access_static_deploy" {
   policy = data.aws_iam_policy_document.access_static_deploy.json
 }
 
-########
-# Lambda
-########
+
+#
+# Lambda permission to download the zipped static uploads package
+#
+data "aws_iam_policy_document" "access_static_upload" {
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:DeleteObject",
+      "s3:DeleteObjectVersion"
+    ]
+    resources = ["${aws_s3_bucket.static_upload.arn}/*"]
+  }
+}
+
+resource "aws_iam_policy" "access_static_upload" {
+  name_prefix = "next-tf"
+  description = "S3 access for ${aws_s3_bucket.static_upload.id} bucket"
+
+  policy = data.aws_iam_policy_document.access_static_upload.json
+}
+
+#
+# Lambda permission to access the SQS queue
+#
+data "aws_iam_policy_document" "access_sqs_queue" {
+  statement {
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    # TODO: Check if we can be more precise here
+    resources = [
+      "arn:aws:logs:*:*:*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:SendMessage",
+      "sqs:GetQueueUrl",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility",
+    ]
+
+    resources = [
+      aws_sqs_queue.this.arn
+    ]
+  }
+
+  statement {
+    actions = [
+      "sqs:ListQueues",
+    ]
+
+    # TODO: Check if we can be more precise here
+    resources = [
+      "*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "access_sqs_queue" {
+  name_prefix = "next-tf"
+  description = "SQS access for ${aws_sqs_queue.this.id} queue"
+
+  policy = data.aws_iam_policy_document.access_sqs_queue.json
+}
+
 
 module "lambda_content" {
   source  = "dealmore/download/npm"
@@ -150,6 +212,14 @@ module "lambda_content" {
   module_version = var.deploy_trigger_module_version
   path_to_file   = "dist.zip"
   use_local      = var.debug_use_local_packages
+}
+
+locals {
+  lambda_policies = [
+    aws_iam_policy.access_static_upload.arn,
+    aws_iam_policy.access_static_deploy.arn,
+    aws_iam_policy.access_sqs_queue.arn,
+  ]
 }
 
 resource "random_id" "function_name" {
@@ -166,7 +236,7 @@ module "deploy_trigger" {
   handler                   = "handler.handler"
   runtime                   = "nodejs14.x"
   memory_size               = 1024
-  timeout                   = 60
+  timeout                   = locals.lambda_timeout
   publish                   = true
   tags                      = var.tags
   role_permissions_boundary = var.lambda_role_permissions_boundary
@@ -233,4 +303,39 @@ resource "null_resource" "static_s3_upload" {
   depends_on = [
     aws_s3_bucket_notification.on_create
   ]
+}
+
+################################
+# SQS Queue
+# (For CloudFront invalidations)
+################################
+resource "aws_sns_topic" "this" {
+  name_prefix = var.deployment_name
+
+  tags = var.tags
+}
+
+resource "aws_sqs_queue" "this" {
+  name_prefix               = var.deployment_name
+  message_retention_seconds = var.sqs_message_retention_seconds
+  receive_wait_time_seconds = var.sqs_receive_wait_time_seconds
+
+  # SQS visibility_timeout_seconds must be >= lambda fn timeout,
+  # aws reccomends at least 6 times the lambda
+  # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
+  visibility_timeout_seconds = locals.lambda_timeout * 6
+
+  tags = var.tags
+}
+
+resource "aws_sns_topic_subscription" "this" {
+  topic_arn = aws_sns_topic.this.arn
+  endpoint  = aws_sqs_queue.this.arn
+  protocol  = "sqs"
+}
+
+resource "aws_lambda_event_source_mapping" "this" {
+  batch_size       = 10 # Maximum batch size for SQS
+  event_source_arn = aws_sqs_queue.this.arn
+  function_name    = module.deploy_trigger.this_lambda_function_arn
 }

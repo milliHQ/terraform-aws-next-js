@@ -36,7 +36,7 @@ resource "random_id" "function_name" {
 # Lambdas
 #########
 
-# Static deployment to S3 website
+# Static deployment to S3 website and handles CloudFront invalidations
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
@@ -45,9 +45,11 @@ module "statics_deploy" {
   debug_use_local_packages         = var.debug_use_local_packages
   cloudfront_id                    = module.proxy.cloudfront_id
   cloudfront_arn                   = module.proxy.cloudfront_arn
-  tags                             = var.tags
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
   use_awscli_for_static_upload     = var.use_awscli_for_static_upload
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
 }
 
 # Lambda
