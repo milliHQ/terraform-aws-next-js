@@ -1,5 +1,5 @@
 locals {
-  s3_origin_id         = "S3-Proxy-Config-${aws_s3_bucket.proxy_config.id}"
+  s3_origin_id         = "S3-Proxy-Config-${aws_s3_bucket.proxy_config_store.id}"
   proxy_config_key     = "proxy-config.json"
   proxy_config_max_age = 15 * 60
 }
@@ -8,8 +8,7 @@ locals {
 # Bucket
 ########
 
-resource "aws_s3_bucket" "proxy_config" {
-  provider      = aws.global_region
+resource "aws_s3_bucket" "proxy_config_store" {
   bucket_prefix = "next-tf-proxy-config"
   acl           = "private"
   force_destroy = true
@@ -19,7 +18,7 @@ resource "aws_s3_bucket" "proxy_config" {
 data "aws_iam_policy_document" "cf_access" {
   statement {
     actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.proxy_config.arn}/*"]
+    resources = ["${aws_s3_bucket.proxy_config_store.arn}/*"]
 
     principals {
       type        = "AWS"
@@ -28,9 +27,8 @@ data "aws_iam_policy_document" "cf_access" {
   }
 }
 
-resource "aws_s3_bucket_policy" "origin_access" {
-  provider = aws.global_region
-  bucket   = aws_s3_bucket.proxy_config.id
+resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
+  bucket   = aws_s3_bucket.proxy_config_store.id
   policy   = data.aws_iam_policy_document.cf_access.json
 }
 
@@ -38,9 +36,8 @@ resource "aws_s3_bucket_policy" "origin_access" {
 # Upload Proxy Config
 #####################
 
-resource "aws_s3_bucket_object" "proxy_config" {
-  provider      = aws.global_region
-  bucket        = aws_s3_bucket.proxy_config.id
+resource "aws_s3_bucket_object" "config_json" {
+  bucket        = aws_s3_bucket.proxy_config_store.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json
   content_type  = "application/json"
@@ -65,7 +62,7 @@ data "aws_cloudfront_cache_policy" "managed_caching_optimized_for_uncompressed_o
 }
 
 resource "aws_cloudfront_origin_access_identity" "this" {
-  comment = "S3 CloudFront access ${aws_s3_bucket.proxy_config.id}"
+  comment = "S3 CloudFront access ${aws_s3_bucket.proxy_config_store.id}"
 }
 
 resource "aws_cloudfront_distribution" "distribution" {
@@ -75,7 +72,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   price_class     = var.cloudfront_price_class
 
   origin {
-    domain_name = aws_s3_bucket.proxy_config.bucket_regional_domain_name
+    domain_name = aws_s3_bucket.proxy_config_store.bucket_regional_domain_name
     origin_id   = local.s3_origin_id
 
     s3_origin_config {
