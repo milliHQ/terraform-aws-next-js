@@ -68,6 +68,14 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = aws_iam_policy.lambda_logging.arn
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_vpc" {
+  for_each = var.lambda_attach_to_vpc ? local.lambdas : {}
+
+  role       = aws_iam_role.lambda[each.key].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+
 ####################################
 # Additional policy JSON (λ Next.js)
 ####################################

@@ -82,6 +82,24 @@ variable "lambda_role_permissions_boundary" {
   default     = null
 }
 
+variable "lambda_attach_to_vpc" {
+  type        = bool
+  description = "Set to true if the Lambda functions should be attached to a VPC. Use this setting if VPC resources should be accessed by the Lambda functions. When setting this to true, use vpc_security_group_ids and vpc_subnet_ids to specify the VPC networking. Note that attaching to a VPC would introduce a delay on to cold starts"
+  default     = false
+}
+
+variable "vpc_subnet_ids" {
+  type        = list(string)
+  description = "The list of VPC subnet IDs to attach the Lambda functions. lambda_attach_to_vpc should be set to true for these to be applied."
+  default     = []
+}
+
+variable "vpc_security_group_ids" {
+  type        = list(string)
+  description = "The list of Security Group IDs to be used by the Lambda functions. lambda_attach_to_vpc should be set to true for these to be applied."
+  default     = []
+}
+
 #########################
 # Cloudfront Distribution
 #########################
