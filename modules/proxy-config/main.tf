@@ -28,8 +28,8 @@ data "aws_iam_policy_document" "cf_access" {
 }
 
 resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
-  bucket   = aws_s3_bucket.proxy_config_store.id
-  policy   = data.aws_iam_policy_document.cf_access.json
+  bucket = aws_s3_bucket.proxy_config_store.id
+  policy = data.aws_iam_policy_document.cf_access.json
 }
 
 #####################
