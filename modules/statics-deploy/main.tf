@@ -158,19 +158,6 @@ resource "aws_iam_policy" "access_static_upload" {
 data "aws_iam_policy_document" "access_sqs_queue" {
   statement {
     actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-
-    # TODO: Check if we can be more precise here
-    resources = [
-      "arn:aws:logs:*:*:*",
-    ]
-  }
-
-  statement {
-    actions = [
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:SendMessage",
@@ -181,17 +168,6 @@ data "aws_iam_policy_document" "access_sqs_queue" {
 
     resources = [
       aws_sqs_queue.this.arn
-    ]
-  }
-
-  statement {
-    actions = [
-      "sqs:ListQueues",
-    ]
-
-    # TODO: Check if we can be more precise here
-    resources = [
-      "*",
     ]
   }
 }
