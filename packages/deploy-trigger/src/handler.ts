@@ -15,6 +15,7 @@ import { generateRandomId } from './utils';
 interface InvalidationSQSMessage {
   id: string;
   distributionId: string;
+  retries: number;
   multiPaths: string[];
   singlePaths: string[];
 }
@@ -24,6 +25,9 @@ const defaultExpireAfterDays = 30;
 
 // Timeout in seconds to wait after an invalidation is send to SQS
 const timeOutBetweenInvalidations = 60;
+
+// Sets the number of retries for an invalidation
+const numberOfRetriesForInvalidation = 3;
 
 function parseExpireAfterDays() {
   if (process.env.EXPIRE_AFTER_DAYS) {
@@ -50,15 +54,18 @@ function parseExpireAfterDays() {
 async function createCloudFrontInvalidation(
   incomingMultiPaths: string[],
   incomingSinglePaths: string[],
-  distributionId: string
+  distributionId: string,
+  incomingRetries: number
 ) {
+  let retries = incomingRetries;
+
   // Invalidate the paths from the CloudFront distribution
   const cloudFrontClient = new CloudFront({
     apiVersion: '2020-05-31',
   });
 
   const invalidationId = generateRandomId(4);
-  const [InvalidationBatch, multiPaths, singlePaths] = createInvalidation(
+  let [InvalidationBatch, multiPaths, singlePaths] = createInvalidation(
     invalidationId,
     incomingMultiPaths,
     incomingSinglePaths
@@ -72,8 +79,16 @@ async function createCloudFrontInvalidation(
       })
       .promise();
   } catch (err) {
-    // TODO: Find way to handle errors here
     console.log(err);
+    if (err.code === 'TooManyInvalidationsInProgress') {
+      // Send the invalidation back to the queue
+      if (retries < numberOfRetriesForInvalidation) {
+        console.log('Invalidation rescheduled');
+        retries = retries + 1;
+        multiPaths = incomingMultiPaths;
+        singlePaths = incomingSinglePaths;
+      }
+    }
   }
 
   // Create SQS event if there are paths left to invalidate
@@ -83,6 +98,7 @@ async function createCloudFrontInvalidation(
       distributionId,
       multiPaths,
       singlePaths,
+      retries,
     };
 
     const sqsClient = new SQS();
@@ -159,7 +175,12 @@ async function s3Handler(Record: S3EventRecord) {
   });
 
   const [multiPaths, singlePaths] = prepareInvalidations(invalidationPaths);
-  await createCloudFrontInvalidation(multiPaths, singlePaths, distributionId);
+  await createCloudFrontInvalidation(
+    multiPaths,
+    singlePaths,
+    distributionId,
+    0
+  );
 }
 
 async function sqsHandler(Record: SQSRecord) {
@@ -168,6 +189,7 @@ async function sqsHandler(Record: SQSRecord) {
   await createCloudFrontInvalidation(
     body.multiPaths,
     body.singlePaths,
-    body.distributionId
+    body.distributionId,
+    body.retries
   );
 }
