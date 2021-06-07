@@ -18,7 +18,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@types/aws-lambda": "8.10.64",
+    "@types/aws-lambda": "^8.10.76",
     "@types/buffer-crc32": "0.2.0",
     "@types/find-up": "4.0.0",
     "@types/fs-extra": "8.0.0",

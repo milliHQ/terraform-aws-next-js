@@ -2,11 +2,6 @@ variable "static_files_archive" {
   type = string
 }
 
-variable "debug_use_local_packages" {
-  type    = bool
-  default = false
-}
-
 variable "deploy_trigger_module_version" {
   type    = string
   default = "0.3.0"
@@ -26,17 +21,45 @@ variable "cloudfront_arn" {
   type        = string
 }
 
-variable "tags" {
-  type    = map(string)
-  default = {}
-}
-
 variable "lambda_role_permissions_boundary" {
   type    = string
   default = null
 }
 
 variable "use_awscli_for_static_upload" {
+  type    = bool
+  default = false
+}
+
+###########
+# SQS Queue
+###########
+variable "sqs_message_retention_seconds" {
+  type    = number
+  default = 86400
+}
+
+variable "sqs_receive_wait_time_seconds" {
+  type    = number
+  default = 10
+}
+
+##########
+# Labeling
+##########
+variable "deployment_name" {
+  type = string
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+
+#######
+# Debug
+#######
+variable "debug_use_local_packages" {
   type    = bool
   default = false
 }
