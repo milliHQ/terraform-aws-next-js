@@ -236,7 +236,7 @@ module "deploy_trigger" {
   handler                   = "handler.handler"
   runtime                   = "nodejs14.x"
   memory_size               = 1024
-  timeout                   = locals.lambda_timeout
+  timeout                   = local.lambda_timeout
   publish                   = true
   tags                      = var.tags
   role_permissions_boundary = var.lambda_role_permissions_boundary
@@ -265,6 +265,7 @@ module "deploy_trigger" {
     TARGET_BUCKET     = aws_s3_bucket.static_deploy.id
     EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
     DISTRIBUTION_ID   = var.cloudfront_id
+    SQS_QUEUE_URL     = aws_sqs_queue.this.id
   }
 }
 
@@ -323,7 +324,7 @@ resource "aws_sqs_queue" "this" {
   # SQS visibility_timeout_seconds must be >= lambda fn timeout,
   # aws reccomends at least 6 times the lambda
   # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
-  visibility_timeout_seconds = locals.lambda_timeout * 6
+  visibility_timeout_seconds = local.lambda_timeout * 6
 
   tags = var.tags
 }
@@ -338,4 +339,39 @@ resource "aws_lambda_event_source_mapping" "this" {
   batch_size       = 10 # Maximum batch size for SQS
   event_source_arn = aws_sqs_queue.this.arn
   function_name    = module.deploy_trigger.this_lambda_function_arn
+}
+
+data "aws_iam_policy_document" "sqs_queue" {
+  statement {
+    actions = [
+      "sqs:SendMessage",
+    ]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+
+      values = [
+        aws_sns_topic.this.arn,
+        module.deploy_trigger.this_lambda_function_arn
+      ]
+    }
+
+    principals {
+      type = "AWS"
+
+      identifiers = [
+        "*",
+      ]
+    }
+
+    resources = [
+      module.deploy_trigger.this_lambda_function_arn,
+    ]
+  }
+}
+
+resource "aws_sqs_queue_policy" "this" {
+  queue_url = aws_sqs_queue.this.id
+  policy    = data.aws_iam_policy_document.sqs_queue.json
 }
