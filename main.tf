@@ -40,16 +40,20 @@ resource "random_id" "function_name" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive             = local.static_files_archive
-  expire_static_assets             = var.expire_static_assets
-  debug_use_local_packages         = var.debug_use_local_packages
-  cloudfront_id                    = module.proxy.cloudfront_id
-  cloudfront_arn                   = module.proxy.cloudfront_arn
+  static_files_archive = local.static_files_archive
+  expire_static_assets = var.expire_static_assets
+
+  # TODO: When using external CloudFront replace this with the id from the external CloudFront
+  cloudfront_id  = module.cloudfront_main[0].cloudfront_id
+  cloudfront_arn = module.cloudfront_main[0].cloudfront_arn
+
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
   use_awscli_for_static_upload     = var.use_awscli_for_static_upload
 
   deployment_name = var.deployment_name
   tags            = var.tags
+
+  debug_use_local_packages = var.debug_use_local_packages
 }
 
 # Lambda
@@ -318,11 +322,15 @@ locals {
     ]
   }
 
-  cloudfront_origins = var.create_image_optimization ? [
-    # Add CloudFront origin for image optimization
-    local.cloudfront_origin_static_content,
-    module.next_image[0].cloudfront_origin_image_optimizer
-  ] : [local.cloudfront_origin_static_content]
+  # cloudfront_origins = var.create_image_optimization ? [
+  #   # Add CloudFront origin for image optimization
+  #   local.cloudfront_origin_static_content,
+  #   module.next_image[0].cloudfront_origin_image_optimizer
+  # ] : [local.cloudfront_origin_static_content]
+
+  # TODO: Convert from Array to Object
+  cloudfront_origins = [local.cloudfront_origin_static_content,
+  module.next_image[0].cloudfront_origin_image_optimizer]
 
   # CloudFront behaviors
   ######################
@@ -352,7 +360,7 @@ locals {
     path_pattern     = "/_next/static/*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.origin_id_static_deployment
+    target_origin_id = local.cloudfront_origin_static_content.origin_id
 
     compress               = true
     viewer_protocol_policy = "redirect-to-https"

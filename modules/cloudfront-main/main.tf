@@ -36,8 +36,8 @@ resource "aws_cloudfront_distribution" "distribution" {
         for_each = origin.value["custom_header"]
 
         content {
-          name  = custom_header["name"]
-          value = custom_header["value"]
+          name  = custom_header.value["name"]
+          value = custom_header.value["value"]
         }
       }
     }

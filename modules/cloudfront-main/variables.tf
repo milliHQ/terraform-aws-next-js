@@ -16,7 +16,7 @@ variable "cloudfront_origins" {
 }
 
 variable "cloudfront_default_behavior" {
-  type    = map(any)
+  type    = any
   default = null
 }
 
