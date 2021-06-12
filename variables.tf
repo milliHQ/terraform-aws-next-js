@@ -13,23 +13,6 @@ variable "create_image_optimization" {
   default     = true
 }
 
-variable "domain_names" {
-  description = "Alternative domain names for the CloudFront distribution."
-  type        = list(string)
-  default     = []
-}
-
-variable "create_domain_name_records" {
-  description = "Controls whether Route 53 records for the for the domain_names should be created."
-  type        = bool
-  default     = true
-}
-
-variable "domain_zone_names" {
-  type    = list(string)
-  default = []
-}
-
 variable "expire_static_assets" {
   description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
   type        = number
@@ -103,31 +86,22 @@ variable "vpc_security_group_ids" {
 #########################
 # Cloudfront Distribution
 #########################
+variable "cloudfront_create_distribution" {
+  description = "Controls whether the main CloudFront distribution should be created."
+  type        = bool
+  default     = true
+}
+
 variable "cloudfront_price_class" {
   description = "Price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
   type        = string
   default     = "PriceClass_100"
 }
 
-variable "cloudfront_viewer_certificate_arn" {
-  type    = string
-  default = null
-}
-
 variable "cloudfront_minimum_protocol_version" {
   description = "Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
   type        = string
   default     = "TLSv1.2_2019"
-}
-
-variable "cloudfront_origins" {
-  type    = list(any)
-  default = null
-}
-
-variable "cloudfront_custom_behaviors" {
-  type    = list(any)
-  default = null
 }
 
 variable "cloudfront_origin_headers" {
@@ -140,22 +114,6 @@ variable "cloudfront_cache_key_headers" {
   description = "Header keys that should be used to calculate the cache key in CloudFront."
   type        = list(string)
   default     = ["Authorization"]
-}
-
-variable "cloudfront_geo_restriction" {
-  description = "Options to control distribution of content, object with restriction_type and locations."
-  type = object({
-    restriction_type = string,
-    locations        = list(string),
-  })
-  default = {
-    restriction_type = "none"
-    locations        = []
-  }
-  validation {
-    condition     = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
-    error_message = "The restriction_type must be \"none\", \"blacklist\", or \"whitelist\"."
-  }
 }
 
 ##########

@@ -175,39 +175,60 @@ module "next_image" {
   tags            = var.tags
 }
 
-##################
-# CloudFront Proxy
-##################
-locals {
-  next_image_cloudfront_origins = var.create_image_optimization ? [module.next_image[0].cloudfront_origin_image_optimizer] : []
-  proxy_cloudfront_origins = var.cloudfront_origins != null ? concat(
-    local.next_image_cloudfront_origins,
-    var.cloudfront_origins
-  ) : local.next_image_cloudfront_origins
+#########################
+# CloudFront Proxy Config
+#########################
 
-  # Custom CloudFront beheaviour for image optimization
-  next_image_custom_behavior = var.create_image_optimization ? [{
-    path_pattern     = "/_next/image*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = module.next_image[0].cloudfront_origin_id
+module "proxy_config" {
+  source = "./modules/cloudfront-proxy-config"
 
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
+  cloudfront_price_class = var.cloudfront_price_class
+  proxy_config_json      = local.proxy_config_json
+  proxy_config_version   = local.config_file_version
 
-    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
-    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
-  }] : []
-
-  cloudfront_custom_behaviors = var.cloudfront_custom_behaviors != null ? concat(
-    local.next_image_custom_behavior,
-    var.cloudfront_custom_behaviors
-  ) : local.next_image_custom_behavior
+  deployment_name = var.deployment_name
+  tags            = var.tags
 }
+
+#####################
+# Proxy (Lambda@Edge)
+#####################
 
 resource "random_id" "policy_name" {
   prefix      = "${var.deployment_name}-"
   byte_length = 4
+}
+
+module "proxy" {
+  source = "./modules/proxy"
+
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+
+  debug_use_local_packages = var.debug_use_local_packages
+
+  providers = {
+    aws.global_region = aws.global_region
+  }
+}
+
+#########################
+# CloudFront distribution
+#########################
+
+# Origin & Cache Policies
+#########################
+
+# Managed origin policy
+data "aws_cloudfront_origin_request_policy" "managed_cors_s3_origin" {
+  name = "Managed-CORS-S3Origin"
+}
+
+# Managed cache policy
+data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
+  name = "Managed-CachingOptimized"
 }
 
 resource "aws_cloudfront_origin_request_policy" "this" {
@@ -268,54 +289,110 @@ resource "aws_cloudfront_cache_policy" "this" {
   }
 }
 
-module "proxy" {
-  source = "./modules/proxy"
+locals {
+  # CloudFront default root object
+  ################################
+  cloudfront_default_root_object = "index"
 
-  api_gateway_endpoint          = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
-  static_bucket_endpoint        = module.statics_deploy.static_bucket_endpoint
-  static_bucket_access_identity = module.statics_deploy.static_bucket_access_identity
-  proxy_config_json             = local.proxy_config_json
-  proxy_config_version          = local.config_file_version
+  # CloudFront Origins
+  ####################
 
-  # Forwarding variables
-  deployment_name                     = var.deployment_name
-  cloudfront_price_class              = var.cloudfront_price_class
-  cloudfront_origins                  = local.proxy_cloudfront_origins
-  cloudfront_custom_behaviors         = local.cloudfront_custom_behaviors
-  cloudfront_alias_domains            = var.domain_names
-  cloudfront_viewer_certificate_arn   = var.cloudfront_viewer_certificate_arn
-  cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
-  cloudfront_origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
-  cloudfront_cache_policy_id          = aws_cloudfront_cache_policy.this.id
-  debug_use_local_packages            = var.debug_use_local_packages
-  tags                                = var.tags
-  lambda_role_permissions_boundary    = var.lambda_role_permissions_boundary
+  # Default origin (With config for Lambda@Edge Proxy)
+  cloudfront_origin_static_content = {
+    domain_name = module.statics_deploy.static_bucket_endpoint
+    origin_id   = "tf-next-s3-static-content"
 
-  providers = {
-    aws.global_region = aws.global_region
+    s3_origin_config = {
+      origin_access_identity = module.statics_deploy.static_bucket_access_identity
+    }
+
+    custom_header = [
+      {
+        name  = "x-env-config-endpoint"
+        value = "http://${module.proxy_config.config_endpoint}"
+      },
+      {
+        name  = "x-env-api-endpoint"
+        value = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+      }
+    ]
   }
+
+  cloudfront_origins = var.create_image_optimization ? [
+    # Add CloudFront origin for image optimization
+    local.cloudfront_origin_static_content,
+    module.next_image[0].cloudfront_origin_image_optimizer
+  ] : [local.cloudfront_origin_static_content]
+
+  # CloudFront behaviors
+  ######################
+
+  # Default CloudFront behavior
+  # (Lambda@Edge Proxy)
+  cloudfront_default_behavior = {
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = local.cloudfront_origin_static_content.origin_id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
+    cache_policy_id          = aws_cloudfront_cache_policy.this.id
+
+    lambda_function_association = {
+      event_type   = "origin-request"
+      lambda_arn   = module.proxy.lambda_edge_arn
+      include_body = false
+    }
+  }
+
+  # Next.js static assets behavior
+  cloudfront_ordered_cache_behavior_static_assets = {
+    path_pattern     = "/_next/static/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = local.origin_id_static_deployment
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_cors_s3_origin.id
+    cache_policy_id          = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
+  }
+
+  # next/image behavior
+  # TODO: Replace with output from https://github.com/dealmore/terraform-aws-next-js-image-optimization/issues/43
+  cloudfront_ordered_cache_behavior_next_image = {
+    path_pattern     = "/_next/image*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = module.next_image[0].cloudfront_origin_id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
+    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
+  }
+
+  cloudfront_custom_behaviors = var.create_image_optimization ? [
+    local.cloudfront_ordered_cache_behavior_static_assets,
+    local.cloudfront_ordered_cache_behavior_next_image
+  ] : [local.cloudfront_ordered_cache_behavior_static_assets]
 }
 
-################
-# Custom Domains
-################
+module "cloudfront_main" {
+  count = var.cloudfront_create_distribution ? 1 : 0
 
-data "aws_route53_zone" "alias_domains" {
-  count = var.create_domain_name_records ? length(var.domain_zone_names) : 0
+  source = "./modules/cloudfront-main"
 
-  name = var.domain_zone_names[count.index]
-}
+  cloudfront_price_class         = var.cloudfront_price_class
+  cloudfront_default_root_object = local.cloudfront_default_root_object
+  cloudfront_origins             = local.cloudfront_origins
+  cloudfront_default_behavior    = local.cloudfront_default_behavior
+  cloudfront_custom_behaviors    = local.cloudfront_custom_behaviors
 
-resource "aws_route53_record" "alias_domains" {
-  count = var.create_domain_name_records ? length(var.domain_names) : 0
-
-  zone_id = data.aws_route53_zone.alias_domains[count.index].zone_id
-  name    = var.domain_names[count.index]
-  type    = "A"
-
-  alias {
-    name                   = module.proxy.cloudfront_domain_name
-    zone_id                = module.proxy.cloudfront_hosted_zone_id
-    evaluate_target_health = false
-  }
+  deployment_name = var.deployment_name
+  tags            = var.tags
 }
