@@ -326,8 +326,9 @@ locals {
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
   _cloudfront_origins = {
     static_content = merge(local.cloudfront_origin_static_content, { create = true })
-    next_image = merge(module.next_image[0].cloudfront_origin_image_optimizer, {
-      create = var.create_image_optimization
+    next_image = merge(
+      var.create_image_optimization ? module.next_image[0].cloudfront_origin_image_optimizer : null, {
+        create = var.create_image_optimization
     })
   }
 
@@ -375,7 +376,7 @@ locals {
 
   # next/image behavior
   # TODO: Replace with output from https://github.com/dealmore/terraform-aws-next-js-image-optimization/issues/43
-  cloudfront_ordered_cache_behavior_next_image = {
+  cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? {
     path_pattern     = "/_next/image*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
@@ -386,7 +387,7 @@ locals {
 
     origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
     cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
-  }
+  } : null
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
