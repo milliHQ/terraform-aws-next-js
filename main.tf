@@ -322,15 +322,19 @@ locals {
     ]
   }
 
-  # cloudfront_origins = var.create_image_optimization ? [
-  #   # Add CloudFront origin for image optimization
-  #   local.cloudfront_origin_static_content,
-  #   module.next_image[0].cloudfront_origin_image_optimizer
-  # ] : [local.cloudfront_origin_static_content]
+  # Little hack here to create a dynamic object with different number of attributes
+  # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
+  _cloudfront_origins = {
+    static_content = merge(local.cloudfront_origin_static_content, { create = true })
+    next_image = merge(module.next_image[0].cloudfront_origin_image_optimizer, {
+      create = var.create_image_optimization
+    })
+  }
 
-  # TODO: Convert from Array to Object
-  cloudfront_origins = [local.cloudfront_origin_static_content,
-  module.next_image[0].cloudfront_origin_image_optimizer]
+  cloudfront_origins = {
+    for key, origin in local._cloudfront_origins : key => origin
+    if origin.create
+  }
 
   # CloudFront behaviors
   ######################
@@ -384,10 +388,19 @@ locals {
     cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
   }
 
-  cloudfront_custom_behaviors = var.create_image_optimization ? [
-    local.cloudfront_ordered_cache_behavior_static_assets,
-    local.cloudfront_ordered_cache_behavior_next_image
-  ] : [local.cloudfront_ordered_cache_behavior_static_assets]
+  # Little hack here to create a dynamic object with different number of attributes
+  # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
+  _cloudfront_custom_behaviors = {
+    static_assets = merge(local.cloudfront_ordered_cache_behavior_static_assets, { create = true })
+    next_image = merge(local.cloudfront_ordered_cache_behavior_next_image, {
+      create = var.create_image_optimization
+    })
+  }
+
+  cloudfront_custom_behaviors = {
+    for key, behavior in local._cloudfront_custom_behaviors : key => behavior
+    if behavior.create
+  }
 }
 
 module "cloudfront_main" {

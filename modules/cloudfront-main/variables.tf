@@ -11,7 +11,7 @@ variable "cloudfront_default_root_object" {
 }
 
 variable "cloudfront_origins" {
-  type    = list(any)
+  type    = any
   default = null
 }
 
@@ -21,7 +21,7 @@ variable "cloudfront_default_behavior" {
 }
 
 variable "cloudfront_custom_behaviors" {
-  type    = list(any)
+  type    = any
   default = null
 }
 

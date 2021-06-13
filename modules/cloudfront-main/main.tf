@@ -7,7 +7,8 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Add CloudFront origins
   dynamic "origin" {
-    for_each = var.cloudfront_origins != null ? var.cloudfront_origins : []
+    for_each = var.cloudfront_origins
+
     content {
       domain_name = origin.value["domain_name"]
       origin_id   = origin.value["origin_id"]
@@ -33,7 +34,7 @@ resource "aws_cloudfront_distribution" "distribution" {
       }
 
       dynamic "custom_header" {
-        for_each = origin.value["custom_header"]
+        for_each = lookup(origin.value, "custom_header", null) != null ? origin.value["custom_header"] : []
 
         content {
           name  = custom_header.value["name"]
@@ -72,7 +73,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Custom behaviors
   dynamic "ordered_cache_behavior" {
-    for_each = var.cloudfront_custom_behaviors != null ? var.cloudfront_custom_behaviors : []
+    for_each = var.cloudfront_custom_behaviors
     content {
       path_pattern     = ordered_cache_behavior.value["path_pattern"]
       allowed_methods  = ordered_cache_behavior.value["allowed_methods"]
