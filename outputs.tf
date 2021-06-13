@@ -32,7 +32,7 @@ output "cloudfront_default_cache_behavior" {
 
 output "cloudfront_ordered_cache_behaviors" {
   description = "Preconfigured ordered cache behaviors the CloudFront distribution should use."
-  value       = local.cloudfront_custom_behaviors
+  value       = local.cloudfront_ordered_cache_behaviors
 }
 
 output "cloudfront_origins" {

@@ -20,7 +20,7 @@ variable "cloudfront_default_behavior" {
   default = null
 }
 
-variable "cloudfront_custom_behaviors" {
+variable "cloudfront_ordered_cache_behaviors" {
   type    = any
   default = null
 }

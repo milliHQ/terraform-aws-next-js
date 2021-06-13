@@ -85,7 +85,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Ordered cache behaviors
   dynamic "ordered_cache_behavior" {
-    for_each = var.cloudfront_custom_behaviors
+    for_each = var.cloudfront_ordered_cache_behaviors
 
     content {
       path_pattern     = ordered_cache_behavior.value["path_pattern"]

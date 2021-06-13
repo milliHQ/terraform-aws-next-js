@@ -392,15 +392,15 @@ locals {
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
-  _cloudfront_custom_behaviors = {
+  _cloudfront_ordered_cache_behaviors = {
     static_assets = merge(local.cloudfront_ordered_cache_behavior_static_assets, { create = true })
     next_image = merge(local.cloudfront_ordered_cache_behavior_next_image, {
       create = var.create_image_optimization
     })
   }
 
-  cloudfront_custom_behaviors = {
-    for key, behavior in local._cloudfront_custom_behaviors : key => behavior
+  cloudfront_ordered_cache_behaviors = {
+    for key, behavior in local._cloudfront_ordered_cache_behaviors : key => behavior
     if behavior.create
   }
 
@@ -419,12 +419,12 @@ module "cloudfront_main" {
 
   source = "./modules/cloudfront-main"
 
-  cloudfront_price_class           = var.cloudfront_price_class
-  cloudfront_default_root_object   = local.cloudfront_default_root_object
-  cloudfront_origins               = local.cloudfront_origins
-  cloudfront_default_behavior      = local.cloudfront_default_behavior
-  cloudfront_custom_behaviors      = local.cloudfront_custom_behaviors
-  cloudfront_custom_error_response = local.cloudfront_custom_error_response
+  cloudfront_price_class             = var.cloudfront_price_class
+  cloudfront_default_root_object     = local.cloudfront_default_root_object
+  cloudfront_origins                 = local.cloudfront_origins
+  cloudfront_default_behavior        = local.cloudfront_default_behavior
+  cloudfront_ordered_cache_behaviors = local.cloudfront_ordered_cache_behaviors
+  cloudfront_custom_error_response   = local.cloudfront_custom_error_response
 
   deployment_name = var.deployment_name
   tags            = var.tags
