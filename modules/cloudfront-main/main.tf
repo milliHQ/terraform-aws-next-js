@@ -13,6 +13,17 @@ resource "aws_cloudfront_distribution" "distribution" {
       domain_name = origin.value["domain_name"]
       origin_id   = origin.value["origin_id"]
 
+      # Origin Shield
+      dynamic "origin_shield" {
+        for_each = lookup(origin.value, "origin_shield", null) != null ? [true] : []
+
+        content {
+          enabled              = lookup(origin.value["origin_shield"], "enabled", false)
+          origin_shield_region = lookup(origin.value["origin_shield"], "origin_shield_region", null)
+        }
+      }
+
+      # S3 origin
       dynamic "s3_origin_config" {
         for_each = lookup(origin.value, "s3_origin_config", null) != null ? [true] : []
         content {
@@ -20,6 +31,7 @@ resource "aws_cloudfront_distribution" "distribution" {
         }
       }
 
+      # Custom origin
       dynamic "custom_origin_config" {
         for_each = lookup(origin.value, "custom_origin_config", null) != null ? [true] : []
 
@@ -46,7 +58,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Lambda@Edge Proxy
   dynamic "default_cache_behavior" {
-    for_each = [var.cloudfront_default_behavior]
+    for_each = var.cloudfront_default_behavior
 
     content {
       allowed_methods  = default_cache_behavior.value["allowed_methods"]
@@ -71,9 +83,10 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
-  # Custom behaviors
+  # Ordered cache behaviors
   dynamic "ordered_cache_behavior" {
     for_each = var.cloudfront_custom_behaviors
+
     content {
       path_pattern     = ordered_cache_behavior.value["path_pattern"]
       allowed_methods  = ordered_cache_behavior.value["allowed_methods"]
@@ -90,11 +103,15 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   # Custom error response when a doc is not found in S3 (returns 403)
   # Then shows the 404 page
-  custom_error_response {
-    error_caching_min_ttl = 60
-    error_code            = 403
-    response_code         = 404
-    response_page_path    = "/404"
+  dynamic "custom_error_response" {
+    for_each = var.cloudfront_custom_error_response
+
+    content {
+      error_caching_min_ttl = custom_error_response.value["error_caching_min_ttl"]
+      error_code            = custom_error_response.value["error_code"]
+      response_code         = custom_error_response.value["response_code"]
+      response_page_path    = custom_error_response.value["response_page_path"]
+    }
   }
 
   viewer_certificate {

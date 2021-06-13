@@ -43,9 +43,8 @@ module "statics_deploy" {
   static_files_archive = local.static_files_archive
   expire_static_assets = var.expire_static_assets
 
-  # TODO: When using external CloudFront replace this with the id from the external CloudFront
-  cloudfront_id  = module.cloudfront_main[0].cloudfront_id
-  cloudfront_arn = module.cloudfront_main[0].cloudfront_arn
+  cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
+  cloudfront_arn = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
   use_awscli_for_static_upload     = var.use_awscli_for_static_upload
@@ -343,20 +342,22 @@ locals {
   # Default CloudFront behavior
   # (Lambda@Edge Proxy)
   cloudfront_default_behavior = {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.cloudfront_origin_static_content.origin_id
+    default_behavior = {
+      allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+      cached_methods   = ["GET", "HEAD"]
+      target_origin_id = local.cloudfront_origin_static_content.origin_id
 
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
+      compress               = true
+      viewer_protocol_policy = "redirect-to-https"
 
-    origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
-    cache_policy_id          = aws_cloudfront_cache_policy.this.id
+      origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
+      cache_policy_id          = aws_cloudfront_cache_policy.this.id
 
-    lambda_function_association = {
-      event_type   = "origin-request"
-      lambda_arn   = module.proxy.lambda_edge_arn
-      include_body = false
+      lambda_function_association = {
+        event_type   = "origin-request"
+        lambda_arn   = module.proxy.lambda_edge_arn
+        include_body = false
+      }
     }
   }
 
@@ -402,6 +403,15 @@ locals {
     for key, behavior in local._cloudfront_custom_behaviors : key => behavior
     if behavior.create
   }
+
+  cloudfront_custom_error_response = {
+    s3_failover = {
+      error_caching_min_ttl = 60
+      error_code            = 403
+      response_code         = 404
+      response_page_path    = "/404"
+    }
+  }
 }
 
 module "cloudfront_main" {
@@ -409,11 +419,12 @@ module "cloudfront_main" {
 
   source = "./modules/cloudfront-main"
 
-  cloudfront_price_class         = var.cloudfront_price_class
-  cloudfront_default_root_object = local.cloudfront_default_root_object
-  cloudfront_origins             = local.cloudfront_origins
-  cloudfront_default_behavior    = local.cloudfront_default_behavior
-  cloudfront_custom_behaviors    = local.cloudfront_custom_behaviors
+  cloudfront_price_class           = var.cloudfront_price_class
+  cloudfront_default_root_object   = local.cloudfront_default_root_object
+  cloudfront_origins               = local.cloudfront_origins
+  cloudfront_default_behavior      = local.cloudfront_default_behavior
+  cloudfront_custom_behaviors      = local.cloudfront_custom_behaviors
+  cloudfront_custom_error_response = local.cloudfront_custom_error_response
 
   deployment_name = var.deployment_name
   tags            = var.tags

@@ -110,6 +110,18 @@ variable "cloudfront_cache_key_headers" {
   default     = ["Authorization"]
 }
 
+variable "cloudfront_external_id" {
+  description = "When using an external CloudFront distribution provide its id."
+  type        = string
+  default     = null
+}
+
+variable "cloudfront_external_arn" {
+  description = "When using an external CloudFront distribution provide its arn."
+  type        = string
+  default     = null
+}
+
 ##########
 # Labeling
 ##########

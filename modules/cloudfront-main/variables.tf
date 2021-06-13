@@ -25,6 +25,11 @@ variable "cloudfront_custom_behaviors" {
   default = null
 }
 
+variable "cloudfront_custom_error_response" {
+  type    = any
+  default = null
+}
+
 ##########
 # Labeling
 ##########
