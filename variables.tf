@@ -98,12 +98,6 @@ variable "cloudfront_price_class" {
   default     = "PriceClass_100"
 }
 
-variable "cloudfront_minimum_protocol_version" {
-  description = "Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
-  type        = string
-  default     = "TLSv1.2_2019"
-}
-
 variable "cloudfront_origin_headers" {
   description = "Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront_cache_key_headers."
   type        = list(string)
