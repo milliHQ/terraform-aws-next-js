@@ -122,14 +122,6 @@ data "aws_iam_policy_document" "access_static_deploy" {
   }
 }
 
-resource "aws_iam_policy" "access_static_deploy" {
-  name_prefix = "next-tf"
-  description = "S3 access for ${aws_s3_bucket.static_deploy.id} bucket"
-
-  policy = data.aws_iam_policy_document.access_static_deploy.json
-}
-
-
 #
 # Lambda permission to download the zipped static uploads package
 #
@@ -143,13 +135,6 @@ data "aws_iam_policy_document" "access_static_upload" {
     ]
     resources = ["${aws_s3_bucket.static_upload.arn}/*"]
   }
-}
-
-resource "aws_iam_policy" "access_static_upload" {
-  name_prefix = "next-tf"
-  description = "S3 access for ${aws_s3_bucket.static_upload.id} bucket"
-
-  policy = data.aws_iam_policy_document.access_static_upload.json
 }
 
 #
@@ -172,14 +157,6 @@ data "aws_iam_policy_document" "access_sqs_queue" {
   }
 }
 
-resource "aws_iam_policy" "access_sqs_queue" {
-  name_prefix = "next-tf"
-  description = "SQS access for ${aws_sqs_queue.this.id} queue"
-
-  policy = data.aws_iam_policy_document.access_sqs_queue.json
-}
-
-
 module "lambda_content" {
   source  = "dealmore/download/npm"
   version = "1.0.0"
@@ -188,14 +165,6 @@ module "lambda_content" {
   module_version = var.deploy_trigger_module_version
   path_to_file   = "dist.zip"
   use_local      = var.debug_use_local_packages
-}
-
-locals {
-  lambda_policies = [
-    aws_iam_policy.access_static_upload.arn,
-    aws_iam_policy.access_static_deploy.arn,
-    aws_iam_policy.access_sqs_queue.arn,
-  ]
 }
 
 resource "random_id" "function_name" {
@@ -230,11 +199,20 @@ module "deploy_trigger" {
       service    = "s3"
       source_arn = aws_s3_bucket.static_upload.arn
     }
+    # TODO: Check if we need this
+    InvalidationQueue = {
+      service    = "sqs"
+      source_arn = aws_sqs_queue.this.arn
+    },
   }
 
-  attach_policies    = length(local.lambda_policies) > 0 ? true : false
-  number_of_policies = length(local.lambda_policies)
-  policies           = local.lambda_policies
+  attach_policy_jsons    = true
+  number_of_policy_jsons = 3
+  policy_jsons = [
+    data.aws_iam_policy_document.access_static_deploy.json,
+    data.aws_iam_policy_document.access_static_upload.json,
+    data.aws_iam_policy_document.access_sqs_queue.json
+  ]
 
   environment_variables = {
     NODE_ENV          = "production"
@@ -242,6 +220,13 @@ module "deploy_trigger" {
     EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
     DISTRIBUTION_ID   = var.cloudfront_id
     SQS_QUEUE_URL     = aws_sqs_queue.this.id
+  }
+
+  event_source_mapping = {
+    sqs_source = {
+      batch_size       = 10 # Maximum batch size for SQS
+      event_source_arn = aws_sqs_queue.this.arn
+    }
   }
 }
 
@@ -309,12 +294,6 @@ resource "aws_sns_topic_subscription" "this" {
   topic_arn = aws_sns_topic.this.arn
   endpoint  = aws_sqs_queue.this.arn
   protocol  = "sqs"
-}
-
-resource "aws_lambda_event_source_mapping" "this" {
-  batch_size       = 10 # Maximum batch size for SQS
-  event_source_arn = aws_sqs_queue.this.arn
-  function_name    = module.deploy_trigger.this_lambda_function_arn
 }
 
 data "aws_iam_policy_document" "sqs_queue" {
