@@ -1,8 +1,15 @@
 # Terraform Next.js custom domain example
 
 This example shows how to use a custom domain with the [Next.js Terraform module for AWS](https://registry.terraform.io/modules/dealmore/next-js/aws).
+The code is based on the [with existing CloudFront distribution example](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront).
 
-You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/custom-domain).
+## Features
+
+- Creates a new domain record in Route53
+- Provisions a free SSL certificate from the AWS Certificate Manager for the domain
+- Assigns the domain and the SSL certificate to the CloudFront distribution
+
+> **Note:** You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/custom-domain).
 
 ## Setup
 
@@ -24,21 +31,28 @@ yarn tf-next
 
 ## Setting the domain
 
-Open the `main.tf` file in the root of the Next.js app, and change the following:
+Open the `main.tf` file in the root of the Next.js app, and set the custom domain that should be assigned to the CloudFront distribution:
 
 ```tf
 # main.tf
 ...
 
-locals {
-  # Your custom domain
-  custom_domain = "example.com"
+variable "custom_domain" {
+  description = "Your custom domain"
+  type        = string
+  default     = "example.com"
+}
+
+variable "custom_domain_zone_name" {
+  description = "The Route53 zone name of the custom domain"
+  type        = string
+  default     = "example.com."
 }
 
 ...
 ```
 
-You can change `example.com` to every domain that is associated with Route 53 in your AWS account.
+You can change `example.com` to every domain (or subdomain) that is associated with Route 53 in your AWS account.
 
 ## Deploy
 
