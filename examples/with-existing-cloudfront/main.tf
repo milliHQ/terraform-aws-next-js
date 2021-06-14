@@ -20,106 +20,40 @@ provider "aws" {
   region = "us-east-1"
 }
 
-###########
-# Variables
-###########
-
-variable "custom_domain" {
-  description = "Your custom domain"
-  type        = string
-  # default = "example.com"
-  default = "tf-next.dealmore.de"
-}
-
-# Assuming that the ZONE of your domain is already registrated in your AWS account (Route 53)
-# https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html
-variable "custom_domain_zone_name" {
-  description = "The Route53 zone name of the custom domain"
-  type        = string
-  default     = "example.com."
-}
-
-
-#######################
-# Route53 Domain record
-#######################
-
-# Get the hosted zone for the custom domain
-data "aws_route53_zone" "custom_domain_zone" {
-  name = var.custom_domain_zone_name
-}
-
-# Create a new record in Route 53 for the domain
-resource "aws_route53_record" "cloudfront_alias_domain" {
-  zone_id = data.aws_route53_zone.custom_domain_zone.zone_id
-  name    = var.custom_domain
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.distribution.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-##########
-# SSL Cert
-##########
-
-# Creates a free SSL certificate for CloudFront distribution
-# For more options (e.g. multiple domains) see:
-# https://registry.terraform.io/modules/terraform-aws-modules/acm/aws/
-module "cloudfront_cert" {
-  source  = "terraform-aws-modules/acm/aws"
-  version = "~> 3.0"
-
-  domain_name = var.custom_domain
-  zone_id     = data.aws_route53_zone.custom_domain_zone.zone_id
-
-  tags = {
-    Name = "CloudFront ${var.custom_domain}"
-  }
-
-  # CloudFront works only with certs stored in us-east-1
-  providers = {
-    aws = aws.global_region
-  }
-}
-
 ##########################
 # Terraform Next.js Module
 ##########################
 
 module "tf_next" {
-  # source = "dealmore/next-js/aws"
+  source = "dealmore/next-js/aws"
 
   # Prevent creation of the main CloudFront distribution
   cloudfront_create_distribution = false
   cloudfront_external_id         = aws_cloudfront_distribution.distribution.id
   cloudfront_external_arn        = aws_cloudfront_distribution.distribution.arn
 
-  deployment_name = "terraform-next-js-example-custom-domain"
+  deployment_name = "terraform-next-js-existing-cloudfront"
+
   providers = {
     aws.global_region = aws.global_region
   }
 
   # Uncomment when using in the cloned monorepo for tf-next development
-  source = "../.."
+  # source = "../.."
   # debug_use_local_packages = true
 }
 
 ##################################
 # Existing CloudFront distribution
 ##################################
-
 # You can fully customize all the settings of the CloudFront distribution
 # as described in the AWS Provider documentation:
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution
+
 resource "aws_cloudfront_distribution" "distribution" {
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "terraform-next-js-example-custom-domain"
-  aliases             = [var.custom_domain]
+  comment             = "next-image-optimizer-example-external-cf"
   default_root_object = module.tf_next.cloudfront_default_root_object
 
   # Default cache behavior
@@ -172,6 +106,14 @@ resource "aws_cloudfront_distribution" "distribution" {
       cache_policy_id          = ordered_cache_behavior.value["cache_policy_id"]
     }
   }
+
+  # You can add your own cache behaviours here (uncomment the following block)
+  # ordered_cache_behavior {
+  #   path_pattern    = "/test/*"
+  #   allowed_methods = ["GET", "HEAD", "OPTIONS"]
+  #   cached_methods  = ["GET", "HEAD"]
+  #   ...
+  # }
 
   # Origins
   #########
@@ -227,6 +169,13 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
+  # You can add your own origins here (uncomment the following block)
+  # origin {
+  #   domain_name = "example.com"
+  #   origin_id   = "My custom origin"
+  #   ...
+  # }
+
   # Custom Error response (S3 failover)
   #####################################
   # Adds the preconfigured custom error response from the tf-next module
@@ -243,10 +192,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = false
-    acm_certificate_arn            = module.cloudfront_cert.acm_certificate_arn
-    ssl_support_method             = "sni-only"
-    minimum_protocol_version       = "TLSv1"
+    cloudfront_default_certificate = true
   }
 
   restrictions {
@@ -256,14 +202,6 @@ resource "aws_cloudfront_distribution" "distribution" {
   }
 }
 
-#########
-# Outputs
-#########
-
 output "cloudfront_domain_name" {
-  value = module.tf_next.cloudfront_domain_name
-}
-
-output "custom_domain_name" {
-  value = var.custom_domain
+  value = aws_cloudfront_distribution.distribution.domain_name
 }
