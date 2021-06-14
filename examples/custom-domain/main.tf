@@ -36,7 +36,7 @@ variable "custom_domain" {
 variable "custom_domain_zone_name" {
   description = "The Route53 zone name of the custom domain"
   type        = string
-  default = "example.com."
+  default     = "example.com."
 }
 
 
