@@ -186,14 +186,14 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Version |
 |------|---------|
 | terraform | >= 0.13 |
-| aws | >= 3.34.0 |
+| aws | >= 3.43.0 |
 | random | >= 2.3.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 3.34.0 |
+| aws | >= 3.43.0 |
 | random | >= 2.3.0 |
 
 ## Inputs
@@ -201,19 +201,14 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | cloudfront\_cache\_key\_headers | Header keys that should be used to calculate the cache key in CloudFront. | `list(string)` | <pre>[<br>  "Authorization"<br>]</pre> | no |
-| cloudfront\_custom\_behaviors | n/a | `list(any)` | `null` | no |
-| cloudfront\_geo\_restriction | Options to control distribution of content, object with restriction\_type and locations. | <pre>object({<br>    restriction_type = string,<br>    locations        = list(string),<br>  })</pre> | <pre>{<br>  "locations": [],<br>  "restriction_type": "none"<br>}</pre> | no |
-| cloudfront\_minimum\_protocol\_version | Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1.2_2019"` | no |
+| cloudfront\_create\_distribution | Controls whether the main CloudFront distribution should be created. | `bool` | `true` | no |
+| cloudfront\_external\_arn | When using an external CloudFront distribution provide its arn. | `string` | `null` | no |
+| cloudfront\_external\_id | When using an external CloudFront distribution provide its id. | `string` | `null` | no |
 | cloudfront\_origin\_headers | Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront\_cache\_key\_headers. | `list(string)` | `[]` | no |
-| cloudfront\_origins | n/a | `list(any)` | `null` | no |
 | cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
-| cloudfront\_viewer\_certificate\_arn | n/a | `string` | `null` | no |
-| create\_domain\_name\_records | Controls whether Route 53 records for the for the domain\_names should be created. | `bool` | `true` | no |
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
 | deployment\_name | Identifier for the deployment group (alphanumeric characters, underscores, hyphens, slashes, hash signs and dots are allowed). | `string` | `"tf-next"` | no |
-| domain\_names | Alternative domain names for the CloudFront distribution. | `list(string)` | `[]` | no |
-| domain\_zone\_names | n/a | `list(string)` | `[]` | no |
 | expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
 | lambda\_attach\_to\_vpc | Set to true if the Lambda functions should be attached to a VPC. Use this setting if VPC resources should be accessed by the Lambda functions. When setting this to true, use vpc\_security\_group\_ids and vpc\_subnet\_ids to specify the VPC networking. Note that attaching to a VPC would introduce a delay on to cold starts | `bool` | `false` | no |
 | lambda\_environment\_variables | Map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
@@ -232,8 +227,13 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 | Name | Description |
 |------|-------------|
-| cloudfront\_domain\_name | The domain of the main CloudFront distribution. |
-| cloudfront\_hosted\_zone\_id | The zone id of the main CloudFront distribution. |
+| cloudfront\_custom\_error\_response | Preconfigured custom error response the CloudFront distribution should use. |
+| cloudfront\_default\_cache\_behavior | Preconfigured default cache behavior the CloudFront distribution should use. |
+| cloudfront\_default\_root\_object | Preconfigured root object the CloudFront distribution should use. |
+| cloudfront\_domain\_name | Domain of the main CloudFront distribution (When created). |
+| cloudfront\_hosted\_zone\_id | Zone id of the main CloudFront distribution (When created). |
+| cloudfront\_ordered\_cache\_behaviors | Preconfigured ordered cache behaviors the CloudFront distribution should use. |
+| cloudfront\_origins | Preconfigured origins the CloudFront distribution should use. |
 | static\_upload\_bucket\_id | n/a |
 
 <!--- END_TF_DOCS --->
