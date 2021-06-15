@@ -13,23 +13,6 @@ variable "create_image_optimization" {
   default     = true
 }
 
-variable "domain_names" {
-  description = "Alternative domain names for the CloudFront distribution."
-  type        = list(string)
-  default     = []
-}
-
-variable "create_domain_name_records" {
-  description = "Controls whether Route 53 records for the for the domain_names should be created."
-  type        = bool
-  default     = true
-}
-
-variable "domain_zone_names" {
-  type    = list(string)
-  default = []
-}
-
 variable "expire_static_assets" {
   description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
   type        = number
@@ -82,34 +65,37 @@ variable "lambda_role_permissions_boundary" {
   default     = null
 }
 
+variable "lambda_attach_to_vpc" {
+  type        = bool
+  description = "Set to true if the Lambda functions should be attached to a VPC. Use this setting if VPC resources should be accessed by the Lambda functions. When setting this to true, use vpc_security_group_ids and vpc_subnet_ids to specify the VPC networking. Note that attaching to a VPC would introduce a delay on to cold starts"
+  default     = false
+}
+
+variable "vpc_subnet_ids" {
+  type        = list(string)
+  description = "The list of VPC subnet IDs to attach the Lambda functions. lambda_attach_to_vpc should be set to true for these to be applied."
+  default     = []
+}
+
+variable "vpc_security_group_ids" {
+  type        = list(string)
+  description = "The list of Security Group IDs to be used by the Lambda functions. lambda_attach_to_vpc should be set to true for these to be applied."
+  default     = []
+}
+
 #########################
 # Cloudfront Distribution
 #########################
+variable "cloudfront_create_distribution" {
+  description = "Controls whether the main CloudFront distribution should be created."
+  type        = bool
+  default     = true
+}
+
 variable "cloudfront_price_class" {
   description = "Price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
   type        = string
   default     = "PriceClass_100"
-}
-
-variable "cloudfront_viewer_certificate_arn" {
-  type    = string
-  default = null
-}
-
-variable "cloudfront_minimum_protocol_version" {
-  description = "Minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
-  type        = string
-  default     = "TLSv1.2_2019"
-}
-
-variable "cloudfront_origins" {
-  type    = list(any)
-  default = null
-}
-
-variable "cloudfront_custom_behaviors" {
-  type    = list(any)
-  default = null
 }
 
 variable "cloudfront_origin_headers" {
@@ -124,20 +110,16 @@ variable "cloudfront_cache_key_headers" {
   default     = ["Authorization"]
 }
 
-variable "cloudfront_geo_restriction" {
-  description = "Options to control distribution of content, object with restriction_type and locations."
-  type = object({
-    restriction_type = string,
-    locations        = list(string),
-  })
-  default = {
-    restriction_type = "none"
-    locations        = []
-  }
-  validation {
-    condition     = contains(["none", "blacklist", "whitelist"], var.cloudfront_geo_restriction.restriction_type)
-    error_message = "The restriction_type must be \"none\", \"blacklist\", or \"whitelist\"."
-  }
+variable "cloudfront_external_id" {
+  description = "When using an external CloudFront distribution provide its id."
+  type        = string
+  default     = null
+}
+
+variable "cloudfront_external_arn" {
+  description = "When using an external CloudFront distribution provide its arn."
+  type        = string
+  default     = null
 }
 
 ##########

@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: dealmore/gh-action-terraform-module-release@v1.0.0
+      - uses: dealmore/gh-action-release-branch@v1.1.0
         with:
           upstream-branch: main
           release-branch: release

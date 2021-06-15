@@ -1,0 +1,19 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-tf:
+    name: Lint Terraform
+    runs-on: ubuntu-latest
+    container: hashicorp/terraform
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Lint Terraform
+        run: terraform fmt -check -recursive -diff

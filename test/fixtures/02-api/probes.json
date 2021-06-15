@@ -1,0 +1,12 @@
+{
+  "builds": [{ "src": "package.json", "use": "tf-next" }],
+  "probes": [
+    {
+      "path": "/api",
+      "status": 200,
+      "responseHeaders": {
+        "Set-Cookie": "cookie-1, cookie-2"
+      }
+    }
+  ]
+}
