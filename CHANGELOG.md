@@ -1,6 +1,46 @@
 # Changelog
 
-## 0.9.0 - (Unreleased)
+## 0.9.0 - (June 15, 2021)
+
+**⚠️ Breaking Changes ⚠️**
+
+Since the main CloudFront distribution is a central resource that may need advanced customization, we decided to introduce a new way to fully customize the distribution for to your needs.
+
+As part of this change a few input variables are no longer supported and should be removed from the module.
+
+If you are not using one of these variables you can safely upgrade to this release without further changes.
+
+If you use one of the following input variables read below for more information how to upgrade:
+
+- `cloudfront_custom_behaviors`
+- `cloudfront_geo_restriction`
+- `cloudfront_origins`
+- `cloudfront_viewer_certificate_arn`
+- `cloudfront_minimum_protocol_version`
+- `create_domain_name_records`
+- `domain_names`
+- `domain_zone_names`
+
+If you are already using one of these input variables you should now create a new CloudFront resource in your `main.tf` file and link it with the Next.js module.
+
+For more information please see the ["with existing CloudFront"](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront) and ["with custom domain"](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-custom-domain) examples.
+
+### Terraform module
+
+- Enable usage of external CloudFront resource ([#55](https://github.com/dealmore/terraform-aws-next-js/issues/55), [#134](https://github.com/dealmore/terraform-aws-next-js/pull/134), [#137](https://github.com/dealmore/terraform-aws-next-js/pull/137))
+- Queue CloudFront invalidations ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#125](https://github.com/dealmore/terraform-aws-next-js/pull/125))
+- Attaching Lambda to VPC ([#110](https://github.com/dealmore/terraform-aws-next-js/issues/110), [#111](https://github.com/dealmore/terraform-aws-next-js/pull/111))  
+  Thanks to [@chamilad](https://github.com/chamilad) for contributing!
+- Remove provider proxy from proxy-config module ([#102](https://github.com/dealmore/terraform-aws-next-js/issues/102), [#124](https://github.com/dealmore/terraform-aws-next-js/pull/124))
+
+## Proxy (0.6.0)
+
+- Support rewriting to an external URL ([#65](https://github.com/dealmore/terraform-aws-next-js/issues/65), [#120](https://github.com/dealmore/terraform-aws-next-js/pull/120))
+- Bump runtime from `nodejs12.x` to `nodejs14.x` ([136](https://github.com/dealmore/terraform-aws-next-js/pull/136))
+
+### Deploy trigger (0.4.0)
+
+- Queue CloudFront invalidations ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#125](https://github.com/dealmore/terraform-aws-next-js/pull/125))
 
 ## tf-next (0.7.0)
 
