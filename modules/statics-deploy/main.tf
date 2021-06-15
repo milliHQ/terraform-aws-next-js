@@ -199,10 +199,9 @@ module "deploy_trigger" {
       service    = "s3"
       source_arn = aws_s3_bucket.static_upload.arn
     }
-    # TODO: Check if we need this
     InvalidationQueue = {
-      service    = "sqs"
-      source_arn = aws_sqs_queue.this.arn
+      principal  = "sqs.amazonaws.com"
+      source_arn = aws_sns_topic.this.arn
     },
   }
 

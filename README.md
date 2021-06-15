@@ -268,6 +268,15 @@ So issues that exist on Vercel are likely to occur on this project too.
   After running the initial `terraform destroy` command (that failed) wait ~1 hour and run the command again.
   This time it should run successfully and delete the rest of the stack.
 
+- Initial apply fails with error message `Error: error creating Lambda Event Source Mapping` ([#138](https://github.com/dealmore/terraform-aws-next-js/issues/138))
+
+  There is some race condition when the permissions are created for the static deployment Lambda.
+  This should only happen on the first deployment.
+
+  **Workaround:**
+
+  You should be able to run`terraform apply` again and the stack creation would progreed without this error.
+
 ## License
 
 Apache-2.0 - see [LICENSE](./LICENSE) for details.
