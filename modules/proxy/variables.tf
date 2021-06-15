@@ -7,11 +7,9 @@ variable "proxy_module_version" {
   default = "0.5.0"
 }
 
-# Note that Lambda@Edge currently does not support `nodejs14.x` runtime
-# https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-requirements-limits.html#lambda-requirements-lambda-function-configuration
 variable "lambda_default_runtime" {
   type    = string
-  default = "nodejs12.x"
+  default = "nodejs14.x"
 }
 
 variable "lambda_role_permissions_boundary" {
