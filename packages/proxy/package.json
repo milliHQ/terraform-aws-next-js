@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.76",
-    "@types/node": "^12.0.0",
     "@types/node-fetch": "^2.5.7",
     "@vercel/ncc": "^0.27.0",
     "get-port": "^5.1.1",
