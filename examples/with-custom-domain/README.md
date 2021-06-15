@@ -9,14 +9,14 @@ The code is based on the [with existing CloudFront distribution example](https:/
 - Provisions a free SSL certificate from the AWS Certificate Manager for the domain
 - Assigns the domain and the SSL certificate to the CloudFront distribution
 
-> **Note:** You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/custom-domain).
+> **Note:** You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-custom-domain).
 
 ## Setup
 
 Download the files from the example app:
 
 ```sh
-yarn create next-app --example https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/custom-domain my-app
+yarn create next-app --example https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-custom-domain my-app
 
 cd my-app
 ```

@@ -175,9 +175,16 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 ## Examples
 
-- [Complete](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/complete) - Complete example with SSR, API and static pages.
-- [Static](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/static) - Example that uses static pages only (No SSR).
-- [Custom Domain](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/custom-domain) - Demonstrates how to use the module with a custom domain from Route 53.
+- [Complete](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/complete)  
+  Complete example with SSR, API and static pages.
+- [Static](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/static)  
+  Example that uses static pages only (No SSR).
+- [Next Image](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/next-image)  
+  Images are optimized on the fly by AWS Lambda.
+- [Existing CloudFront](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/with-existing-cloudfront)  
+  Use the module together with an existing CloudFront distribution that can be fully customized.
+- [Custom Domain](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/with-custom-domain)  
+  Use the module with your own domain from Route 53.
 
 <!-- prettier-ignore-start -->
 <!--- BEGIN_TF_DOCS --->
