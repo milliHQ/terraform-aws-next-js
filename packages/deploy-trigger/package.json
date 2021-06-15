@@ -1,8 +1,10 @@
 {
   "name": "@dealmore/terraform-next-deploy-trigger",
-  "version": "0.3.0",
+  "version": "0.4.0",
+  "description": "Deploy trigger component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",
+  "homepage": "https://registry.terraform.io/modules/dealmore/next-js/aws",
   "repository": {
     "type": "git",
     "url": "https://github.com/dealmore/terraform-next.js.git",
