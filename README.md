@@ -64,6 +64,13 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
 
   This is a second CloudFront distribution that serves a special JSON file that the Proxy ([`III`](#III-lambda-edge-proxy)) fetches as configuration (Contains information about routes).
 
+- **CloudFront Invalidation Queue**
+
+  When updating the app, not the whole CloudFront cache gets invalidated to keep response times low for your customers.
+  Instead the paths that should be invalidated are calculated from the updated content.
+  Depending on the size of the application the paths to invalidate could exceed the [CloudFront limits](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html#invalidation-specifying-objects%23InvalidationLimits) for one invalidation.
+  Therefore invalidations get splitted into chunks and then queued in SQS from where they are sequentially sent to CloudFront.
+
 ## Usage
 
 ### Add to your Next.js project
