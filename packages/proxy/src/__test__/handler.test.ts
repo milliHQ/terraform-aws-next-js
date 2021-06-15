@@ -162,7 +162,7 @@ describe('[proxy] Handler', () => {
       expect(result.origin?.custom).toEqual(
         expect.objectContaining({
           domainName: 'example.com',
-          path: '/',
+          path: '',
           port: 80,
           protocol: 'http',
         })
@@ -284,7 +284,7 @@ describe('[proxy] Handler', () => {
       expect(result.origin?.custom).toEqual(
         expect.objectContaining({
           domainName: 'example.com',
-          path: '/',
+          path: '',
           port: 443,
           protocol: 'https',
         })
@@ -406,7 +406,7 @@ describe('[proxy] Handler', () => {
       expect(result.origin?.custom).toEqual(
         expect.objectContaining({
           domainName: 'example.com',
-          path: '/',
+          path: '',
           port: 666,
           protocol: 'https',
         })
@@ -528,7 +528,7 @@ describe('[proxy] Handler', () => {
       expect(result.origin?.custom).toEqual(
         expect.objectContaining({
           domainName: 'sub.example.com',
-          path: '/',
+          path: '',
           port: 443,
           protocol: 'https',
         })
