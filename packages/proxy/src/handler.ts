@@ -162,6 +162,10 @@ export async function handler(event: CloudFrontRequestEvent) {
       if (proxyResult.found) {
         request.uri = proxyResult.dest;
       }
+
+      // TODO: Test this
+      // Replace the last / with /index when requesting the resource from S3
+      request.uri.replace(/\/$/, '/index');
     }
 
     headers = { ...proxyResult.headers, ...headers };

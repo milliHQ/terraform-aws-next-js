@@ -18,8 +18,7 @@
   "dependencies": {
     "@vercel/routing-utils": "^1.9.1",
     "abort-controller": "^3.0.0",
-    "node-fetch": "^2.6.1",
-    "pcre-to-regexp": "^1.1.0"
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.76",
