@@ -41,7 +41,9 @@ function isRedirect(
     routeResult.status <= 309
   ) {
     if ('Location' in routeResult.headers) {
-      let headers: CloudFrontHeaders = {};
+      const headers: CloudFrontHeaders = {
+        location: [{ key: 'Location', value: routeResult.headers.Location }],
+      };
 
       // If the redirect is permanent, add caching it
       if (routeResult.status === 301 || routeResult.status === 308) {
@@ -56,7 +58,7 @@ function isRedirect(
       return {
         status: routeResult.status.toString(),
         statusDescription: STATUS_CODES[routeResult.status],
-        headers: convertToCloudFrontHeaders(headers, routeResult.headers),
+        headers,
       };
     }
   }
@@ -65,7 +67,12 @@ function isRedirect(
 }
 
 export async function handler(event: CloudFrontRequestEvent) {
-  const { request } = event.Records[0].cf;
+  const { request, config } = event.Records[0].cf;
+  // Get the domain where the request came from
+  const wildcard = request.headers.host
+    ? request.headers.host[0].value
+    : config.distributionDomainName;
+
   const configEndpoint = request.origin!.s3!.customHeaders[
     'x-env-config-endpoint'
   ][0].value;
@@ -109,7 +116,10 @@ export async function handler(event: CloudFrontRequestEvent) {
     headers.host = apiEndpoint;
   } else {
     // Handle by proxy
-    const proxyResult = proxy.route(requestPath);
+    const proxyResult = proxy.route(requestPath, {
+      reqHeaders: request.headers,
+      wildcard,
+    });
 
     // Check for redirect
     const redirect = isRedirect(proxyResult);

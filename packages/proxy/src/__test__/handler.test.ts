@@ -1,5 +1,9 @@
 import { createServer, Server } from 'http';
-import { CloudFrontRequestEvent, CloudFrontRequest } from 'aws-lambda';
+import {
+  CloudFrontRequestEvent,
+  CloudFrontRequest,
+  CloudFrontHeaders,
+} from 'aws-lambda';
 import getPort from 'get-port';
 
 import { ProxyConfig } from '../types';
@@ -546,17 +550,147 @@ describe('[proxy] Handler', () => {
     TIMEOUT
   );
 
-  test(
-    'i18n default locale rewrite',
-    async () => {
+  type i18nRedirectTest = [
+    string,
+    CloudFrontHeaders,
+    string | undefined,
+    CloudFrontHeaders
+  ];
+
+  const i18nRedirectTests: i18nRedirectTest[] = [
+    [
+      'default locale rewrite',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: '*',
+          },
+        ],
+      },
+      '/en',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: '*',
+          },
+        ],
+      },
+    ],
+
+    [
+      'language redirect nl',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: 'nl',
+          },
+        ],
+      },
+      undefined,
+      {
+        location: [
+          {
+            key: 'Location',
+            value: '/nl',
+          },
+        ],
+      },
+    ],
+
+    [
+      'language redirect fr-FR',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: 'fr-FR, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5',
+          },
+        ],
+      },
+      undefined,
+      {
+        location: [
+          {
+            key: 'Location',
+            value: '/fr-fr',
+          },
+        ],
+      },
+    ],
+
+    [
+      'Language override by cookie',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: 'Accept-Language: en',
+          },
+        ],
+        cookie: [
+          {
+            key: 'Cookie',
+            value: 'NEXT_LOCALE=nl',
+          },
+        ],
+      },
+      undefined,
+      {
+        location: [
+          {
+            key: 'Location',
+            value: '/nl',
+          },
+        ],
+      },
+    ],
+
+    [
+      'Redirect to i18n domain',
+      {
+        'accept-language': [
+          {
+            key: 'Accept-Language',
+            value: 'de',
+          },
+        ],
+      },
+      undefined,
+      {
+        location: [
+          {
+            key: 'Location',
+            value: 'https://milli.is/',
+          },
+        ],
+      },
+    ],
+  ];
+
+  test.each(i18nRedirectTests)(
+    'i18n: %s',
+    async (_, requestHeaders, destUrl, responseHeaders) => {
       const proxyConfig: ProxyConfig = {
         lambdaRoutes: [],
         prerenders: {},
         staticRoutes: [],
         routes: [
           {
-            src: '^/(?!(?:_next/.*|en|fr\\-FR|nl)(?:/.*|$))(.*)$',
+            src: '^/(?!(?:_next/.*|en|fr\\-FR|nl|de)(?:/.*|$))(.*)$',
             dest: '$wildcard/$1',
+            continue: true,
+          },
+          {
+            src: '^//?(?:en|fr\\-FR|nl|de)?/?$',
+            locale: {
+              redirect: {
+                de: 'https://milli.is/',
+              },
+              cookie: 'NEXT_LOCALE',
+            },
             continue: true,
           },
           {
@@ -564,8 +698,9 @@ describe('[proxy] Handler', () => {
             locale: {
               redirect: {
                 en: '/',
-                'fr-FR': '/fr-FR',
+                'fr-fr': '/fr-fr',
                 nl: '/nl',
+                de: '/de',
               },
               cookie: 'NEXT_LOCALE',
             },
@@ -574,6 +709,11 @@ describe('[proxy] Handler', () => {
           {
             src: '^/$',
             dest: '/en',
+            continue: true,
+          },
+          {
+            src: '^/(?!(?:_next/.*|en|fr\\-FR|nl|de)(?:/.*|$))(.*)$',
+            dest: '/en/$1',
             continue: true,
           },
         ],
@@ -598,39 +738,7 @@ describe('[proxy] Handler', () => {
               },
               request: {
                 clientIp: '203.0.113.178',
-                headers: {
-                  'x-forwarded-for': [
-                    {
-                      key: 'X-Forwarded-For',
-                      value: '203.0.113.178',
-                    },
-                  ],
-                  'user-agent': [
-                    {
-                      key: 'User-Agent',
-                      value: 'Amazon CloudFront',
-                    },
-                  ],
-                  via: [
-                    {
-                      key: 'Via',
-                      value:
-                        '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)',
-                    },
-                  ],
-                  host: [
-                    {
-                      key: 'Host',
-                      value: 'example.org',
-                    },
-                  ],
-                  'cache-control': [
-                    {
-                      key: 'Cache-Control',
-                      value: 'no-cache, cf-no-cache',
-                    },
-                  ],
-                },
+                headers: requestHeaders,
                 method: 'GET',
                 origin: {
                   s3: {
@@ -664,13 +772,8 @@ describe('[proxy] Handler', () => {
 
       const result = (await handler(event)) as CloudFrontRequest;
 
-      expect(result.origin?.s3).toEqual(
-        expect.objectContaining({
-          domainName: 's3.localhost',
-          path: '',
-        })
-      );
-      expect(result.uri).toBe('/en');
+      // expect(result.uri).toBe(destUrl);
+      expect(result.headers).toStrictEqual(responseHeaders);
     },
     TIMEOUT
   );

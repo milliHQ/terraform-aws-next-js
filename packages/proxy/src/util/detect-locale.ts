@@ -24,11 +24,7 @@ export function detectLocale(
   // Check if we can detect the locale from headers
   const acceptPreferredLanguageHeader = headers['accept-language'];
   if (acceptPreferredLanguageHeader?.length > 0) {
-    const languageKeys = locale.redirect ? Object.keys(locale.redirect) : [];
-    return parseAcceptLanguage(
-      acceptPreferredLanguageHeader[0].value,
-      languageKeys
-    );
+    return parseAcceptLanguage(acceptPreferredLanguageHeader[0].value);
   }
 
   return null;

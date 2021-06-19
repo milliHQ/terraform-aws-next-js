@@ -107,7 +107,7 @@ variable "cloudfront_origin_headers" {
 variable "cloudfront_cache_key_headers" {
   description = "Header keys that should be used to calculate the cache key in CloudFront."
   type        = list(string)
-  default     = ["Authorization", "Accept-Language"]
+  default     = ["Accept-Language", "Authorization"]
 }
 
 variable "cloudfront_external_id" {

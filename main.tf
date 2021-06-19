@@ -278,7 +278,7 @@ resource "aws_cloudfront_cache_policy" "this" {
       dynamic "headers" {
         for_each = length(var.cloudfront_cache_key_headers) == 0 ? [] : [true]
         content {
-          items = var.cloudfront_cache_key_headers
+          items = sort(var.cloudfront_cache_key_headers)
         }
       }
     }

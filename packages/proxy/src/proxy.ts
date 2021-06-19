@@ -1,8 +1,10 @@
 import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
+import { CloudFrontHeaders } from 'aws-lambda';
 
 import isURL from './util/is-url';
 import { RouteResult, HTTPHeaders } from './types';
+import { detectLocale } from './util/detect-locale';
 
 // Since we have no replacement for url.parse, thanks Node.js
 // https://github.com/nodejs/node/issues/12682
@@ -40,7 +42,7 @@ function appendURLSearchParams(
  */
 function resolveRouteParameters(
   str: string,
-  match: string[],
+  match: Record<number, string>,
   keys: string[]
 ): string {
   return str.replace(/\$([1-9a-zA-Z]+)/g, (_, param) => {
@@ -61,6 +63,7 @@ export class Proxy {
   routes: Route[];
   lambdaRoutes: Set<string>;
   staticRoutes: Set<string>;
+  regExMatchers: Map<string, RegExp> = new Map();
 
   constructor(routes: Route[], lambdaRoutes: string[], staticRoutes: string[]) {
     this.routes = routes;
@@ -72,7 +75,16 @@ export class Proxy {
     return this.staticRoutes.has(path);
   };
 
-  route(reqUrl: string) {
+  route(
+    reqUrl: string,
+    {
+      reqHeaders,
+      wildcard,
+    }: { reqHeaders: CloudFrontHeaders; wildcard: string } = {
+      reqHeaders: {},
+      wildcard: '',
+    }
+  ) {
     const parsedUrl = parseUrl(reqUrl);
     let { searchParams, pathname: reqPathname = '/' } = parsedUrl;
     let result: RouteResult | undefined;
@@ -139,12 +151,65 @@ export class Proxy {
       // Phase 2: Check for source
       const { src, headers } = routeConfig;
       // Note: Routes are case-insensitive
-      // TODO: Performance: Cache matcher results
-      const matcher = new RegExp(src, 'i');
+      let matcher = this.regExMatchers.get(src);
+      if (matcher === undefined) {
+        matcher = new RegExp(src, 'i');
+        this.regExMatchers.set(src, matcher);
+      }
       const match = matcher.exec(reqPathname);
 
       if (match !== null) {
-        const keys = Object.keys(match.groups ?? {});
+        // Check if route has locale block
+        if (routeConfig.locale && routeConfig.locale.redirect) {
+          const detectedLocale = detectLocale(reqHeaders, {
+            locale: routeConfig.locale,
+          });
+
+          if (detectedLocale && detectedLocale in routeConfig.locale.redirect) {
+            // - can be URL (e.g. https://milli.is/) when i18n domains are used
+            // - can be path (e.g. /en) when path based i18n
+            let localePath = routeConfig.locale.redirect[detectedLocale];
+            const isLocaleURL = isURL(localePath);
+
+            if (isLocaleURL) {
+              const localeURL = new URL(localePath);
+
+              // Check if we already on the correct i18n domain
+              if (localeURL.host === wildcard) {
+                localePath = localeURL.pathname;
+              }
+            }
+
+            // Other locale detected, add redirect
+            if (localePath !== reqPathname) {
+              combinedHeaders['Location'] = localePath;
+              status = 307;
+
+              if (isLocaleURL) {
+                result = {
+                  dest: localePath,
+                  found: true,
+                  continue: isContinue,
+                  userDest: false,
+                  isDestUrl: isLocaleURL,
+                  status,
+                  uri_args: searchParams,
+                  matched_route: routeConfig,
+                  matched_route_idx: routeIndex,
+                  phase,
+                  headers: combinedHeaders,
+                  target: 'url',
+                };
+
+                break;
+              }
+            }
+          }
+        }
+
+        const keys = [...Object.keys(match.groups ?? {}), 'wildcard'];
+        const matches = [...match, wildcard];
+
         isContinue = false;
         // The path that should be sent to the target system (lambda or filesystem)
         let destPath: string = reqPathname;
@@ -156,13 +221,13 @@ export class Proxy {
         if (routeConfig.dest) {
           // Rewrite dynamic routes
           // e.g. /posts/1234 -> /posts/[id]?id=1234
-          destPath = resolveRouteParameters(routeConfig.dest, match, keys);
+          destPath = resolveRouteParameters(routeConfig.dest, matches, keys);
         }
 
         if (headers) {
           for (const originalKey in headers) {
             const originalValue = headers[originalKey];
-            const value = resolveRouteParameters(originalValue, match, keys);
+            const value = resolveRouteParameters(originalValue, matches, keys);
             combinedHeaders[originalKey] = value;
           }
         }

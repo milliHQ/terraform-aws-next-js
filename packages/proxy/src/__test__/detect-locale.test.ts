@@ -48,11 +48,11 @@ describe('detectLocale', () => {
       },
     };
     const preferredLocaleFromHeader = [
-      ['fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', 'fr-FR'],
-      ['*', 'en'],
-      ['de', ''],
-      ['en-US, en', 'en'],
-      ['af;q=0.9, ar;q=0.8, de;q=0.7, *;q=0.5', 'en'],
+      ['fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', 'fr-ch'],
+      ['*', '*'],
+      ['de', 'de'],
+      ['en-US, en', 'en-us'],
+      ['af;q=0.9, ar;q=0.8, de;q=0.7, *;q=0.5', 'af'],
     ];
     test.each(preferredLocaleFromHeader)(
       'ExpectedLocale from "%s" should be "%s"',
