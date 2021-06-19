@@ -154,7 +154,7 @@ module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
   source  = "dealmore/next-js-image-optimization/aws"
-  version = "~> 10.0.8"
+  version = ">= 11.0.0"
 
   cloudfront_create_distribution = false
 
@@ -170,6 +170,7 @@ module "next_image" {
 
   source_bucket_id = module.statics_deploy.static_bucket_id
 
+  lambda_memory_size               = var.image_optimization_lambda_memory_size
   lambda_attach_policy_json        = true
   lambda_policy_json               = data.aws_iam_policy_document.access_static_deployment.json
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
@@ -376,19 +377,7 @@ locals {
   }
 
   # next/image behavior
-  # TODO: Replace with output from https://github.com/dealmore/terraform-aws-next-js-image-optimization/issues/43
-  cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? {
-    path_pattern     = "/_next/image*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = module.next_image[0].cloudfront_origin_id
-
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-
-    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
-    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
-  } : null
+  cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? module.next_image[0].cloudfront_cache_behavior : null
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements

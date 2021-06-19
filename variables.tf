@@ -13,6 +13,12 @@ variable "create_image_optimization" {
   default     = true
 }
 
+variable "image_optimization_lambda_memory_size" {
+  description = "Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments."
+  type        = number
+  default     = 2048
+}
+
 variable "expire_static_assets" {
   description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
   type        = number
