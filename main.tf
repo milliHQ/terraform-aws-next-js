@@ -295,7 +295,7 @@ resource "aws_cloudfront_cache_policy" "this" {
 locals {
   # CloudFront default root object
   ################################
-  cloudfront_default_root_object = "index"
+  cloudfront_default_root_object = ""
 
   # CloudFront Origins
   ####################

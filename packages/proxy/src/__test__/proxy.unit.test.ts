@@ -331,3 +331,74 @@ test('[proxy-unit] External rewrite', () => {
     target: 'url',
   });
 });
+
+test('[proxy-unit] Rewrite with ^ and $', () => {
+  const routesConfig = [
+    {
+      src: '^/$',
+      dest: '/en',
+      continue: true,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route('/');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/en',
+    continue: true,
+    status: undefined,
+    headers: {},
+    uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: true,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+});
+
+test('[proxy-unit] i18n default locale', () => {
+  const routesConfig = [
+    {
+      src: '^/(?!(?:_next/.*|en|fr\\-FR|nl)(?:/.*|$))(.*)$',
+      dest: '$wildcard/$1',
+      continue: true,
+    },
+    {
+      src: '/',
+      locale: {
+        redirect: {
+          en: '/',
+          'fr-FR': '/fr-FR',
+          nl: '/nl',
+        },
+        cookie: 'NEXT_LOCALE',
+      },
+      continue: true,
+    },
+    {
+      src: '^/$',
+      dest: '/en',
+      continue: true,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route('/');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/en',
+    continue: true,
+    status: undefined,
+    headers: {},
+    uri_args: new URLSearchParams(''),
+    matched_route: routesConfig[2],
+    matched_route_idx: 2,
+    userDest: true,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+});

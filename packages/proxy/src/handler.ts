@@ -154,13 +154,21 @@ export async function handler(event: CloudFrontRequestEvent) {
       request.querystring = proxyResult.uri_args
         ? proxyResult.uri_args.toString()
         : '';
-    } else if (proxyResult.phase === 'error' && proxyResult.status === 404) {
-      // Send 404 directly to S3 bucket for handling without rewrite
-      return request;
     } else {
       // Route is served by S3 bucket
-      if (proxyResult.found) {
+      const notFound =
+        proxyResult.phase === 'error' && proxyResult.status === 404;
+
+      if (!notFound && proxyResult.found) {
         request.uri = proxyResult.dest;
+      }
+
+      // Replace the last / with /index when requesting the resource from S3
+      request.uri = request.uri.replace(/\/$/, '/index');
+
+      // Send 404 directly to S3 bucket for handling without rewrite
+      if (notFound) {
+        return request;
       }
     }
 

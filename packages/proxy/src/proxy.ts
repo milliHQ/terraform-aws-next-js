@@ -1,6 +1,5 @@
 import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
-import PCRE from 'pcre-to-regexp';
 
 import isURL from './util/is-url';
 import { RouteResult, HTTPHeaders } from './types';
@@ -139,15 +138,13 @@ export class Proxy {
       //////////////////////////////////////////////////////////////////////////
       // Phase 2: Check for source
       const { src, headers } = routeConfig;
-      let keys: string[] = []; // Filled by PCRE in next step
       // Note: Routes are case-insensitive
-      // PCRE tries to match the path to the regex of the route
-      // It also parses the parameters to the keys variable
-      // TODO: Performance: Cache results from PCRE
-      const matcher = PCRE(`%${src}%i`, keys);
+      // TODO: Performance: Cache matcher results
+      const matcher = new RegExp(src, 'i');
       const match = matcher.exec(reqPathname);
 
       if (match !== null) {
+        const keys = Object.keys(match.groups ?? {});
         isContinue = false;
         // The path that should be sent to the target system (lambda or filesystem)
         let destPath: string = reqPathname;
@@ -210,7 +207,10 @@ export class Proxy {
             reqPathname = nextUrl.pathname!;
 
             // Check if we have a static route
-            if (!this.staticRoutes.has(reqPathname)) {
+            // Convert to filePath first, since routes with tailing `/` are
+            // stored as `/index` in filesystem
+            const filePath = reqPathname.replace(/\/$/, '/index');
+            if (!this.staticRoutes.has(filePath)) {
               appendURLSearchParams(searchParams, nextUrl.searchParams);
               continue;
             }
