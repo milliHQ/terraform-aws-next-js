@@ -19,7 +19,7 @@ resource "random_id" "function_name" {
 
 module "edge_proxy" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "1.47.0"
+  version = "2.4.0"
 
   lambda_at_edge = true
 

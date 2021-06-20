@@ -100,7 +100,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
   function_name = random_id.function_name[each.key].hex
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "${module.api_gateway.this_apigatewayv2_api_execution_arn}/*/*/*"
+  source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
 }
 
 #############
@@ -125,7 +125,7 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "0.11.0"
+  version = "1.1.0"
 
   name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
@@ -154,7 +154,7 @@ module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
   source  = "dealmore/next-js-image-optimization/aws"
-  version = "~> 10.0.8"
+  version = ">= 11.0.0"
 
   cloudfront_create_distribution = false
 
@@ -170,6 +170,7 @@ module "next_image" {
 
   source_bucket_id = module.statics_deploy.static_bucket_id
 
+  lambda_memory_size               = var.image_optimization_lambda_memory_size
   lambda_attach_policy_json        = true
   lambda_policy_json               = data.aws_iam_policy_document.access_static_deployment.json
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
@@ -295,7 +296,7 @@ resource "aws_cloudfront_cache_policy" "this" {
 locals {
   # CloudFront default root object
   ################################
-  cloudfront_default_root_object = "index"
+  cloudfront_default_root_object = ""
 
   # CloudFront Origins
   ####################
@@ -316,7 +317,7 @@ locals {
       },
       {
         name  = "x-env-api-endpoint"
-        value = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+        value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
       }
     ]
   }
@@ -376,19 +377,7 @@ locals {
   }
 
   # next/image behavior
-  # TODO: Replace with output from https://github.com/dealmore/terraform-aws-next-js-image-optimization/issues/43
-  cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? {
-    path_pattern     = "/_next/image*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = module.next_image[0].cloudfront_origin_id
-
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-
-    origin_request_policy_id = module.next_image[0].cloudfront_origin_request_policy_id
-    cache_policy_id          = module.next_image[0].cloudfront_cache_policy_id
-  } : null
+  cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? module.next_image[0].cloudfront_cache_behavior : null
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements

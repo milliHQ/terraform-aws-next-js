@@ -23,7 +23,7 @@ resource "aws_s3_bucket_notification" "on_create" {
   bucket = aws_s3_bucket.static_upload.id
 
   lambda_function {
-    lambda_function_arn = module.deploy_trigger.this_lambda_function_arn
+    lambda_function_arn = module.deploy_trigger.lambda_function_arn
     events              = ["s3:ObjectCreated:*"]
   }
 }
@@ -174,7 +174,7 @@ resource "random_id" "function_name" {
 
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "1.47.0"
+  version = "2.4.0"
 
   function_name             = random_id.function_name.hex
   description               = "Managed by Terraform-next.js"
@@ -307,7 +307,7 @@ data "aws_iam_policy_document" "sqs_queue" {
 
       values = [
         aws_sns_topic.this.arn,
-        module.deploy_trigger.this_lambda_function_arn
+        module.deploy_trigger.lambda_function_arn
       ]
     }
 
@@ -320,7 +320,7 @@ data "aws_iam_policy_document" "sqs_queue" {
     }
 
     resources = [
-      module.deploy_trigger.this_lambda_function_arn,
+      module.deploy_trigger.lambda_function_arn,
     ]
   }
 }
