@@ -100,7 +100,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
   function_name = random_id.function_name[each.key].hex
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "${module.api_gateway.this_apigatewayv2_api_execution_arn}/*/*/*"
+  source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
 }
 
 #############
@@ -125,7 +125,7 @@ locals {
 
 module "api_gateway" {
   source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "0.11.0"
+  version = "1.1.0"
 
   name          = var.deployment_name
   description   = "Managed by Terraform-next.js"
@@ -317,7 +317,7 @@ locals {
       },
       {
         name  = "x-env-api-endpoint"
-        value = trimprefix(module.api_gateway.this_apigatewayv2_api_api_endpoint, "https://")
+        value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
       }
     ]
   }
