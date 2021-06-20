@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 - (June 20, 2021)
+
+## Proxy (0.7.0)
+
+- Fix root route rewrites ([#139](https://github.com/dealmore/terraform-aws-next-js/issues/139), [#141](https://github.com/dealmore/terraform-aws-next-js/pull/141))
+
 ## 0.9.0 - (June 15, 2021)
 
 **⚠️ Breaking Changes ⚠️**
