@@ -2,6 +2,21 @@
 
 ## 0.9.1 - (June 20, 2021)
 
+This is a maintenance release which upgrades the image optimizer module to the latest version.
+We also changed the behavior of the proxy module so that the default root object in CloudFront is no longer necessary.
+
+No configuration changes should be necessary when upgrading from the `0.9.0` release.
+
+### Terraform module
+
+- Upgrades Proxy component to 0.7.0 ([#139](https://github.com/dealmore/terraform-aws-next-js/issues/139), [#141](https://github.com/dealmore/terraform-aws-next-js/pull/141))
+- Upgrades [Terraform Next.js Image Optimization module for AWS](https://github.com/dealmore/terraform-aws-next-js-image-optimization) to `11.x.x` release ([#142](https://github.com/dealmore/terraform-aws-next-js/issues/142), [#144](https://github.com/dealmore/terraform-aws-next-js/pull/144))  
+  The image optimizer Lambda now uses `2048mb` RAM by default (from `1024mb`) to improve resizing speed.
+  You can change that amount with the newly introduced variable `image_optimization_lambda_memory_size`.
+  This has no effect on the Lambda functions that serve the Next.js pages or api routes (they remain at `1024mb` by default).
+- Bump AWS Lambda Terraform module from 1.47.0 to 2.4.0 ([#145](https://github.com/dealmore/terraform-aws-next-js/pull/145))
+- Bump AWS API Gateway Terraform module from 0.11.0 to 1.1.0 ([#146](https://github.com/dealmore/terraform-aws-next-js/pull/146))
+
 ## Proxy (0.7.0)
 
 - Fix root route rewrites ([#139](https://github.com/dealmore/terraform-aws-next-js/issues/139), [#141](https://github.com/dealmore/terraform-aws-next-js/pull/141))
@@ -42,7 +57,7 @@ For more information please see the ["with existing CloudFront"](https://github.
 ## Proxy (0.6.0)
 
 - Support rewriting to an external URL ([#65](https://github.com/dealmore/terraform-aws-next-js/issues/65), [#120](https://github.com/dealmore/terraform-aws-next-js/pull/120))
-- Bump runtime from `nodejs12.x` to `nodejs14.x` ([136](https://github.com/dealmore/terraform-aws-next-js/pull/136))
+- Bump runtime from `nodejs12.x` to `nodejs14.x` ([#136](https://github.com/dealmore/terraform-aws-next-js/pull/136))
 
 ### Deploy trigger (0.4.0)
 
