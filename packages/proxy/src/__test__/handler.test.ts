@@ -925,4 +925,124 @@ describe('[proxy] Handler', () => {
     },
     TIMEOUT
   );
+
+  const staticFileRoutingProbes = [
+    // ['/en/dynamic/hello', '/en/dynamic/[slug]'],
+    // ['/en-US/dynamic/hello', '/en-US/dynamic/[slug]'],
+    // ['/fr-BE/dynamic/hello', '/fr-BE/dynamic/[slug]'],
+    // ['/fr/dynamic/hello', '/fr/dynamic/[slug]'],
+    // ['/nl-BE/dynamic/hello', '/nl-BE/dynamic/[slug]'],
+    // ['/nl-NL/dynamic/hello', '/nl-NL/dynamic/[slug]'],
+    // ['/nl/dynamic/hello', '/nl/dynamic/[slug]'],
+    ['/hello.txt', '/hello.txt'],
+  ];
+  test.each(staticFileRoutingProbes)(
+    'i18n: Correct static file routing %s -> %s',
+    async (requestPath, targetPath) => {
+      const proxyConfig: ProxyConfig = {
+        staticRoutes: [
+          '/en-US/dynamic/[slug]',
+          '/en/dynamic/[slug]',
+          '/fr-BE/dynamic/[slug]',
+          '/fr/dynamic/[slug]',
+          '/nl-BE/dynamic/[slug]',
+          '/nl-NL/dynamic/[slug]',
+          '/nl/dynamic/[slug]',
+          '/hello.txt',
+        ],
+        lambdaRoutes: [],
+        routes: [
+          {
+            src:
+              '^/(?!(?:_next/.*|en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)(?:/.*|$))(.*)$',
+            dest: '$wildcard/$1',
+            continue: true,
+          },
+
+          {
+            handle: 'filesystem',
+          },
+
+          {
+            handle: 'resource',
+          },
+
+          {
+            handle: 'miss',
+          },
+          {
+            handle: 'rewrite',
+          },
+          {
+            src:
+              '^[/]?(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/dynamic/(?<slug>[^/]+?)(?:/)?$',
+            dest: '/$nextLocale/dynamic/[slug]?slug=$slug',
+            check: true,
+          },
+        ],
+        prerenders: {},
+      };
+
+      // Prepare configServer
+      configServer.proxyConfig = proxyConfig;
+
+      // Origin Request
+      // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html#example-origin-request
+      const event: CloudFrontRequestEvent = {
+        Records: [
+          {
+            cf: {
+              config: {
+                distributionDomainName: 'd111111abcdef8.cloudfront.net',
+                distributionId: 'EDFDVBD6EXAMPLE',
+                eventType: 'origin-request',
+                requestId:
+                  '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              },
+              request: {
+                clientIp: '203.0.113.178',
+                headers: {},
+                method: 'GET',
+                origin: {
+                  s3: {
+                    customHeaders: {
+                      'x-env-config-endpoint': [
+                        {
+                          key: 'x-env-config-endpoint',
+                          value: configEndpoint,
+                        },
+                      ],
+                      'x-env-api-endpoint': [
+                        {
+                          key: 'x-env-api-endpoint',
+                          value: 'example.localhost',
+                        },
+                      ],
+                    },
+                    region: 'us-east-1',
+                    authMethod: 'origin-access-identity',
+                    domainName: 's3.localhost',
+                    path: '',
+                  },
+                },
+                querystring: '',
+                uri: requestPath,
+              },
+            },
+          },
+        ],
+      };
+
+      const result = (await handler(event)) as CloudFrontRequest;
+
+      expect(result.origin?.s3).toEqual(
+        expect.objectContaining({
+          domainName: 's3.localhost',
+          path: '',
+        })
+      );
+      expect(result.uri).toBe(targetPath);
+    },
+    TIMEOUT
+  );
 });

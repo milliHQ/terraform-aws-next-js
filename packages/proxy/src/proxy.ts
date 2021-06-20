@@ -142,6 +142,11 @@ export class Proxy {
         continue;
       }
 
+      // Skip miss phase entirely because we don't support it
+      if (phase === 'miss') {
+        continue;
+      }
+
       // Special case to allow redirect to kick in when a continue route was touched before
       if (phase === 'error' && isContinue) {
         break;
@@ -207,8 +212,10 @@ export class Proxy {
           }
         }
 
-        const keys = [...Object.keys(match.groups ?? {}), 'wildcard'];
+        const keys = [...Object.keys([...match]), 'wildcard'];
         const matches = [...match, wildcard];
+        console.log('keys', keys);
+        console.log('matches', matches);
 
         isContinue = false;
         // The path that should be sent to the target system (lambda or filesystem)
