@@ -927,13 +927,13 @@ describe('[proxy] Handler', () => {
   );
 
   const staticFileRoutingProbes = [
-    // ['/en/dynamic/hello', '/en/dynamic/[slug]'],
-    // ['/en-US/dynamic/hello', '/en-US/dynamic/[slug]'],
-    // ['/fr-BE/dynamic/hello', '/fr-BE/dynamic/[slug]'],
-    // ['/fr/dynamic/hello', '/fr/dynamic/[slug]'],
-    // ['/nl-BE/dynamic/hello', '/nl-BE/dynamic/[slug]'],
-    // ['/nl-NL/dynamic/hello', '/nl-NL/dynamic/[slug]'],
-    // ['/nl/dynamic/hello', '/nl/dynamic/[slug]'],
+    ['/en/dynamic/hello', '/en/dynamic/[slug]'],
+    ['/en-US/dynamic/hello', '/en-US/dynamic/[slug]'],
+    ['/fr-BE/dynamic/hello', '/fr-BE/dynamic/[slug]'],
+    ['/fr/dynamic/hello', '/fr/dynamic/[slug]'],
+    ['/nl-BE/dynamic/hello', '/nl-BE/dynamic/[slug]'],
+    ['/nl-NL/dynamic/hello', '/nl-NL/dynamic/[slug]'],
+    ['/nl/dynamic/hello', '/nl/dynamic/[slug]'],
     ['/hello.txt', '/hello.txt'],
   ];
   test.each(staticFileRoutingProbes)(
@@ -960,19 +960,20 @@ describe('[proxy] Handler', () => {
           },
 
           {
-            handle: 'filesystem',
+            src:
+              '^/(?!(?:_next/.*|en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)(?:/.*|$))(.*)$',
+            dest: '/en-US/$1',
+            continue: true,
           },
 
           {
-            handle: 'resource',
+            "handle": "filesystem"
           },
 
-          {
-            handle: 'miss',
-          },
           {
             handle: 'rewrite',
           },
+
           {
             src:
               '^[/]?(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/dynamic/(?<slug>[^/]+?)(?:/)?$',

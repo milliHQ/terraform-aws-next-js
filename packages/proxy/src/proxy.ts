@@ -212,10 +212,7 @@ export class Proxy {
           }
         }
 
-        const keys = [...Object.keys([...match]), 'wildcard'];
-        const matches = [...match, wildcard];
-        console.log('keys', keys);
-        console.log('matches', matches);
+        const keys = Object.keys(match.groups ?? {});
 
         isContinue = false;
         // The path that should be sent to the target system (lambda or filesystem)
@@ -228,20 +225,24 @@ export class Proxy {
         if (routeConfig.dest) {
           // Rewrite dynamic routes
           // e.g. /posts/1234 -> /posts/[id]?id=1234
-          destPath = resolveRouteParameters(routeConfig.dest, matches, keys);
+          destPath = resolveRouteParameters(routeConfig.dest, match, keys);
         }
 
         if (headers) {
           for (const originalKey in headers) {
             const originalValue = headers[originalKey];
-            const value = resolveRouteParameters(originalValue, matches, keys);
+            const value = resolveRouteParameters(originalValue, match, keys);
             combinedHeaders[originalKey] = value;
           }
         }
 
         if (routeConfig.continue) {
-          reqPathname = destPath;
           isContinue = true;
+
+          // Change the Pathname
+          if (phase === 'rewrite') {
+            reqPathname = destPath;
+          }
         }
 
         // Check for external rewrite
