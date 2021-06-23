@@ -167,4 +167,32 @@ describe('Proxy', () => {
       );
     });
   });
+
+  describe('Proxy::Routing 005', () => {
+    let proxy: Proxy;
+
+    beforeAll(() => {
+      // Initialize proxy
+      const config = require('./res/config-005.json') as ProxyConfig;
+      proxy = new Proxy(
+        config.routes,
+        config.lambdaRoutes,
+        config.staticRoutes
+      );
+    });
+
+    test('/dynamic/hello: Should be resolved to lambda', () => {
+      const route = proxy.route('/dynamic/hello');
+      expect(route).toEqual(
+        expect.objectContaining({
+          found: true,
+          dest: '/__NEXT_PAGE_LAMBDA_0',
+          status: 200,
+          headers: {
+            Location: '/unknown-route-with-tailing-slash',
+          },
+        })
+      );
+    });
+  });
 });

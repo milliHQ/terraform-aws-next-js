@@ -8,7 +8,4 @@ module.exports = {
     '<rootDir>/test/**/__tests__/**/*.[jt]s?(x)',
     '<rootDir>/test/**/?(*.)+(spec|test).[jt]s?(x)',
   ],
-  // We use an increased timeout here because in the worst case
-  // AWS SAM needs to download a docker image before the test can run
-  testTimeout: 60000,
 };

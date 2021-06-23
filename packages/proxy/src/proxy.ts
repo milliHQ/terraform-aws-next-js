@@ -1,8 +1,10 @@
 import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
+import { CloudFrontHeaders } from 'aws-lambda';
 
 import isURL from './util/is-url';
 import { RouteResult, HTTPHeaders } from './types';
+import { detectLocale } from './util/detect-locale';
 
 // Since we have no replacement for url.parse, thanks Node.js
 // https://github.com/nodejs/node/issues/12682
@@ -40,7 +42,7 @@ function appendURLSearchParams(
  */
 function resolveRouteParameters(
   str: string,
-  match: string[],
+  match: Record<number, string>,
   keys: string[]
 ): string {
   return str.replace(/\$([1-9a-zA-Z]+)/g, (_, param) => {
@@ -61,6 +63,7 @@ export class Proxy {
   routes: Route[];
   lambdaRoutes: Set<string>;
   staticRoutes: Set<string>;
+  regExMatchers: Map<string, RegExp> = new Map();
 
   constructor(routes: Route[], lambdaRoutes: string[], staticRoutes: string[]) {
     this.routes = routes;
@@ -68,11 +71,16 @@ export class Proxy {
     this.staticRoutes = new Set<string>(staticRoutes);
   }
 
-  _checkFileSystem = (path: string) => {
-    return this.staticRoutes.has(path);
-  };
-
-  route(reqUrl: string) {
+  route(
+    reqUrl: string,
+    {
+      reqHeaders,
+      wildcard,
+    }: { reqHeaders: CloudFrontHeaders; wildcard: string } = {
+      reqHeaders: {},
+      wildcard: '',
+    }
+  ) {
     const parsedUrl = parseUrl(reqUrl);
     let { searchParams, pathname: reqPathname = '/' } = parsedUrl;
     let result: RouteResult | undefined;
@@ -87,28 +95,29 @@ export class Proxy {
        * This is how the routing basically works:
        * (For reference see: https://vercel.com/docs/configuration#routes)
        *
-       * 1. Checks if the route is an exact match to a route in the
-       *    S3 filesystem (e.g. /test.html -> s3://test.html)
-       *    --> true: returns found in filesystem
-       * 2.
-       *
+       * 1. Route is Handler
+       *    - filesystem
+       *      Checks, if the route has an exact match in the filesystem (static
+       *      files). Exits early, if true.
+       * 2. Route is a Source
        */
 
       const routeConfig = this.routes[routeIndex];
 
       //////////////////////////////////////////////////////////////////////////
-      // Phase 1: Check for handler
+      // Phase 1: Route is Handler
+      //////////////////////////////////////////////////////////////////////////
       if (isHandler(routeConfig)) {
         phase = routeConfig.handle;
 
         // Check if the path is a static file that should be served from the
         // filesystem
         if (routeConfig.handle === 'filesystem') {
-          // Remove tailing `/` for filesystem check
-          const filePath = reqPathname.replace(/\/+$/, '');
+          // Replace tailing `/` with `/index` for filesystem check
+          const filePath = reqPathname.replace(/\/+$/, '/index');
 
           // Check if the route matches a route from the filesystem
-          if (this._checkFileSystem(filePath)) {
+          if (this.staticRoutes.has(filePath)) {
             result = {
               found: true,
               target: 'filesystem',
@@ -125,109 +134,138 @@ export class Proxy {
         continue;
       }
 
+      //////////////////////////////////////////////////////////////////////////
+      // Phase 2: Route is a Source
+      //////////////////////////////////////////////////////////////////////////
+
       // Skip resource phase entirely because we don't support it
       if (phase === 'resource') {
         continue;
       }
 
-      // Special case to allow redirect to kick in when a continue route was touched before
+      // Skip miss phase entirely because we don't support it
+      if (phase === 'miss') {
+        continue;
+      }
+
+      // Special case to allow redirect to kick in when a continue route was
+      // touched before
       if (phase === 'error' && isContinue) {
         break;
       }
 
+      const { headers } = routeConfig;
+
       //////////////////////////////////////////////////////////////////////////
-      // Phase 2: Check for source
-      const { src, headers } = routeConfig;
-      // Note: Routes are case-insensitive
-      // TODO: Performance: Cache matcher results
-      const matcher = new RegExp(src, 'i');
+      // Does Source matches the requestPath?
+      let matcher = this.regExMatchers.get(routeConfig.src);
+      if (matcher === undefined) {
+        matcher = new RegExp(routeConfig.src, 'i');
+        this.regExMatchers.set(routeConfig.src, matcher);
+      }
       const match = matcher.exec(reqPathname);
 
-      if (match !== null) {
-        const keys = Object.keys(match.groups ?? {});
-        isContinue = false;
-        // The path that should be sent to the target system (lambda or filesystem)
-        let destPath: string = reqPathname;
+      // Source is not matched, skip this route
+      if (match === null) {
+        continue;
+      }
 
-        if (routeConfig.status) {
-          status = routeConfig.status;
-        }
+      //////////////////////////////////////////////////////////////////////////
+      // Source: Localization
+      if (routeConfig.locale && routeConfig.locale.redirect) {
+        const detectedLocale = detectLocale(reqHeaders, {
+          locale: routeConfig.locale,
+        });
 
-        if (routeConfig.dest) {
-          // Rewrite dynamic routes
-          // e.g. /posts/1234 -> /posts/[id]?id=1234
-          destPath = resolveRouteParameters(routeConfig.dest, match, keys);
-        }
+        if (detectedLocale && detectedLocale in routeConfig.locale.redirect) {
+          // - can be URL (e.g. https://milli.is/) when i18n domains are used
+          // - can be path (e.g. /en) when path based i18n
+          let localePath = routeConfig.locale.redirect[detectedLocale];
+          const isLocaleURL = isURL(localePath);
 
-        if (headers) {
-          for (const originalKey in headers) {
-            const originalValue = headers[originalKey];
-            const value = resolveRouteParameters(originalValue, match, keys);
-            combinedHeaders[originalKey] = value;
-          }
-        }
+          if (isLocaleURL) {
+            const localeURL = new URL(localePath);
 
-        if (routeConfig.continue) {
-          reqPathname = destPath;
-          isContinue = true;
-        }
-
-        // Check for external rewrite
-        const isDestUrl = isURL(destPath);
-        if (isDestUrl) {
-          result = {
-            found: true,
-            dest: destPath,
-            continue: isContinue,
-            userDest: false,
-            isDestUrl,
-            status: status,
-            uri_args: searchParams,
-            matched_route: routeConfig,
-            matched_route_idx: routeIndex,
-            phase,
-            headers: combinedHeaders,
-            target: 'url',
-          };
-
-          if (isContinue) {
-            continue;
+            // Check if we already on the correct i18n domain
+            if (localeURL.host === wildcard) {
+              localePath = localeURL.pathname;
+            }
           }
 
-          break;
-        }
+          // Other locale detected, add redirect
+          if (localePath !== reqPathname) {
+            combinedHeaders['Location'] = localePath;
+            status = 307;
 
-        if (routeConfig.check && phase !== 'hit') {
-          if (this.lambdaRoutes.has(destPath)) {
-            target = 'lambda';
-          } else {
-            // When it is not a lambda route we cut the url_args
-            // for the next iteration
-            const nextUrl = parseUrl(destPath);
-            reqPathname = nextUrl.pathname!;
+            if (isLocaleURL) {
+              result = {
+                dest: localePath,
+                found: true,
+                continue: isContinue,
+                userDest: false,
+                isDestUrl: isLocaleURL,
+                status,
+                uri_args: searchParams,
+                matched_route: routeConfig,
+                matched_route_idx: routeIndex,
+                phase,
+                headers: combinedHeaders,
+                target: 'url',
+              };
 
-            // Check if we have a static route
-            // Convert to filePath first, since routes with tailing `/` are
-            // stored as `/index` in filesystem
-            const filePath = reqPathname.replace(/\/$/, '/index');
-            if (!this.staticRoutes.has(filePath)) {
-              appendURLSearchParams(searchParams, nextUrl.searchParams);
-              continue;
+              break;
             }
           }
         }
+      }
 
-        if (!destPath.startsWith('/')) {
-          destPath = `/${destPath}`;
+      //////////////////////////////////////////////////////////////////////////
+      // Source: Set status
+      if (routeConfig.status) {
+        // In practice changing the status of the response is currently not
+        // possible until https://github.com/dealmore/terraform-aws-next-js/issues/9
+        // is implemented
+        // Changing status only works for redirects for now
+        status = routeConfig.status;
+      }
+
+      const keys = Object.keys(match.groups ?? {});
+
+      isContinue = false;
+      // The path that should be sent to the target system (lambda or filesystem)
+      let destPath: string = reqPathname;
+
+      if (routeConfig.dest) {
+        // Rewrite dynamic routes
+        // e.g. /posts/1234 -> /posts/[id]?id=1234
+        destPath = resolveRouteParameters(routeConfig.dest, match, keys);
+      }
+
+      if (headers) {
+        for (const originalKey in headers) {
+          const originalValue = headers[originalKey];
+          const value = resolveRouteParameters(originalValue, match, keys);
+          combinedHeaders[originalKey] = value;
         }
+      }
 
-        const destParsed = parseUrl(destPath);
-        appendURLSearchParams(searchParams, destParsed.searchParams);
+      if (routeConfig.continue) {
+        isContinue = true;
+
+        // Change the Pathname
+        if (phase === 'rewrite') {
+          reqPathname = destPath;
+        }
+      }
+
+      // Check for external rewrite
+      const isDestUrl = isURL(destPath);
+      if (isDestUrl) {
         result = {
           found: true,
-          dest: destParsed.pathname || '/',
+          dest: destPath,
           continue: isContinue,
-          userDest: Boolean(routeConfig.dest),
+          userDest: false,
           isDestUrl,
           status: status,
           uri_args: searchParams,
@@ -235,7 +273,7 @@ export class Proxy {
           matched_route_idx: routeIndex,
           phase,
           headers: combinedHeaders,
-          target,
+          target: 'url',
         };
 
         if (isContinue) {
@@ -244,6 +282,53 @@ export class Proxy {
 
         break;
       }
+
+      if (routeConfig.check && phase !== 'hit') {
+        if (this.lambdaRoutes.has(destPath)) {
+          target = 'lambda';
+        } else {
+          // When it is not a lambda route we cut the url_args
+          // for the next iteration
+          const nextUrl = parseUrl(destPath);
+          reqPathname = nextUrl.pathname!;
+
+          // Check if we have a static route
+          // Convert to filePath first, since routes with tailing `/` are
+          // stored as `/index` in filesystem
+          const filePath = reqPathname.replace(/\/$/, '/index');
+          if (!this.staticRoutes.has(filePath)) {
+            appendURLSearchParams(searchParams, nextUrl.searchParams);
+            continue;
+          }
+        }
+      }
+
+      if (!destPath.startsWith('/')) {
+        destPath = `/${destPath}`;
+      }
+
+      const destParsed = parseUrl(destPath);
+      appendURLSearchParams(searchParams, destParsed.searchParams);
+      result = {
+        found: true,
+        dest: destParsed.pathname || '/',
+        continue: isContinue,
+        userDest: Boolean(routeConfig.dest),
+        isDestUrl,
+        status: status,
+        uri_args: searchParams,
+        matched_route: routeConfig,
+        matched_route_idx: routeIndex,
+        phase,
+        headers: combinedHeaders,
+        target,
+      };
+
+      if (isContinue) {
+        continue;
+      }
+
+      break;
     }
 
     if (!result) {

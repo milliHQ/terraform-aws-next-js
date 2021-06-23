@@ -16,7 +16,8 @@
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
-    "@vercel/routing-utils": "^1.9.1",
+    "@hapi/accept": "^5.0.2",
+    "@vercel/routing-utils": "1.11.2",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1"
   },

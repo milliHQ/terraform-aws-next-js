@@ -1,0 +1,541 @@
+{
+  "lambdas": {
+    "__NEXT_PAGE_LAMBDA_0": {
+      "handler": "now__launcher.launcher",
+      "runtime": "nodejs14.x",
+      "filename": "lambdas/__NEXT_PAGE_LAMBDA_0.zip",
+      "route": "/__NEXT_PAGE_LAMBDA_0"
+    }
+  },
+  "staticRoutes": [
+    "/hello.txt",
+    "/en-US",
+    "/en-US/404",
+    "/en-US/500",
+    "/en-US/auto-export",
+    "/en-US/dynamic/[slug]",
+    "/en-US/gsp",
+    "/en-US/gsp/fallback/[slug]",
+    "/en-US/gsp/fallback/first",
+    "/en-US/gsp/fallback/second",
+    "/en-US/gsp/no-fallback/first",
+    "/en-US/gsp/no-fallback/second",
+    "/en-US/not-found",
+    "/en-US/not-found/fallback/[slug]",
+    "/en-US/not-found/fallback/first",
+    "/en-US/not-found/fallback/second",
+    "/en",
+    "/en/404",
+    "/en/500",
+    "/en/auto-export",
+    "/en/dynamic/[slug]",
+    "/en/gsp",
+    "/en/gsp/fallback/[slug]",
+    "/en/gsp/fallback/first",
+    "/en/gsp/fallback/second",
+    "/en/not-found/fallback/[slug]",
+    "/fr-BE",
+    "/fr-BE/404",
+    "/fr-BE/500",
+    "/fr-BE/auto-export",
+    "/fr-BE/dynamic/[slug]",
+    "/fr-BE/gsp",
+    "/fr-BE/gsp/fallback/[slug]",
+    "/fr-BE/gsp/fallback/first",
+    "/fr-BE/gsp/fallback/second",
+    "/fr-BE/not-found",
+    "/fr-BE/not-found/fallback/[slug]",
+    "/fr",
+    "/fr/404",
+    "/fr/500",
+    "/fr/auto-export",
+    "/fr/dynamic/[slug]",
+    "/fr/gsp",
+    "/fr/gsp/fallback/[slug]",
+    "/fr/gsp/fallback/first",
+    "/fr/gsp/fallback/second",
+    "/fr/gsp/no-fallback/first",
+    "/fr/not-found",
+    "/fr/not-found/fallback/[slug]",
+    "/nl-BE",
+    "/nl-BE/404",
+    "/nl-BE/500",
+    "/nl-BE/auto-export",
+    "/nl-BE/dynamic/[slug]",
+    "/nl-BE/gsp",
+    "/nl-BE/gsp/fallback/[slug]",
+    "/nl-BE/gsp/fallback/first",
+    "/nl-BE/gsp/fallback/second",
+    "/nl-BE/not-found",
+    "/nl-BE/not-found/fallback/[slug]",
+    "/nl-NL",
+    "/nl-NL/404",
+    "/nl-NL/500",
+    "/nl-NL/auto-export",
+    "/nl-NL/dynamic/[slug]",
+    "/nl-NL/gsp",
+    "/nl-NL/gsp/fallback/[slug]",
+    "/nl-NL/gsp/fallback/first",
+    "/nl-NL/gsp/fallback/second",
+    "/nl-NL/gsp/no-fallback/second",
+    "/nl-NL/not-found",
+    "/nl-NL/not-found/fallback/[slug]",
+    "/nl",
+    "/nl/404",
+    "/nl/500",
+    "/nl/auto-export",
+    "/nl/dynamic/[slug]",
+    "/nl/gsp",
+    "/nl/gsp/fallback/[slug]",
+    "/nl/gsp/fallback/first",
+    "/nl/gsp/fallback/second",
+    "/nl/not-found/fallback/[slug]"
+  ],
+  "routes": [
+    {
+      "src": "^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$",
+      "headers": {
+        "Location": "/$1"
+      },
+      "status": 308,
+      "continue": true
+    },
+    {
+      "src": "^/(?!(?:_next/.*|en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)(?:/.*|$))(.*)$",
+      "dest": "$wildcard/$1",
+      "continue": true
+    },
+    {
+      "src": "^//?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/?$",
+      "locale": {
+        "redirect": {
+          "nl-BE": "https://example.be/",
+          "fr": "https://example.fr/"
+        },
+        "cookie": "NEXT_LOCALE"
+      },
+      "continue": true
+    },
+    {
+      "src": "/",
+      "locale": {
+        "redirect": {
+          "en-US": "/",
+          "nl-NL": "/nl-NL",
+          "nl-BE": "/nl-BE",
+          "nl": "/nl",
+          "fr-BE": "/fr-BE",
+          "fr": "/fr",
+          "en": "/en"
+        },
+        "cookie": "NEXT_LOCALE"
+      },
+      "continue": true
+    },
+    {
+      "src": "^/$",
+      "dest": "/en-US",
+      "continue": true
+    },
+    {
+      "src": "^/(?!(?:_next/.*|en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)(?:/.*|$))(.*)$",
+      "dest": "/en-US/$1",
+      "continue": true
+    },
+    {
+      "src": "^\\/en-US\\/add-header-1$",
+      "headers": {
+        "x-hello": "world"
+      },
+      "continue": true
+    },
+    {
+      "src": "^\\/nl\\/add-header-2$",
+      "headers": {
+        "x-hello": "world"
+      },
+      "continue": true
+    },
+    {
+      "src": "^(?:\\/(en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en))\\/add-header-3$",
+      "headers": {
+        "x-hello": "world"
+      },
+      "continue": true
+    },
+    {
+      "src": "^\\/en-US\\/redirect-1$",
+      "headers": {
+        "Location": "/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "^\\/nl\\/redirect-2$",
+      "headers": {
+        "Location": "/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "^\\/nl-BE\\/redirect-3$",
+      "headers": {
+        "Location": "https://example.be/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "^\\/fr\\/redirect-3$",
+      "headers": {
+        "Location": "https://example.fr/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "^\\/en-US\\/redirect-3$",
+      "headers": {
+        "Location": "/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "^(?:\\/(en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en))\\/redirect-3$",
+      "headers": {
+        "Location": "/$1/somewhere-else"
+      },
+      "status": 307
+    },
+    {
+      "src": "/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?[/]?404",
+      "status": 404,
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/another/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/another"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gssp/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gssp"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?(/|/index|)/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/index"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/links/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/links"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/not\\-found/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/not-found"
+      },
+      "check": true
+    },
+    {
+      "src": "^\\/en-US\\/rewrite-1$",
+      "dest": "/another",
+      "check": true
+    },
+    {
+      "src": "^\\/nl\\/rewrite-2$",
+      "dest": "/nl/another",
+      "check": true
+    },
+    {
+      "src": "^\\/fr\\/rewrite-3$",
+      "dest": "/nl/another",
+      "check": true
+    },
+    {
+      "src": "^(?:\\/(en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en))\\/rewrite-4$",
+      "dest": "/$1/another",
+      "check": true
+    },
+    {
+      "handle": "resource"
+    },
+    {
+      "src": "/.*",
+      "status": 404
+    },
+    {
+      "handle": "miss"
+    },
+    {
+      "src": "^//?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/(.*)",
+      "dest": "/$1",
+      "check": true
+    },
+    {
+      "handle": "rewrite"
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/index.json$",
+      "dest": "/",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/another.json$",
+      "dest": "/another",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gsp.json$",
+      "dest": "/gsp",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gsp/blocking(?:/(?<slug>.+?))?\\.json$",
+      "dest": "/gsp/blocking/[[...slug]]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/blocking/\\[\\[\\.\\.\\.slug\\]\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp/blocking/[[...slug]]"
+      },
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gsp/fallback/(?<slug>[^/]+?)\\.json$",
+      "dest": "/gsp/fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/fallback/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp/fallback/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gsp/no\\-fallback/(?<slug>[^/]+?)\\.json$",
+      "dest": "/gsp/no-fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/no\\-fallback/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp/no-fallback/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gssp.json$",
+      "dest": "/gssp",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/gssp/(?<slug>[^/]+?)\\.json$",
+      "dest": "/gssp/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gssp/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gssp/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/links.json$",
+      "dest": "/links",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/not-found.json$",
+      "dest": "/not-found",
+      "check": true
+    },
+    {
+      "src": "^/_next/data/testing\\-build\\-id/(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)/not\\-found/fallback/(?<slug>[^/]+?)\\.json$",
+      "dest": "/not-found/fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/not\\-found/fallback/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/not-found/fallback/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/another/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/another"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gssp/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gssp"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?(/|/index|)/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/index"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/links/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/links"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/not\\-found/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/not-found"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/dynamic/(?<slug>[^/]+?)(?:/)?$",
+      "dest": "/$nextLocale/dynamic/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/blocking(?:/(?<slug>.+?))?(?:/)?$",
+      "dest": "/gsp/blocking/[[...slug]]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/blocking/\\[\\[\\.\\.\\.slug\\]\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp/blocking/[[...slug]]"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/fallback/(?<slug>[^/]+?)(?:/)?$",
+      "dest": "/$nextLocale/gsp/fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/no\\-fallback/(?<slug>[^/]+?)(?:/)?$",
+      "dest": "/gsp/no-fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gsp/no\\-fallback/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gsp/no-fallback/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gssp/(?<slug>[^/]+?)(?:/)?$",
+      "dest": "/gssp/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "src": "^[/]?(?:en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/gssp/\\[slug\\]/?$",
+      "dest": "/__NEXT_PAGE_LAMBDA_0",
+      "headers": {
+        "x-nextjs-page": "/gssp/[slug]"
+      },
+      "check": true
+    },
+    {
+      "src": "^[/]?(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)?/not\\-found/fallback/(?<slug>[^/]+?)(?:/)?$",
+      "dest": "/$nextLocale/not-found/fallback/[slug]?slug=$slug",
+      "check": true
+    },
+    {
+      "handle": "hit"
+    },
+    {
+      "handle": "error"
+    },
+    {
+      "src": "/(?<nextLocale>en\\-US|nl\\-NL|nl\\-BE|nl|fr\\-BE|fr|en)(/.*|$)",
+      "dest": "/$nextLocale/404",
+      "status": 404
+    },
+    {
+      "src": "/.*",
+      "dest": "/en-US/404",
+      "status": 404
+    }
+  ],
+  "buildId": "testing-build-id",
+  "prerenders": {},
+  "staticFilesArchive": "static-website-files.zip",
+  "version": 1,
+  "images": {
+    "domains": [],
+    "sizes": [
+      640,
+      750,
+      828,
+      1080,
+      1200,
+      1920,
+      2048,
+      3840,
+      16,
+      32,
+      48,
+      64,
+      96,
+      128,
+      256,
+      384
+    ]
+  }
+}

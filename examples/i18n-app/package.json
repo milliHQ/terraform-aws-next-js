@@ -1,0 +1,20 @@
+{
+  "name": "terraform-next-js-example-i18n-routing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "tf-next": "tf-next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "tf-next": "latest"
+  },
+  "license": "MIT"
+}
