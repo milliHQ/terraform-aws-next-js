@@ -14,6 +14,7 @@ import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
 import * as util from 'util';
 import findWorkspaceRoot from 'find-yarn-workspace-root';
+import StreamZip from 'node-stream-zip';
 
 import { ConfigOutput } from '../types';
 import { removeRoutesByPrefix } from '../utils/routes';
@@ -67,11 +68,17 @@ function writeStaticWebsiteFiles(
   files: StaticWebsiteFiles
 ) {
   return new Promise<void>(async (resolve, reject) => {
+    const zip = new StreamZip.async({ file: outputFile });
+
+
+
     // Create a zip package for the static website files
     const output = fs.createWriteStream(outputFile);
     const archive = archiver('zip', {
       zlib: { level: 9 },
     });
+
+
 
     archive.pipe(output);
 
@@ -85,15 +92,22 @@ function writeStaticWebsiteFiles(
     });
 
     for (const [key, file] of Object.entries(files)) {
+      console.log(`write "${key}":`, file);
+
       const buf = await streamToBuffer(file.toStream());
-      archive.append(buf, { name: key });
+
+      console.log('buffer', buf.length);
+
+      archive.append('buf', {
+        name: path.basename(key),
+      });
     }
 
     archive.finalize();
   });
 }
 
-function writeOutput(props: OutputProps) {
+async function writeOutput(props: OutputProps) {
   const config: ConfigOutput = {
     lambdas: {},
     staticRoutes: [],
@@ -127,7 +141,7 @@ function writeOutput(props: OutputProps) {
     // Add leading / to the route
     .map((path) => `/${path}`);
 
-  const staticFilesArchive = writeStaticWebsiteFiles(
+  const staticFilesArchive = await writeStaticWebsiteFiles(
     path.join(props.outputDir, config.staticFilesArchive),
     props.staticWebsiteFiles
   );
