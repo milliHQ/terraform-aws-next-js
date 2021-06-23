@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "test:prepare": "docker-compose up -d",
-    "test": "jest --testPathIgnorePatterns test/routes.test.ts",
+    "test": "jest --testPathIgnorePatterns test/routes.test.ts packages/runtime/test/test.js",
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts"
   },
