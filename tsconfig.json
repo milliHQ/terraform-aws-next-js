@@ -11,6 +11,5 @@
     "experimentalDecorators": true,
     "esModuleInterop": true
   },
-  "include": ["packages/**/*"],
-  "exclude": ["examples/**/*", "**/*.(spec|test).ts"]
+  "exclude": ["node_modules", "examples/**/*"]
 }

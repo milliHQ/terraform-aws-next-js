@@ -12,6 +12,12 @@ import {
   normalizeCloudFrontHeaders,
   ConfigLambda,
 } from '@dealmore/sammy';
+import unzipper, { Entry } from 'unzipper';
+import etl from 'etl';
+
+// We use an increased timeout here because in the worst case
+// AWS SAM needs to download a docker image before the test can run
+const TEST_TIMEOUT = 2 * 60 * 1000;
 
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const pathToProxyPackage = path.join(__dirname, '../packages/proxy/dist.zip');
@@ -98,116 +104,157 @@ describe('Test proxy config', () => {
           },
         });
         await proxySAM.start();
-      });
+      }, TEST_TIMEOUT);
 
       afterAll(async () => {
         // Shutdown SAM
         await lambdaSAM.stop();
         await proxySAM.stop();
-      });
+      }, TEST_TIMEOUT);
 
-      test('Proxy', async () => {
-        for (const probe of probeFile.probes) {
-          const Request = await proxySAM.sendRequestEvent({
-            uri: probe.path,
-          });
+      test(
+        'Proxy',
+        async () => {
+          for (const probe of probeFile.probes) {
+            const Request = await proxySAM.sendRequestEvent({
+              uri: probe.path,
+            });
 
-          if ('origin' in Request) {
-            // Request
-            if (Request.origin?.custom) {
-              if (samEndpoint.includes(Request.origin.custom.domainName)) {
-                // Request should be served by lambda (SSR)
-                const basePath = Request.origin.custom.path;
-                const { uri, querystring } = Request;
+            if ('origin' in Request) {
+              // Request
+              if (Request.origin?.custom) {
+                if (samEndpoint.includes(Request.origin.custom.domainName)) {
+                  // Request should be served by lambda (SSR)
+                  const basePath = Request.origin.custom.path;
+                  const { uri, querystring } = Request;
 
-                // Merge request headers and custom headers from origin
-                const headers = {
-                  ...normalizeCloudFrontHeaders(Request.headers),
-                  ...normalizeCloudFrontHeaders(
-                    Request.origin.custom.customHeaders
-                  ),
-                };
-                const requestPath = `${basePath}${uri}${
-                  querystring !== '' ? `?${querystring}` : ''
-                }`;
+                  // Merge request headers and custom headers from origin
+                  const headers = {
+                    ...normalizeCloudFrontHeaders(Request.headers),
+                    ...normalizeCloudFrontHeaders(
+                      Request.origin.custom.customHeaders
+                    ),
+                  };
+                  const requestPath = `${basePath}${uri}${
+                    querystring !== '' ? `?${querystring}` : ''
+                  }`;
 
-                const lambdaResponse = await lambdaSAM
-                  .sendApiGwRequest(requestPath, {
-                    headers,
-                  })
-                  .then((res) => {
-                    const headers = res.headers;
+                  const lambdaResponse = await lambdaSAM
+                    .sendApiGwRequest(requestPath, {
+                      headers,
+                    })
+                    .then((res) => {
+                      const headers = res.headers;
 
-                    return res.text();
-                  })
-                  .then((text) => {
-                    // If text is already JSON we dont need to parse base64
-                    if (text.startsWith('{')) {
-                      return text;
+                      return res.text();
+                    })
+                    .then((text) => {
+                      // If text is already JSON we dont need to parse base64
+                      if (text.startsWith('{')) {
+                        return text;
+                      }
+
+                      return Buffer.from(text, 'base64').toString('utf-8');
+                    });
+
+                  if (probe.mustContain) {
+                    expect(lambdaResponse).toContain(probe.mustContain);
+                  }
+                } else {
+                  // Request is an external rewrite
+                  if (probe.destPath) {
+                    const { custom: customOrigin } = Request.origin;
+                    const originRequest = new URL(
+                      `${customOrigin.protocol}://${customOrigin.domainName}${
+                        Request.uri
+                      }${Request.querystring ? `?${Request.querystring}` : ''}`
+                    );
+
+                    // Check for custom ports
+                    if (customOrigin.port !== 80 && customOrigin.port !== 443) {
+                      originRequest.port = customOrigin.port.toString();
                     }
 
-                    return Buffer.from(text, 'base64').toString('utf-8');
-                  });
-
-                if (probe.mustContain) {
-                  expect(lambdaResponse).toContain(probe.mustContain);
+                    expect(originRequest).toEqual(new URL(probe.destPath));
+                  }
                 }
-              } else {
-                // Request is an external rewrite
-                if (probe.destPath) {
-                  const { custom: customOrigin } = Request.origin;
-                  const originRequest = new URL(
-                    `${customOrigin.protocol}://${customOrigin.domainName}${
-                      Request.uri
-                    }${Request.querystring ? `?${Request.querystring}` : ''}`
+              } else if (Request.origin?.s3) {
+                // Request should be served by static file system (S3)
+                // Check static routes
+                const { uri } = Request;
+                if (config.staticRoutes.find((route) => route === uri)) {
+                  const pathToStaticFilesArchive = path.join(
+                    pathToFixture,
+                    '.next-tf',
+                    config.staticFilesArchive
                   );
 
-                  // Check for custom ports
-                  if (customOrigin.port !== 80 && customOrigin.port !== 443) {
-                    originRequest.port = customOrigin.port.toString();
-                  }
+                  const fileContent = await new Promise<Buffer>(
+                    (resolve, reject) => {
+                      let found = false;
+                      // Remove leading / from the path
+                      const filePath = uri.replace(/^\//, '');
 
-                  expect(originRequest).toEqual(new URL(probe.destPath));
+                      fs.createReadStream(pathToStaticFilesArchive)
+                        .pipe(unzipper.Parse())
+                        .pipe(
+                          etl.map(async (entry: Entry) => {
+                            if (entry.path === filePath) {
+                              const content = await entry.buffer();
+                              found = true;
+                              resolve(content);
+                            } else {
+                              entry.autodrain();
+                            }
+                          })
+                        )
+                        .on('finish', () => {
+                          if (!found) {
+                            reject(`Could not find static file ${filePath}`);
+                          }
+                        });
+                    }
+                  ).then((buffer) => buffer.toString('utf-8'));
+
+                  if (probe.mustContain) {
+                    expect(fileContent).toContain(probe.mustContain);
+                  }
+                } else {
+                  fail(
+                    `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
+                  );
                 }
-              }
-            } else if (Request.origin?.s3) {
-              // Request should be served by static file system (S3)
-              // Check static routes
-              const { uri } = Request;
-              if (!config.staticRoutes.find((route) => route === uri)) {
-                fail(
-                  `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
-                );
               } else {
-                // TODO: Open the static file and check the content
+                fail(`Path ${probe.path} returned invalid proxy request`);
               }
             } else {
-              fail(`Path ${probe.path} returned invalid proxy request`);
-            }
-          } else {
-            // Request-Response
-            const Response = Request as CloudFrontResultResponse;
+              // Request-Response
+              const Response = Request as CloudFrontResultResponse;
 
-            if (probe.status) {
-              expect(Response.status).toBe(probe.status.toString());
-            }
+              if (probe.status) {
+                expect(Response.status).toBe(probe.status.toString());
+              }
 
-            for (const header in probe.responseHeaders) {
-              const lowerHeader = header.toLowerCase();
-              expect(Response.headers![lowerHeader]).toBeDefined();
-              expect(Response.headers![lowerHeader]).toContainEqual(
-                expect.objectContaining({
-                  value: probe.responseHeaders[header],
-                })
-              );
-            }
+              for (const header in probe.responseHeaders) {
+                const lowerHeader = header.toLowerCase();
+                expect(Response.headers![lowerHeader]).toBeDefined();
+                expect(Response.headers![lowerHeader]).toContainEqual(
+                  expect.objectContaining({
+                    value: probe.responseHeaders[header],
+                  })
+                );
+              }
 
-            if (probe.statusDescription) {
-              expect(Response.statusDescription).toBe(probe.statusDescription);
+              if (probe.statusDescription) {
+                expect(Response.statusDescription).toBe(
+                  probe.statusDescription
+                );
+              }
             }
           }
-        }
-      });
+        },
+        TEST_TIMEOUT
+      );
     });
   }
 });
