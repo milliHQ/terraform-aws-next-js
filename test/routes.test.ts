@@ -123,7 +123,7 @@ describe('Test proxy config', () => {
             if ('origin' in Request) {
               // Request
               if (Request.origin?.custom) {
-                if (samEndpoint.includes(Request.origin.custom.domainName)) {
+                if (Request.origin.custom.domainName === 'local-apigw.local') {
                   // Request should be served by lambda (SSR)
                   const basePath = Request.origin.custom.path;
                   const { uri, querystring } = Request;
@@ -144,17 +144,7 @@ describe('Test proxy config', () => {
                       headers,
                     })
                     .then((res) => {
-                      const headers = res.headers;
-
                       return res.text();
-                    })
-                    .then((text) => {
-                      // If text is already JSON we dont need to parse base64
-                      if (text.startsWith('{')) {
-                        return text;
-                      }
-
-                      return Buffer.from(text, 'base64').toString('utf-8');
                     });
 
                   if (probe.mustContain) {
