@@ -7,6 +7,11 @@
       "responseHeaders": {
         "Set-Cookie": "cookie-1, cookie-2"
       }
+    },
+    {
+      "path": "/api/actions/12345/info",
+      "status": 200,
+      "mustContain": "actionId: 12345"
     }
   ]
 }
