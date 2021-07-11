@@ -12,6 +12,14 @@
       "path": "/api/actions/12345/info",
       "status": 200,
       "mustContain": "actionId: 12345"
+    },
+    {
+      "path": "/api/host",
+      "requestHeaders": {
+        "Host": "example.org"
+      },
+      "status": 200,
+      "mustContain": "host: example.org"
     }
   ]
 }

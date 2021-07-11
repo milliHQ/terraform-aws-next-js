@@ -57,6 +57,7 @@ interface ProbeFile {
     status?: number;
     statusDescription?: string;
     responseHeaders?: Record<string, string>;
+    requestHeaders?: Record<string, string>;
     destPath?: string;
   }[];
 }
@@ -239,6 +240,7 @@ describe('Test proxy config', () => {
         };
 
         proxySAM = await generateProxySAM({
+          runtime: 'nodejs14.x',
           pathToProxyPackage,
           proxyConfig: JSON.stringify(proxyConfig),
           onData(data: string) {
@@ -270,6 +272,7 @@ describe('Test proxy config', () => {
         for (const probe of probeFile.probes) {
           const Request = await proxySAM.sendRequestEvent({
             uri: probe.path,
+            headers: probe.requestHeaders,
           });
 
           if ('origin' in Request) {

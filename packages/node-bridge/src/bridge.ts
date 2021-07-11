@@ -12,6 +12,11 @@ import {
   request,
 } from 'http';
 
+// Remember that all header names are lower-cased in API Gateway context
+const HEADER_KEY_X_FORWARDED_HOST = 'x-forwarded-host';
+const HEADER_KEY_COOKIE = 'cookie';
+const HEADER_KEY_HOST = 'host';
+
 export interface NowProxyRequest {
   method: string;
   path: string;
@@ -79,7 +84,13 @@ function normalizeAPIGatewayProxyEvent(
   // API Gateway 2.0 payload splits cookie header from the rest,
   // so we need to readd them
   if (cookies) {
-    headers['cookie'] = cookies.join('; ');
+    headers[HEADER_KEY_COOKIE] = cookies.join('; ');
+  }
+
+  // Replace the `host` header with the value of `X-Forwarded-Host` if available
+  if (HEADER_KEY_X_FORWARDED_HOST in headers) {
+    headers[HEADER_KEY_HOST] = headers[HEADER_KEY_X_FORWARDED_HOST];
+    delete headers[HEADER_KEY_X_FORWARDED_HOST];
   }
 
   if (body) {
