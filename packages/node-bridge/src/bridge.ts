@@ -13,6 +13,8 @@ import {
 } from 'http';
 
 // Remember that all header names are lower-cased in API Gateway context
+// However the local API Gateway emulation does not guarantee that they are
+// always lower-cased (https://github.com/aws/aws-sam-cli/issues/3034)
 const HEADER_KEY_X_FORWARDED_HOST = 'x-forwarded-host';
 const HEADER_KEY_COOKIE = 'cookie';
 const HEADER_KEY_HOST = 'host';
@@ -54,6 +56,23 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
+function findInsensitiveKeyInObject(obj: Record<string, any>, key: string) {
+  // Check for exact match first
+  if (key in obj) {
+    return key;
+  }
+
+  // Try to find insensitive key
+  const lowerCaseKey = key.toLowerCase();
+  for (const indexKey in obj) {
+    if (indexKey.toLowerCase() === lowerCaseKey) {
+      return indexKey;
+    }
+  }
+
+  return null;
+}
+
 function normalizeAPIGatewayProxyEvent(
   event: APIGatewayProxyEventV2
 ): NowProxyRequest {
@@ -88,9 +107,13 @@ function normalizeAPIGatewayProxyEvent(
   }
 
   // Replace the `host` header with the value of `X-Forwarded-Host` if available
-  if (HEADER_KEY_X_FORWARDED_HOST in headers) {
-    headers[HEADER_KEY_HOST] = headers[HEADER_KEY_X_FORWARDED_HOST];
-    delete headers[HEADER_KEY_X_FORWARDED_HOST];
+  const forwardedHostHeaderKey = findInsensitiveKeyInObject(
+    headers,
+    HEADER_KEY_X_FORWARDED_HOST
+  );
+  if (forwardedHostHeaderKey !== null) {
+    headers[HEADER_KEY_HOST] = headers[forwardedHostHeaderKey];
+    delete headers[forwardedHostHeaderKey];
   }
 
   if (body) {

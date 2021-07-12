@@ -297,8 +297,7 @@ test('[APIGatewayProxyEvent] Replace Host header with X-Forwarded-Host', async (
       host: 'example.com',
     })
   );
-  expect(body.headers['x-forwarded-host']).toBeUndefined()
-
+  expect(body.headers['x-forwarded-host']).toBeUndefined();
 
   server.close();
 });
