@@ -125,13 +125,13 @@ variable "cloudfront_minimum_protocol_version" {
 variable "cloudfront_origin_headers" {
   description = "Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront_cache_key_headers."
   type        = list(string)
-  default     = []
+  default     = ["X-Forwarded-Host"]
 }
 
 variable "cloudfront_cache_key_headers" {
   description = "Header keys that should be used to calculate the cache key in CloudFront."
   type        = list(string)
-  default     = ["Authorization"]
+  default     = ["Authorization", "Host"]
 }
 
 variable "cloudfront_external_id" {
