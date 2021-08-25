@@ -44,3 +44,15 @@ output "cloudfront_custom_error_response" {
   description = "Preconfigured custom error response the CloudFront distribution should use."
   value       = local.cloudfront_custom_error_response
 }
+
+
+##################################
+# Lambda function
+##################################
+
+output "lambda_functions_arn" {
+  description = "The list of ARNs of the Lambda functions deployed"
+  value = toset([
+    for x in aws_lambda_function.this : x.arn
+  ])
+}
