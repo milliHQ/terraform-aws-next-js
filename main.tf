@@ -68,6 +68,7 @@ resource "aws_lambda_function" "this" {
   memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
   timeout       = var.lambda_timeout
   tags          = var.tags
+  publish       = true # publish a version of the function
 
   filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
   source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")

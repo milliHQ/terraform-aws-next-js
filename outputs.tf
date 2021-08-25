@@ -50,9 +50,9 @@ output "cloudfront_custom_error_response" {
 # Lambda function
 ##################################
 
-output "lambda_functions_arn" {
-  description = "The list of ARNs of the Lambda functions deployed"
-  value = toset([
-    for x in aws_lambda_function.this : x.arn
-  ])
+output "lambda_functions" {
+  description = "The map of ARNs mapped to the published version of the Lambda functions deployed. Can be used in a for_each as needed."
+  value = tomap({
+    for x in aws_lambda_function.this : x.arn => x.version
+  })
 }
