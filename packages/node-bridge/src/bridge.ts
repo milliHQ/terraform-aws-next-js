@@ -208,6 +208,16 @@ export class Bridge {
               continue;
             }
 
+            // Is dropped by API Gateway
+            // Was added in Next.js 11.1.0
+            // We need to remove this, since the in the local e2e tests
+            // AWS SAM CLI forwards this header to the viewer, which produces
+            // an error, since `transfer-encoding` and `content-length` headers
+            // should not be present on the same response
+            if (headerKey === 'transfer-encoding') {
+              continue;
+            }
+
             // Filter out cookies
             if (headerKey === 'set-cookie' && headerValue) {
               if (typeof headerValue === 'string') {
