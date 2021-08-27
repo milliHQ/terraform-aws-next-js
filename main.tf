@@ -53,6 +53,7 @@ module "statics_deploy" {
   tags            = var.tags
 
   debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
 }
 
 # Lambda
@@ -212,6 +213,7 @@ module "proxy" {
   tags            = var.tags
 
   debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
 
   providers = {
     aws.global_region = aws.global_region
