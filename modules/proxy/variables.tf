@@ -36,3 +36,7 @@ variable "debug_use_local_packages" {
   type    = bool
   default = false
 }
+
+variable "tf_next_module_root" {
+  type = string
+}
