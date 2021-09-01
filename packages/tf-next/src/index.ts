@@ -1,6 +1,8 @@
 import cuid from 'cuid';
 import yargs from 'yargs';
 
+// TODO: Have a central configuration for AWS API versions
+
 yargs
   .scriptName('tf-next')
   .usage('$0 <cmd> [args]')
@@ -47,12 +49,21 @@ yargs
     },
     async ({ verbose }) => {
       const cwd = process.cwd();
-      const id = cuid();
+      const deploymentId = cuid();
+
+      // TODO:
+      // Figure out a good way to pass the current terraform state. Especially
+      // considering that there could be multiple environments (preview,
+      // production). For development/testing, we'll save the current state,
+      // that we get when running `$ terraform show -json` into a file called
+      // `terraform.config.json` at the root of this package.
+      const terraformState = require('../terraform.config.json');
 
       (await import('./commands/create-deployment')).default({
-        id,
+        deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
+        terraformState,
       });
     }
   )

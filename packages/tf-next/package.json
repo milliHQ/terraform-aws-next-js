@@ -29,6 +29,7 @@
     "find-yarn-workspace-root": "^2.0.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
+    "jsonpath": "^1.1.1",
     "tmp": "^0.2.1",
     "yargs": "^15.3.1"
   },
@@ -36,6 +37,7 @@
     "@types/archiver": "^5.1.0",
     "@types/fs-extra": "^9.0.1",
     "@types/glob": "^7.1.2",
+    "@types/jsonpath": "^0.2.0",
     "@types/tmp": "^0.2.0",
     "@types/yargs": "^15.0.5"
   },
