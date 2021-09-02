@@ -11,8 +11,8 @@ async function listDeploymentsCommand({
 }: ListDeploymentProps) {
   const apis = await apiGatewayV2.getApis().promise();
   for (const item of apis.Items || []) {
-    if (item.Name.startsWith('tf-next')) {
-      console.log(`${item.Name} - ${item.ApiId} - ${item.Description}`);
+    if (item.Name.startsWith('tf-next') && item.Description === 'Managed by Terraform-next.js') {
+      console.log(item.ApiId);
     }
   }
 }

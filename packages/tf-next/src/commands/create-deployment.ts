@@ -24,6 +24,7 @@ const lambda = new Lambda();
 //   }
 // },
 
+type ExecuteArn = string;
 type LogLevel = 'verbose' | 'none' | undefined;
 
 interface CreateDeploymentProps {
@@ -164,20 +165,15 @@ async function createAPIGateway(
   lambdaTimeout: number,
   lambdaConfigurations: LambdaConfigurations,
   lambdaArns: LambdaArns,
-) {
-  const integrationKeys = [];
-  const integrationValues = [];
-
-  for (const key in lambdaConfigurations) {
-    integrationKeys.push(`ANY ${lambdaConfigurations[key].route}/{proxy+}`)
-    integrationValues.push({
-      lambda_arn:             lambdaArns[key],
-      payload_format_version: '2.0',
-      timeout_milliseconds:   lambdaTimeout * 1000,
-    });
+  terraformState: any,
+): Promise<ExecuteArn> {
+  // TODO: This needs to be fixed, so we select the correct topic
+  const snsTopics = query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
+  if (snsTopics.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
 
-  await apiGatewayV2.createApi({
+  const api = await apiGatewayV2.createApi({
     Name: `${deploymentName} - ${deploymentId}`,
     ProtocolType: 'HTTP',
     ApiKeySelectionExpression: '$request.header.x-api-key',
@@ -186,102 +182,38 @@ async function createAPIGateway(
     Tags: {},
   }).promise();
 
-  // resource "aws_apigatewayv2_stage" "default" {
-  //   count = var.create && var.create_default_stage ? 1 : 0
+  if (api.ApiId === undefined) {
+    throw new Error(`Created API gateway does not have an id: ${inspect(api)}`);
+  }
 
-  //   api_id      = aws_apigatewayv2_api.this[0].id
-  //   name        = "$default"
-  //   auto_deploy = true
+  const stage = await apiGatewayV2.createStage({
+    ApiId: api.ApiId,
+    StageName: '$default',
+    AutoDeploy: true,
+    Description: 'Managed by Terraform-next.js',
+    // TODO: Tags: {},
+  }).promise();
 
-  //   dynamic "access_log_settings" {
-  //     for_each = var.default_stage_access_log_destination_arn != null && var.default_stage_access_log_format != null ? [true] : []
-  //     content {
-  //       destination_arn = var.default_stage_access_log_destination_arn
-  //       format          = var.default_stage_access_log_format
-  //     }
-  //   }
+  for (const key in lambdaConfigurations) {
+    const integration = await apiGatewayV2.createIntegration({
+      ApiId: api.ApiId,
+      IntegrationType: 'AWS_PROXY',
+      Description: 'Managed by Terraform-next.js',
+      IntegrationMethod: 'POST',
+      IntegrationUri: lambdaArns[key],
+      PayloadFormatVersion: '2.0',
+      TimeoutInMillis: lambdaTimeout * 1000,
+    }).promise();
 
-  //   dynamic "default_route_settings" {
-  //     for_each = length(keys(var.default_route_settings)) == 0 ? [] : [var.default_route_settings]
-  //     content {
-  //       data_trace_enabled       = lookup(default_route_settings.value, "data_trace_enabled", false)
-  //       detailed_metrics_enabled = lookup(default_route_settings.value, "detailed_metrics_enabled", false)
-  //       logging_level            = lookup(default_route_settings.value, "logging_level", null)
-  //       throttling_burst_limit   = lookup(default_route_settings.value, "throttling_burst_limit", null)
-  //       throttling_rate_limit    = lookup(default_route_settings.value, "throttling_rate_limit", null)
-  //     }
-  //   }
+    await apiGatewayV2.createRoute({
+      ApiId: api.ApiId,
+      RouteKey: `ANY ${lambdaConfigurations[key].route}/{proxy+}`,
+      AuthorizationType: 'NONE', // TODO
+      Target: `integrations/${integration.IntegrationId}`,
+    }).promise();
+  }
 
-  //   #  # bug - https://github.com/terraform-providers/terraform-provider-aws/issues/12893
-  //   #  dynamic "route_settings" {
-  //   #    for_each = var.create_routes_and_integrations ? var.integrations : {}
-  //   #    content {
-  //   #      route_key = route_settings.key
-  //   #      data_trace_enabled = lookup(route_settings.value, "data_trace_enabled", null)
-  //   #      detailed_metrics_enabled         = lookup(route_settings.value, "detailed_metrics_enabled", null)
-  //   #      logging_level         = lookup(route_settings.value, "logging_level", null)  # Error: error updating API Gateway v2 stage ($default): BadRequestException: Execution logs are not supported on protocolType HTTP
-  //   #      throttling_burst_limit         = lookup(route_settings.value, "throttling_burst_limit", null)
-  //   #      throttling_rate_limit         = lookup(route_settings.value, "throttling_rate_limit", null)
-  //   #    }
-  //   #  }
-
-  //   tags = merge(var.default_stage_tags, var.tags)
-
-  //   # Bug in terraform-aws-provider with perpetual diff
-  //   lifecycle {
-  //     ignore_changes = [deployment_id]
-  //   }
-  // }
-
-  // resource "aws_apigatewayv2_route" "this" {
-  //   for_each = var.create && var.create_routes_and_integrations ? var.integrations : {}
-
-  //   api_id    = aws_apigatewayv2_api.this[0].id
-  //   route_key = each.key
-
-  //   api_key_required                    = lookup(each.value, "api_key_required", null)
-  //   authorization_type                  = lookup(each.value, "authorization_type", "NONE")
-  //   authorizer_id                       = lookup(each.value, "authorizer_id", null)
-  //   model_selection_expression          = lookup(each.value, "model_selection_expression", null)
-  //   operation_name                      = lookup(each.value, "operation_name", null)
-  //   route_response_selection_expression = lookup(each.value, "route_response_selection_expression", null)
-  //   target                              = "integrations/${aws_apigatewayv2_integration.this[each.key].id}"
-
-  //   # Not sure what structure is allowed for these arguments...
-  //   #  authorization_scopes = lookup(each.value, "authorization_scopes", null)
-  //   #  request_models  = lookup(each.value, "request_models", null)
-  // }
-
-  // resource "aws_apigatewayv2_integration" "this" {
-  //   for_each = var.create && var.create_routes_and_integrations ? var.integrations : {}
-
-  //   api_id      = aws_apigatewayv2_api.this[0].id
-  //   description = lookup(each.value, "description", null)
-
-  //   integration_type    = lookup(each.value, "integration_type", lookup(each.value, "lambda_arn", "") != "" ? "AWS_PROXY" : "MOCK")
-  //   integration_subtype = lookup(each.value, "integration_subtype", null)
-  //   integration_method  = lookup(each.value, "integration_method", lookup(each.value, "integration_subtype", null) == null ? "POST" : null)
-  //   integration_uri     = lookup(each.value, "lambda_arn", lookup(each.value, "integration_uri", null))
-
-  //   connection_type = lookup(each.value, "connection_type", "INTERNET")
-  //   connection_id   = try(aws_apigatewayv2_vpc_link.this[each.value["vpc_link"]].id, lookup(each.value, "connection_id", null))
-
-  //   payload_format_version    = lookup(each.value, "payload_format_version", null)
-  //   timeout_milliseconds      = lookup(each.value, "timeout_milliseconds", null)
-  //   passthrough_behavior      = lookup(each.value, "passthrough_behavior", null)
-  //   content_handling_strategy = lookup(each.value, "content_handling_strategy", null)
-  //   credentials_arn           = lookup(each.value, "credentials_arn", null)
-  //   request_parameters        = try(jsondecode(each.value["request_parameters"]), each.value["request_parameters"], null)
-
-  //   dynamic "tls_config" {
-  //     for_each = flatten([try(jsondecode(each.value["tls_config"]), each.value["tls_config"], [])])
-  //     content {
-  //       server_name_to_verify = tls_config.value["server_name_to_verify"]
-  //     }
-  //   }
-  // }
-
-  // # VPC Link (Private API)
+  // TODO: # VPC Link (Private API)
   // resource "aws_apigatewayv2_vpc_link" "this" {
   //   for_each = var.create && var.create_vpc_link ? var.vpc_links : {}
 
@@ -292,28 +224,43 @@ async function createAPIGateway(
   //   tags = merge(var.tags, var.vpc_link_tags, lookup(each.value, "tags", {}))
   // }
 
-  // TODO: create integrations
+  const snsTopic = snsTopics.find((topic) => topic.values.arn.includes('tf-next'));
+
+  if (!snsTopic) {
+    throw new Error(`Could not find SNS topic created by tf-next.`);
+  }
+
+  // TODO: Find a better way to get this information
+  const topicArn = snsTopic.values.arn.split(':');
+  const region = topicArn[3];
+  const accountId = topicArn[4];
+
+  // The ARN prefix to be used in an aws_lambda_permission's source_arn attribute or in an aws_iam_policy to authorize access to the @connections API.
+  return `arn:aws:execute-api:${region}:${accountId}:${api.ApiId}`;
 }
 
-async function createLambdaPermissions() {
-  // resource "aws_lambda_permission" "current_version_triggers" {
-  //   for_each = local.lambdas
-
-  //   statement_id  = "AllowInvokeFromApiGateway"
-  //   action        = "lambda:InvokeFunction"
-  //   function_name = random_id.function_name[each.key].hex
-  //   principal     = "apigateway.amazonaws.com"
-
-  //   source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
-  // }
+async function createLambdaPermissions(
+  deploymentId: string,
+  lambdaConfigurations: LambdaConfigurations,
+  executeArn: string,
+) {
+  for (const key in lambdaConfigurations) {
+    await lambda.addPermission({
+      Action: 'lambda:InvokeFunction',
+      FunctionName: `${key}-${deploymentId}`,
+      Principal: 'apigateway.amazonaws.com',
+      StatementId: 'AllowInvokeFromApiGateway',
+      SourceArn: `${executeArn}/*/*/*`,
+    }).promise();
+  }
 }
 
 function log(deploymentId: string, message: string, logLevel: LogLevel) {
   if (logLevel === 'verbose') {
-    console.log(`Deployment ${deploymentId}: created log groups and roles.`);
+    console.log(`Deployment ${deploymentId}: ${message}`);
   }
-
 }
+
 async function createDeploymentCommand({
   deploymentId,
   logLevel,
@@ -336,7 +283,7 @@ async function createDeploymentCommand({
   const configFile = require(path.join(configDir, 'config.json'));
   const lambdaConfigurations = configFile.lambdas;
 
-  // Create log groups
+  // Create IAM & CW resources
   const roleArns = await createIAM(
     deploymentId,
     lambdaConfigurations,
@@ -359,18 +306,23 @@ async function createDeploymentCommand({
   log(deploymentId, 'created lambda functions.', logLevel);
 
   // Create API Gateway
-  await createAPIGateway(
+  const executeArn = await createAPIGateway(
     deploymentId,
     deploymentName,
     lambdaTimeout,
     lambdaConfigurations,
     lambdaArns,
+    terraformState,
   );
 
   log(deploymentId, 'created API gateway.', logLevel);
 
   // Create lambda permissions
-  await createLambdaPermissions();
+  await createLambdaPermissions(
+    deploymentId,
+    lambdaConfigurations,
+    executeArn,
+  );
 
   log(deploymentId, 'created lambda permissions.', logLevel);
 

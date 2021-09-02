@@ -2,6 +2,8 @@ import cuid from 'cuid';
 import yargs from 'yargs';
 
 // TODO: Have a central configuration for AWS API versions
+// TODO: Handle trying to delete a deployment that doesn't exist
+// TODO: Handle trying to create a deployment with an id that already exists
 
 yargs
   .scriptName('tf-next')
@@ -60,6 +62,40 @@ yargs
       const terraformState = require('../terraform.config.json');
 
       (await import('./commands/create-deployment')).default({
+        deploymentId,
+        logLevel: verbose ? 'verbose' : 'none',
+        cwd,
+        terraformState,
+      });
+    }
+  )
+  .command(
+    'delete-deployment',
+    'Delete an existing deployment',
+    (yargs_) => {
+      return yargs_
+        .option('deploymentId', {
+          type: 'string',
+          description: 'The id of the deployment to delete',
+          demandOption: true,
+        })
+        .option('verbose', {
+          type: 'boolean',
+          description: 'Run with verbose logging',
+        });
+    },
+    async ({ deploymentId, verbose }) => {
+      const cwd = process.cwd();
+
+      // TODO:
+      // Figure out a good way to pass the current terraform state. Especially
+      // considering that there could be multiple environments (preview,
+      // production). For development/testing, we'll save the current state,
+      // that we get when running `$ terraform show -json` into a file called
+      // `terraform.config.json` at the root of this package.
+      const terraformState = require('../terraform.config.json');
+
+      (await import('./commands/delete-deployment')).default({
         deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
