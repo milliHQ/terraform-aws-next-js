@@ -12,7 +12,10 @@ async function listDeploymentsCommand({
   const apis = await apiGatewayV2.getApis().promise();
   for (const item of apis.Items || []) {
     if (item.Name.startsWith('tf-next') && item.Description === 'Managed by Terraform-next.js') {
-      console.log(item.ApiId);
+      const name = item.Name.split(' - ');
+      if (name[name.length - 1] !== 'tf-next') {
+        console.log(name[name.length - 1]);
+      }
     }
   }
 }

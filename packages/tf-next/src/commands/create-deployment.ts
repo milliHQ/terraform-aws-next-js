@@ -1,4 +1,4 @@
-import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda } from 'aws-sdk';
+import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
 import { promises } from 'fs';
 import { query } from 'jsonpath';
 import * as path from 'path';
@@ -8,6 +8,7 @@ const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
 const iam = new IAM();
 const lambda = new Lambda();
+const s3 = new S3();
 
 // "lambdas": {
 //   "__NEXT_API_LAMBDA_0": {
@@ -24,7 +25,6 @@ const lambda = new Lambda();
 //   }
 // },
 
-type ExecuteArn = string;
 type LogLevel = 'verbose' | 'none' | undefined;
 
 interface CreateDeploymentProps {
@@ -166,7 +166,7 @@ async function createAPIGateway(
   lambdaConfigurations: LambdaConfigurations,
   lambdaArns: LambdaArns,
   terraformState: any,
-): Promise<ExecuteArn> {
+): Promise<{ apiId: string, executeArn: string }> {
   // TODO: This needs to be fixed, so we select the correct topic
   const snsTopics = query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
   if (snsTopics.length === 0) {
@@ -236,7 +236,10 @@ async function createAPIGateway(
   const accountId = topicArn[4];
 
   // The ARN prefix to be used in an aws_lambda_permission's source_arn attribute or in an aws_iam_policy to authorize access to the @connections API.
-  return `arn:aws:execute-api:${region}:${accountId}:${api.ApiId}`;
+  return {
+    apiId: api.ApiId,
+    executeArn: `arn:aws:execute-api:${region}:${accountId}:${api.ApiId}`,
+  };
 }
 
 async function createLambdaPermissions(
@@ -306,7 +309,7 @@ async function createDeploymentCommand({
   log(deploymentId, 'created lambda functions.', logLevel);
 
   // Create API Gateway
-  const executeArn = await createAPIGateway(
+  const { apiId, executeArn } = await createAPIGateway(
     deploymentId,
     deploymentName,
     lambdaTimeout,
@@ -326,9 +329,25 @@ async function createDeploymentCommand({
 
   log(deploymentId, 'created lambda permissions.', logLevel);
 
-  // Image optimizer stuff
   // Modify proxy config to include API Gateway id
+  configFile.apiId = apiId;
+
   // Upload proxy config to bucket
+  const s3Bucket = query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  if (s3Bucket.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
+
+  await s3.putObject({
+    Body: JSON.stringify(configFile),
+    Bucket: s3Bucket[0].values.bucket,
+    ContentType: 'application/json',
+    Key: `${deploymentId}/proxy-config.json`,
+  }).promise();
+
+  log(deploymentId, 'created proxy config.', logLevel);
+
+  // Image optimizer stuff
   // Upload static assets
 }
 

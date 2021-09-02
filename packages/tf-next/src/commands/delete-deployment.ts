@@ -1,4 +1,4 @@
-import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda } from 'aws-sdk';
+import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
 import { query } from 'jsonpath';
 import * as path from 'path';
 
@@ -6,6 +6,7 @@ const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
 const iam = new IAM();
 const lambda = new Lambda();
+const s3 = new S3();
 
 type LogLevel = 'verbose' | 'none' | undefined;
 
@@ -143,13 +144,20 @@ async function deleteDeploymentCommand({
 
   log(deploymentId, 'deleted log groups and roles.', logLevel);
 
+  // Delete proxy config from bucket
+  const s3Bucket = query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  if (s3Bucket.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
 
+  await s3.deleteObject({
+    Bucket: s3Bucket[0].values.bucket,
+    Key: `${deploymentId}/proxy-config.json`,
+  }).promise();
 
-
+  log(deploymentId, 'deleted proxy config.', logLevel);
 
   // Image optimizer stuff
-  // Modify proxy config to include API Gateway id
-  // Upload proxy config to bucket
   // Upload static assets
 }
 
