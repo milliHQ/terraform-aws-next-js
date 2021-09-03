@@ -10,21 +10,6 @@ const iam = new IAM();
 const lambda = new Lambda();
 const s3 = new S3();
 
-// "lambdas": {
-//   "__NEXT_API_LAMBDA_0": {
-//     "handler": "now__launcher.launcher",
-//     "runtime": "nodejs14.x",
-//     "filename": "lambdas/__NEXT_API_LAMBDA_0.zip",
-//     "route": "/__NEXT_API_LAMBDA_0"
-//   },
-//   "__NEXT_PAGE_LAMBDA_0": {
-//     "handler": "now__launcher.launcher",
-//     "runtime": "nodejs14.x",
-//     "filename": "lambdas/__NEXT_PAGE_LAMBDA_0.zip",
-//     "route": "/__NEXT_PAGE_LAMBDA_0"
-//   }
-// },
-
 type LogLevel = 'verbose' | 'none' | undefined;
 
 interface CreateDeploymentProps {
@@ -115,10 +100,17 @@ async function createLambdas(
   lambdaTimeout: number,
   lambdaConfigurations: LambdaConfigurations,
   roleArns: RoleArns,
+  terraformState: any,
 ): Promise<LambdaArns> {
+  // TODO: Do we ever need to update existing functions, or do we just always create new ones?
+
   const arns: LambdaArns = {};
 
-  // TODO: Do we ever need to update existing functions, or do we just always create new ones?
+  // TODO: We should get the environment variables from somewhere else
+  const existingFunction = query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
+  if (existingFunction.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
 
   for (const key in lambdaConfigurations) {
     const fileContent = await promises.readFile(path.join(configDir, lambdaConfigurations[key].filename));
@@ -130,7 +122,7 @@ async function createLambdas(
       Role: roleArns[key],
       Description: 'Managed by Terraform-next.js',
       Environment: {
-        Variables: {}, // TODO: Should get this from somewhere
+        Variables: existingFunction[0].values.environment[0].variables,
       },
       Handler: lambdaConfigurations[key].handler || '',
       MemorySize: lambdaConfigurations[key].memory || defaultFunctionMemory,
@@ -304,6 +296,7 @@ async function createDeploymentCommand({
     lambdaTimeout,
     lambdaConfigurations,
     roleArns,
+    terraformState,
   );
 
   log(deploymentId, 'created lambda functions.', logLevel);
@@ -329,8 +322,19 @@ async function createDeploymentCommand({
 
   log(deploymentId, 'created lambda permissions.', logLevel);
 
-  // Modify proxy config to include API Gateway id
-  configFile.apiId = apiId;
+  // Modify proxy config to include API Gateway id and match expected format
+  const lambdaRoutes = [];
+  for (const key in lambdaConfigurations) {
+    lambdaRoutes.push(lambdaConfigurations[key].route || '/');
+  }
+
+  const modifiedProxyConfig = {
+    apiId,
+    routes: configFile.routes,
+    prerenders: configFile.prerenders,
+    staticRoutes: configFile.staticRoutes,
+    lambdaRoutes,
+  };
 
   // Upload proxy config to bucket
   const s3Bucket = query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
@@ -339,7 +343,7 @@ async function createDeploymentCommand({
   }
 
   await s3.putObject({
-    Body: JSON.stringify(configFile),
+    Body: JSON.stringify(modifiedProxyConfig),
     Bucket: s3Bucket[0].values.bucket,
     ContentType: 'application/json',
     Key: `${deploymentId}/proxy-config.json`,

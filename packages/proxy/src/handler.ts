@@ -38,7 +38,7 @@ function isRedirect(
     routeResult.status <= 309
   ) {
     if ('Location' in routeResult.headers) {
-      let headers: CloudFrontHeaders = {};
+      const headers: CloudFrontHeaders = {};
 
       // If the redirect is permanent, add caching it
       if (routeResult.status === 301 || routeResult.status === 308) {
@@ -67,7 +67,7 @@ export async function handler(event: CloudFrontRequestEvent) {
   const configEndpoint = request.origin!.s3!.customHeaders[
     'x-env-config-endpoint'
   ][0].value;
-  const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
+  let apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
     .value;
 
   let headers: Record<string, string> = {};
@@ -81,6 +81,7 @@ export async function handler(event: CloudFrontRequestEvent) {
   if (hostHeader && domainName && hostHeader !== domainName && hostHeader.endsWith(domainName)) {
     deploymentIdentifier = hostHeader.split('.')[0];
 
+    // Rewrite proxy config path
     const configEndpointURL = new URL(configEndpoint);
     configEndpointURL.pathname = `/${deploymentIdentifier}${configEndpointURL.pathname}`;
 
@@ -92,6 +93,12 @@ export async function handler(event: CloudFrontRequestEvent) {
         'Retrying with default proxy configuration.'
       );
     }
+
+    // Rewrite API endpoint
+    if (proxyConfig?.apiId) {
+      const parts = apiEndpoint.split('.');
+      apiEndpoint = [proxyConfig.apiId, ...parts.slice(1)].join('.');
+    }
   }
 
   try {
@@ -100,6 +107,7 @@ export async function handler(event: CloudFrontRequestEvent) {
     if (!proxyConfig) {
       proxyConfig = await fetchProxyConfig(configEndpoint);
     }
+
     proxy = new Proxy(
       proxyConfig.routes,
       proxyConfig.lambdaRoutes,

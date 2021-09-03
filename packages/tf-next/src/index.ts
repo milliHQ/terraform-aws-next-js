@@ -61,12 +61,14 @@ yargs
       // `terraform.config.json` at the root of this package.
       const terraformState = require('../terraform.config.json');
 
-      (await import('./commands/create-deployment')).default({
+      await (await import('./commands/create-deployment')).default({
         deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
         terraformState,
       });
+
+      console.log(`Created deployment ${deploymentId}.`)
     }
   )
   .command(
@@ -95,12 +97,14 @@ yargs
       // `terraform.config.json` at the root of this package.
       const terraformState = require('../terraform.config.json');
 
-      (await import('./commands/delete-deployment')).default({
+      await (await import('./commands/delete-deployment')).default({
         deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
         terraformState,
       });
+
+      console.log(`Deleted deployment ${deploymentId}.`)
     }
   )
   .help()
