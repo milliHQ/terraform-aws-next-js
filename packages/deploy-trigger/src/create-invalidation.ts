@@ -38,14 +38,21 @@ export function prepareInvalidations(invalidationPaths: string[]): [string[], st
   //    If true then remove the path
   multiPaths = multiPaths
     .sort((a, b) => b.length - a.length)
-    .filter((multiPath, _, array) =>
+    .filter((multiPath, index, array) => {
       // Search for a shorter string that is a substring multiPath
-      !array.find((element) => {
-        // Cut the tailing `*`
-        const pathWithoutTail = element.substr(0, element.length - 1);
-        return multiPath.startsWith(pathWithoutTail);
-      })
-    );
+      for (let i = index + 1; i < array.length; i++) {
+        const element = array[i];
+
+        if (element) {
+          const pathWithoutTail = element.substr(0, element.length - 1);
+          if (multiPath.startsWith(pathWithoutTail)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
 
   // Check if regular paths are already caught by a multiPath
   singlePaths = singlePaths.filter((singlePath) => {

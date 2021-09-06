@@ -113,22 +113,22 @@ async function createLambdas(
   }
 
   for (const key in lambdaConfigurations) {
-    const fileContent = await promises.readFile(path.join(configDir, lambdaConfigurations[key].filename));
+    const fileContent = await promises.readFile(path.join(configDir, lambdaConfigurations[key]!.filename));
     const createdLambda = await lambda.createFunction({
       Code: {
         ZipFile: fileContent,
       },
       FunctionName: `${key}-${deploymentId}`,
-      Role: roleArns[key],
+      Role: roleArns[key]!, // We know this exists because we created it in `createIAM`
       Description: 'Managed by Terraform-next.js',
       Environment: {
         Variables: existingFunction[0].values.environment[0].variables,
       },
-      Handler: lambdaConfigurations[key].handler || '',
-      MemorySize: lambdaConfigurations[key].memory || defaultFunctionMemory,
+      Handler: lambdaConfigurations[key]?.handler || '',
+      MemorySize: lambdaConfigurations[key]?.memory || defaultFunctionMemory,
       PackageType: 'Zip', // Default in TF
       Publish: false, // Default in TF
-      Runtime: lambdaConfigurations[key].runtime || defaultRuntime,
+      Runtime: lambdaConfigurations[key]?.runtime || defaultRuntime,
       Tags: {}, // TODO
       Timeout: lambdaTimeout,
       VpcConfig: {}, // TODO: Should get this from somewhere
@@ -199,7 +199,7 @@ async function createAPIGateway(
 
     await apiGatewayV2.createRoute({
       ApiId: api.ApiId,
-      RouteKey: `ANY ${lambdaConfigurations[key].route}/{proxy+}`,
+      RouteKey: `ANY ${lambdaConfigurations[key]?.route}/{proxy+}`,
       AuthorizationType: 'NONE', // TODO
       Target: `integrations/${integration.IntegrationId}`,
     }).promise();

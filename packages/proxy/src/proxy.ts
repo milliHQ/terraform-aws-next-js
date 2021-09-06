@@ -162,7 +162,7 @@ export class Proxy {
         if (headers) {
           for (const originalKey in headers) {
             const originalValue = headers[originalKey];
-            if (originalValue) {
+            if (originalValue !== undefined) {
               const value = resolveRouteParameters(originalValue, match, keys);
               combinedHeaders[originalKey] = value;
             }
