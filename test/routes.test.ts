@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { URL } from 'url';
+
 import { parse as parseJSON } from 'hjson';
 import { ConfigOutput } from 'tf-next/src/types';
-import { CloudFrontResultResponse } from 'aws-lambda';
+import { CloudFrontResultResponse, S3Event } from 'aws-lambda';
 import {
   generateSAM,
   LambdaSAM,
@@ -14,13 +15,36 @@ import {
 } from '@dealmore/sammy';
 import unzipper, { Entry } from 'unzipper';
 import etl from 'etl';
+import S3 from 'aws-sdk/clients/s3';
+
+import {
+  s3CreateBucket,
+  BucketHandler,
+  getLocalIpAddressFromHost,
+} from './utils';
 
 // We use an increased timeout here because in the worst case
 // AWS SAM needs to download a docker image before the test can run
 const TEST_TIMEOUT = 2 * 60 * 1000;
 
 const pathToFixtures = path.join(__dirname, 'fixtures');
-const pathToProxyPackage = path.join(__dirname, '../packages/proxy/dist.zip');
+const pathToProxyPackage = require.resolve(
+  '@dealmore/terraform-next-proxy/dist.zip',
+  {
+    paths: [__dirname],
+  }
+);
+const pathToDeployTriggerPackage = require.resolve(
+  '@dealmore/terraform-next-deploy-trigger/dist.zip',
+  {
+    paths: [__dirname],
+  }
+);
+
+const deployTriggerFunctionKey = '__deploy-trigger';
+const s3Endpoint = process.env.S3_ENDPOINT
+  ? process.env.S3_ENDPOINT
+  : `${getLocalIpAddressFromHost()}:9000`;
 
 interface ProbeFile {
   probes: {
@@ -34,16 +58,36 @@ interface ProbeFile {
 }
 
 describe('Test proxy config', () => {
-  for (const fixture of fs.readdirSync(pathToFixtures)) {
+  let s3: S3;
+
+  beforeAll(() => {
+    // Initialize the local S3 client
+    s3 = new S3({
+      endpoint: s3Endpoint,
+      accessKeyId: process.env.MINIO_ACCESS_KEY,
+      secretAccessKey: process.env.MINIO_SECRET_KEY,
+
+      s3ForcePathStyle: true,
+      signatureVersion: 'v4',
+      sslEnabled: false,
+    });
+  });
+
+  for (const fixture of fs
+    .readdirSync(pathToFixtures)
+    .filter((fixture) => fixture.startsWith('00'))) {
     describe(`Testing fixture: ${fixture}`, () => {
       const pathToFixture = path.join(pathToFixtures, fixture);
       let config: ConfigOutput;
       let probeFile: ProbeFile;
       let lambdaSAM: LambdaSAM;
       let proxySAM: ProxySAM;
-      let samEndpoint: string;
+      let deployBucket: BucketHandler;
+      let staticFilesBucket: BucketHandler;
 
       beforeAll(async () => {
+        staticFilesBucket = await s3CreateBucket(s3);
+
         // Get the config
         config = require(path.join(
           pathToFixture,
@@ -71,17 +115,37 @@ describe('Test proxy config', () => {
           };
         }
 
+        // Generate SAM for deploy trigger
+        lambdas[deployTriggerFunctionKey] = {
+          handler: 'handler.handler',
+          runtime: 'nodejs14.x',
+          filename: pathToDeployTriggerPackage,
+          environment: {
+            TARGET_BUCKET: staticFilesBucket.bucketName,
+            EXPIRE_AFTER_DAYS: '0', // Disable object expiration
+            __DEBUG__USE_LOCAL_BUCKET: JSON.stringify({
+              endpoint: s3Endpoint,
+              accessKeyId: process.env.MINIO_ACCESS_KEY,
+              secretAccessKey: process.env.MINIO_SECRET_KEY,
+
+              s3ForcePathStyle: true,
+              signatureVersion: 'v4',
+              sslEnabled: false,
+            }),
+          },
+        };
+
         lambdaSAM = await generateSAM({
           lambdas,
           cwd: path.join(pathToFixture, '.next-tf'),
-          onData(data) {
+          onData(data:string) {
             console.log(data.toString());
           },
-          onError(data) {
+          onError(data:string) {
             console.log(data.toString());
           },
         });
-        samEndpoint = await lambdaSAM.start();
+        await lambdaSAM.start();
 
         // Generate SAM for Proxy (Lambda@Edge)
         const proxyConfig = {
@@ -104,12 +168,53 @@ describe('Test proxy config', () => {
           },
         });
         await proxySAM.start();
+
+        // Upload static files and process it though static-deploy Lambda
+        deployBucket = await s3CreateBucket(s3);
+        const staticDeploymentObject = await s3
+          .upload({
+            Key: 'static-website-files.zip',
+            Body: fs.createReadStream(
+              path.join(pathToFixture, '.next-tf/', config.staticFilesArchive)
+            ),
+            Bucket: deployBucket.bucketName,
+          })
+          .promise();
+
+        const staticDeployFunctionName = lambdaSAM.mapping.get(
+          deployTriggerFunctionKey
+        )!;
+
+        console.log('staticDeployFunctionName', staticDeployFunctionName)
+
+        await lambdaSAM.sendEvent(
+          staticDeployFunctionName,
+          'RequestResponse',
+          JSON.stringify({
+            Records: [
+              {
+                s3: {
+                  bucket: {
+                    name: deployBucket.bucketName,
+                  },
+                  object: {
+                    key: staticDeploymentObject.Key,
+                  },
+                },
+              },
+            ],
+          } as S3Event)
+        );
       }, TEST_TIMEOUT);
 
       afterAll(async () => {
         // Shutdown SAM
         await lambdaSAM.stop();
         await proxySAM.stop();
+
+        // Cleanup buckets
+        // await deployBucket.destroy();
+        // await staticFilesBucket.destroy();
       }, TEST_TIMEOUT);
 
       test(

@@ -138,7 +138,13 @@ export const handler = async function (event: S3Event | SQSEvent) {
 };
 
 async function s3Handler(Record: S3EventRecord) {
-  const s3 = new S3({ apiVersion: '2006-03-01' });
+  let s3: S3;
+  // Only for testing purposes when connecting against a local S3 backend
+  if (process.env.__DEBUG__USE_LOCAL_BUCKET) {
+    s3 = new S3(JSON.parse(process.env.__DEBUG__USE_LOCAL_BUCKET));
+  } else {
+    s3 = new S3({ apiVersion: '2006-03-01' });
+  }
   const deployBucket = process.env.TARGET_BUCKET;
   const distributionId = process.env.DISTRIBUTION_ID;
   const expireAfterDays: ExpireValue = parseExpireAfterDays();
@@ -175,12 +181,12 @@ async function s3Handler(Record: S3EventRecord) {
   });
 
   const [multiPaths, singlePaths] = prepareInvalidations(invalidationPaths);
-  await createCloudFrontInvalidation(
-    multiPaths,
-    singlePaths,
-    distributionId,
-    0
-  );
+  // await createCloudFrontInvalidation(
+  //   multiPaths,
+  //   singlePaths,
+  //   distributionId,
+  //   0
+  // );
 }
 
 async function sqsHandler(Record: SQSRecord) {
