@@ -20,7 +20,11 @@ function convertToCloudFrontHeaders(
   const cloudFrontHeaders: CloudFrontHeaders = { ...initialHeaders };
   for (const key in headers) {
     const lowercaseKey = key.toLowerCase();
-    cloudFrontHeaders[lowercaseKey] = [{ key, value: headers[key] }];
+    const value = headers[key];
+
+    if (value) {
+      cloudFrontHeaders[lowercaseKey] = [{ key, value }];
+    }
   }
 
   return cloudFrontHeaders;
@@ -62,13 +66,30 @@ function isRedirect(
 }
 
 export async function handler(event: CloudFrontRequestEvent) {
-  const { request } = event.Records[0].cf;
-  const domainName = request.origin!.s3!.customHeaders['x-env-domain-name'][0].value;
-  const configEndpoint = request.origin!.s3!.customHeaders[
-    'x-env-config-endpoint'
-  ][0].value;
-  let apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
-    .value;
+  const request = event.Records[0]?.cf.request;
+
+  if (request === undefined) {
+    console.error('Could not find any records in CF event.');
+    return request;
+  }
+
+  const customHeaders = request.origin?.s3?.customHeaders;
+
+  // Custom headers should exist, because we assign them to the CF
+  // distribution in the TF code.
+  if (customHeaders === undefined) {
+    console.error('Could not find custom headers in request.');
+    return request;
+  }
+
+  const domainName = customHeaders['x-env-domain-name']?.[0]?.value;
+  const configEndpoint = customHeaders['x-env-config-endpoint']?.[0]?.value;
+  let apiEndpoint = customHeaders['x-env-api-endpoint']?.[0]?.value;
+
+  if (configEndpoint === undefined || apiEndpoint === undefined) {
+    console.error('Could not find required endpoints in custom headers.');
+    return request;
+  }
 
   let headers: Record<string, string> = {};
   let deploymentIdentifier = undefined;
@@ -77,7 +98,7 @@ export async function handler(event: CloudFrontRequestEvent) {
   // made to a different deployment than the previous request.
   let proxyConfig = undefined;
 
-  const hostHeader = event.Records[0].cf.request.headers.host[0].value;
+  const hostHeader = request.headers.host?.[0]?.value;
   if (hostHeader && domainName && hostHeader !== domainName && hostHeader.endsWith(domainName)) {
     deploymentIdentifier = hostHeader.split('.')[0];
 
@@ -129,7 +150,7 @@ export async function handler(event: CloudFrontRequestEvent) {
     // Modify request to be served from Api Gateway
     const customOrigin = createCustomOriginFromApiGateway(
       apiEndpoint,
-      `/${proxyConfig.prerenders[request.uri].lambda}`,
+      `/${proxyConfig.prerenders[request.uri]?.lambda}`,
     );
     request.origin = {
       custom: customOrigin,

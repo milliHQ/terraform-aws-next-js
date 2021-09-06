@@ -51,7 +51,7 @@ export async function deployTrigger({
   const zipHeaders = await s3.headObject(params).promise();
 
   if (zipHeaders.Metadata && BuildIdMetaDataKey in zipHeaders.Metadata) {
-    buildId = zipHeaders.Metadata[BuildIdMetaDataKey];
+    buildId = zipHeaders.Metadata[BuildIdMetaDataKey]!;
   } else if (zipHeaders.ETag) {
     // Fallback 1: If no metadata is present, use the etag
     buildId = zipHeaders.ETag;

@@ -94,7 +94,7 @@ export class Proxy {
        *
        */
 
-      const routeConfig = this.routes[routeIndex];
+      const routeConfig = this.routes[routeIndex]!;
 
       //////////////////////////////////////////////////////////////////////////
       // Phase 1: Check for handler
@@ -162,8 +162,10 @@ export class Proxy {
         if (headers) {
           for (const originalKey in headers) {
             const originalValue = headers[originalKey];
-            const value = resolveRouteParameters(originalValue, match, keys);
-            combinedHeaders[originalKey] = value;
+            if (originalValue) {
+              const value = resolveRouteParameters(originalValue, match, keys);
+              combinedHeaders[originalKey] = value;
+            }
           }
         }
 
