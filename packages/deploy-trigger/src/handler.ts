@@ -78,7 +78,7 @@ async function createCloudFrontInvalidation(
         InvalidationBatch,
       })
       .promise();
-  } catch (err) {
+  } catch (err: any) {
     console.log(err);
     if (err.code === 'TooManyInvalidationsInProgress') {
       // Send the invalidation back to the queue

@@ -9,7 +9,8 @@
     "declaration": false,
     "sourceMap": false,
     "experimentalDecorators": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "noUncheckedIndexedAccess": true
   },
   "exclude": ["node_modules", "examples/**/*"]
 }

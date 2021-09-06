@@ -272,7 +272,7 @@ export class Bridge {
         }
         try {
           req.setHeader(name, value);
-        } catch (err) {
+        } catch (err: any) {
           console.error(
             'Skipping HTTP request header: %j',
             `${name}: ${value}`

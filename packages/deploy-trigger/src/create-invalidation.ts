@@ -12,7 +12,7 @@ const limitTotalPathsPerInvalidation = 3000;
  * @param invalidationPaths
  * @returns [multiPaths, singlePaths]
  */
-export function prepareInvalidations(invalidationPaths: string[]) {
+export function prepareInvalidations(invalidationPaths: string[]): [string[], string[]] {
   let multiPaths: string[] = [];
   let singlePaths: string[] = [];
 
@@ -41,10 +41,13 @@ export function prepareInvalidations(invalidationPaths: string[]) {
     .filter((multiPath, index, array) => {
       // Search for a shorter string that is a substring multiPath
       for (let i = index + 1; i < array.length; i++) {
-        // Cut the tailing `*`
-        const pathWithoutTail = array[i].substr(0, array[i].length - 1);
-        if (multiPath.startsWith(pathWithoutTail)) {
-          return false;
+        const element = array[i];
+
+        if (element) {
+          const pathWithoutTail = element.substr(0, element.length - 1);
+          if (multiPath.startsWith(pathWithoutTail)) {
+            return false;
+          }
         }
       }
 
@@ -81,7 +84,7 @@ export function createInvalidationChunk(
   singlePaths: string[],
   maxMultiPaths: number,
   maxTotalPaths: number
-) {
+): [string[], string[], string[]] {
   let pathsChunk: string[] = [];
   let newSinglePaths: string[] = singlePaths;
   let newMultiPaths: string[] = multiPaths;

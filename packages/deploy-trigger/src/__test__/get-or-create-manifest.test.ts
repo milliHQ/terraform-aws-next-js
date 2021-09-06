@@ -58,8 +58,8 @@ describe('deploy-trigger', () => {
       expect(Object.keys(manifest.files).length).toBe(fileNames.length);
       for (const file of fileNames) {
         expect(manifest.files[file]).toBeDefined();
-        expect(manifest.files[file].buildId).toContain(manifest.currentBuild);
-        expect(manifest.files[file].expiredAt).not.toBeDefined();
+        expect(manifest.files[file]?.buildId).toContain(manifest.currentBuild);
+        expect(manifest.files[file]?.expiredAt).not.toBeDefined();
       }
     });
   });

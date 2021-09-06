@@ -8,6 +8,7 @@ export interface ProxyConfig {
   lambdaRoutes: string[];
   staticRoutes: string[];
   prerenders: Record<string, { lambda: string }>;
+  apiId?: string;
 }
 
 export interface RouteResult {
