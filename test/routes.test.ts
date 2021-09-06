@@ -48,9 +48,7 @@ const pathToDeployTriggerPackage = require.resolve(
   }
 );
 
-const s3Endpoint = process.env.S3_ENDPOINT
-  ? process.env.S3_ENDPOINT
-  : `${getLocalIpAddressFromHost()}:9000`;
+const s3Endpoint = `${getLocalIpAddressFromHost()}:9000`;
 
 interface ProbeFile {
   probes: {

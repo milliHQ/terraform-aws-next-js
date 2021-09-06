@@ -133,6 +133,8 @@ jobs:
         env:
           MINIO_ACCESS_KEY: test
           MINIO_SECRET_KEY: testtest
+        ports:
+          - 9000:9000
     env:
       SAM_CLI_TELEMETRY: 0
       # Don't worry these are fake AWS credentials for AWS SAM
@@ -140,7 +142,6 @@ jobs:
       AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: testtest
-      S3_ENDPOINT: s3:9000
 
     steps:
       - name: Setup AWS SAM
