@@ -1,26 +1,54 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { URL } from 'url';
+
 import { parse as parseJSON } from 'hjson';
 import { ConfigOutput } from 'tf-next/src/types';
-import { CloudFrontResultResponse } from 'aws-lambda';
+import { CloudFrontResultResponse, S3Event } from 'aws-lambda';
 import {
-  generateSAM,
-  LambdaSAM,
+  generateLocalSAM,
+  LocalSAMGenerator,
+  generateAPISAM,
+  APISAMGenerator,
   generateProxySAM,
   ProxySAM,
   normalizeCloudFrontHeaders,
   ConfigLambda,
 } from '@dealmore/sammy';
-import unzipper, { Entry } from 'unzipper';
-import etl from 'etl';
+import S3 from 'aws-sdk/clients/s3';
+
+import {
+  s3CreateBucket,
+  BucketHandler,
+  getLocalIpAddressFromHost,
+  AttachLoggerResult,
+  attachLogger,
+} from './utils';
 
 // We use an increased timeout here because in the worst case
 // AWS SAM needs to download a docker image before the test can run
-const TEST_TIMEOUT = 2 * 60 * 1000;
+jest.setTimeout(2 * 60 * 1000);
+
+// Log files where the output from the SAM CLI should be written to
+// (Using console.log for this would )
+const SAMLogFileLocal = 'sam-local.log';
+const SAMLogFileAPI = 'sam-api.log';
 
 const pathToFixtures = path.join(__dirname, 'fixtures');
-const pathToProxyPackage = path.join(__dirname, '../packages/proxy/dist.zip');
+const pathToProxyPackage = require.resolve(
+  '@dealmore/terraform-next-proxy/dist.zip',
+  {
+    paths: [__dirname],
+  }
+);
+const pathToDeployTriggerPackage = require.resolve(
+  '@dealmore/terraform-next-deploy-trigger/dist.zip',
+  {
+    paths: [__dirname],
+  }
+);
+
+const s3Endpoint = `${getLocalIpAddressFromHost()}:9000`;
 
 interface ProbeFile {
   probes: {
@@ -34,14 +62,57 @@ interface ProbeFile {
 }
 
 describe('Test proxy config', () => {
+  let s3: S3;
+
+  beforeAll(() => {
+    // Initialize the local S3 client
+    s3 = new S3({
+      endpoint: s3Endpoint,
+      accessKeyId: process.env.MINIO_ACCESS_KEY,
+      secretAccessKey: process.env.MINIO_SECRET_KEY,
+
+      s3ForcePathStyle: true,
+      signatureVersion: 'v4',
+      sslEnabled: false,
+    });
+  });
+
   for (const fixture of fs.readdirSync(pathToFixtures)) {
     describe(`Testing fixture: ${fixture}`, () => {
       const pathToFixture = path.join(pathToFixtures, fixture);
       let config: ConfigOutput;
       let probeFile: ProbeFile;
-      let lambdaSAM: LambdaSAM;
+      /**
+       * Logger for apiSAM
+       */
+      let loggerApiSAM: AttachLoggerResult;
+      /**
+       * apiSAM handles request against SSR Lambdas from Next.js
+       * (through API-Gateway)
+       */
+      let apiSAM: APISAMGenerator;
+      /**
+       * Logger for localSAM
+       */
+      let loggerlocalSAM: AttachLoggerResult;
+      /**
+       * lambdaSAM handles request against deploy trigger component
+       */
+      let localSAM: LocalSAMGenerator;
+      /**
+       * proxySAM handles requests against the proxy (Lambda@Edge)
+       */
       let proxySAM: ProxySAM;
-      let samEndpoint: string;
+      /**
+       * Bucket where the static-files.zip file is uploaded to
+       * (for further processing through deploy trigger)
+       */
+      let deployBucket: BucketHandler;
+      /**
+       * Target bucket where the static files are extracted to
+       * (from deploy trigger)
+       */
+      let staticFilesBucket: BucketHandler;
 
       beforeAll(async () => {
         // Get the config
@@ -57,7 +128,79 @@ describe('Test proxy config', () => {
             .toString('utf-8')
         ) as ProbeFile;
 
-        // Generate SAM for SSR (Lambda)
+        /* ---------------------------------------------------------------------
+         * Prepare deploy-trigger integration
+         * -------------------------------------------------------------------*/
+        const staticDeployFunctionName = 'deployTrigger';
+
+        staticFilesBucket = await s3CreateBucket(s3);
+        deployBucket = await s3CreateBucket(s3);
+
+        localSAM = await generateLocalSAM({
+          lambdas: {
+            [staticDeployFunctionName]: {
+              handler: 'handler.handler',
+              runtime: 'nodejs14.x',
+              filename: pathToDeployTriggerPackage,
+              environment: {
+                TARGET_BUCKET: staticFilesBucket.bucketName,
+                EXPIRE_AFTER_DAYS: '0',
+                // No CF invalidation is created
+                __DEBUG__SKIP_INVALIDATIONS: 'true',
+                __DEBUG__USE_LOCAL_BUCKET: JSON.stringify({
+                  endpoint: s3Endpoint,
+                  accessKeyId: process.env.MINIO_ACCESS_KEY,
+                  secretAccessKey: process.env.MINIO_SECRET_KEY,
+
+                  s3ForcePathStyle: true,
+                  signatureVersion: 'v4',
+                  sslEnabled: false,
+                }),
+              },
+            },
+          },
+          cwd: path.join(pathToFixture, '.next-tf'),
+          randomizeFunctionNames: false,
+        });
+        // Attach logger
+        loggerlocalSAM = attachLogger(SAMLogFileLocal, localSAM);
+        await localSAM.start();
+
+        // Upload static files and process it though static-deploy Lambda
+        const staticDeploymentObject = await s3
+          .upload({
+            Key: 'static-website-files.zip',
+            Body: fs.createReadStream(
+              path.join(pathToFixture, '.next-tf/', config.staticFilesArchive)
+            ),
+            Bucket: deployBucket.bucketName,
+          })
+          .promise();
+
+        await localSAM.sendEvent(
+          staticDeployFunctionName,
+          'RequestResponse',
+          JSON.stringify({
+            Records: [
+              {
+                s3: {
+                  bucket: {
+                    name: deployBucket.bucketName,
+                  },
+                  object: {
+                    key: staticDeploymentObject.Key,
+                  },
+                },
+              },
+            ],
+          } as S3Event)
+        );
+
+        /* ---------------------------------------------------------------------
+         * Prepare API-Gateway integration
+         * -------------------------------------------------------------------*/
+
+        // Generate the Lambdas for API-Gateway integration (SSR)
         const lambdas: Record<string, ConfigLambda> = {};
         for (const [key, lambda] of Object.entries(config.lambdas)) {
           lambdas[key] = {
@@ -71,19 +214,19 @@ describe('Test proxy config', () => {
           };
         }
 
-        lambdaSAM = await generateSAM({
+        apiSAM = await generateAPISAM({
           lambdas,
           cwd: path.join(pathToFixture, '.next-tf'),
-          onData(data) {
-            console.log(data.toString());
-          },
-          onError(data) {
-            console.log(data.toString());
-          },
+          randomizeFunctionNames: true,
         });
-        samEndpoint = await lambdaSAM.start();
+        // Attach logger
+        loggerApiSAM = attachLogger(SAMLogFileAPI, apiSAM);
+        await apiSAM.start();
 
-        // Generate SAM for Proxy (Lambda@Edge)
+        /* ---------------------------------------------------------------------
+         * Prepare Proxy integration (Lambda@Edge)
+         * -------------------------------------------------------------------*/
+
         const proxyConfig = {
           routes: config.routes,
           staticRoutes: config.staticRoutes,
@@ -96,155 +239,142 @@ describe('Test proxy config', () => {
         proxySAM = await generateProxySAM({
           pathToProxyPackage,
           proxyConfig: JSON.stringify(proxyConfig),
-          onData(data) {
+          onData(data: string) {
             console.log(data.toString());
           },
-          onError(data) {
+          onError(data: string) {
             console.log(data.toString());
           },
         });
         await proxySAM.start();
-      }, TEST_TIMEOUT);
+      });
 
       afterAll(async () => {
+        // Close loggers
+        loggerlocalSAM.stop();
+        loggerApiSAM.stop();
+
         // Shutdown SAM
-        await lambdaSAM.stop();
+        await localSAM.stop();
+        await apiSAM.stop();
         await proxySAM.stop();
-      }, TEST_TIMEOUT);
 
-      test(
-        'Proxy',
-        async () => {
-          for (const probe of probeFile.probes) {
-            const Request = await proxySAM.sendRequestEvent({
-              uri: probe.path,
-            });
+        // Cleanup buckets
+        await deployBucket.destroy();
+        await staticFilesBucket.destroy();
+      });
 
-            if ('origin' in Request) {
-              // Request
-              if (Request.origin?.custom) {
-                if (Request.origin.custom.domainName === 'local-apigw.local') {
-                  // Request should be served by lambda (SSR)
-                  const basePath = Request.origin.custom.path;
-                  const { uri, querystring } = Request;
+      test('Proxy', async () => {
+        for (const probe of probeFile.probes) {
+          const Request = await proxySAM.sendRequestEvent({
+            uri: probe.path,
+          });
 
-                  // Merge request headers and custom headers from origin
-                  const headers = {
-                    ...normalizeCloudFrontHeaders(Request.headers),
-                    ...normalizeCloudFrontHeaders(
-                      Request.origin.custom.customHeaders
-                    ),
-                  };
-                  const requestPath = `${basePath}${uri}${
-                    querystring !== '' ? `?${querystring}` : ''
-                  }`;
+          if ('origin' in Request) {
+            // Request
+            if (Request.origin?.custom) {
+              if (Request.origin.custom.domainName === 'local-apigw.local') {
+                // Request should be served by lambda (SSR)
+                const basePath = Request.origin.custom.path;
+                const { uri, querystring } = Request;
 
-                  const lambdaResponse = await lambdaSAM
-                    .sendApiGwRequest(requestPath, {
-                      headers,
-                    })
-                    .then((res) => {
-                      return res.text();
-                    });
+                // Merge request headers and custom headers from origin
+                const headers = {
+                  ...normalizeCloudFrontHeaders(Request.headers),
+                  ...normalizeCloudFrontHeaders(
+                    Request.origin.custom.customHeaders
+                  ),
+                };
+                const requestPath = `${basePath}${uri}${
+                  querystring !== '' ? `?${querystring}` : ''
+                }`;
 
-                  if (probe.mustContain) {
-                    expect(lambdaResponse).toContain(probe.mustContain);
-                  }
-                } else {
-                  // Request is an external rewrite
-                  if (probe.destPath) {
-                    const { custom: customOrigin } = Request.origin;
-                    const originRequest = new URL(
-                      `${customOrigin.protocol}://${customOrigin.domainName}${
-                        Request.uri
-                      }${Request.querystring ? `?${Request.querystring}` : ''}`
-                    );
+                const lambdaResponse = await apiSAM
+                  .sendApiGwRequest(requestPath, {
+                    headers,
+                  })
+                  .then((res) => {
+                    return res.text();
+                  });
 
-                    // Check for custom ports
-                    if (customOrigin.port !== 80 && customOrigin.port !== 443) {
-                      originRequest.port = customOrigin.port.toString();
-                    }
-
-                    expect(originRequest).toEqual(new URL(probe.destPath));
-                  }
-                }
-              } else if (Request.origin?.s3) {
-                // Request should be served by static file system (S3)
-                // Check static routes
-                const { uri } = Request;
-                if (config.staticRoutes.find((route) => route === uri)) {
-                  const pathToStaticFilesArchive = path.join(
-                    pathToFixture,
-                    '.next-tf',
-                    config.staticFilesArchive
-                  );
-
-                  const fileContent = await new Promise<Buffer>(
-                    (resolve, reject) => {
-                      let found = false;
-                      // Remove leading / from the path
-                      const filePath = uri.replace(/^\//, '');
-
-                      fs.createReadStream(pathToStaticFilesArchive)
-                        .pipe(unzipper.Parse())
-                        .pipe(
-                          etl.map(async (entry: Entry) => {
-                            if (entry.path === filePath) {
-                              const content = await entry.buffer();
-                              found = true;
-                              resolve(content);
-                            } else {
-                              entry.autodrain();
-                            }
-                          })
-                        )
-                        .on('finish', () => {
-                          if (!found) {
-                            reject(`Could not find static file ${filePath}`);
-                          }
-                        });
-                    }
-                  ).then((buffer) => buffer.toString('utf-8'));
-
-                  if (probe.mustContain) {
-                    expect(fileContent).toContain(probe.mustContain);
-                  }
-                } else {
-                  fail(
-                    `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
-                  );
+                if (probe.mustContain) {
+                  expect(lambdaResponse).toContain(probe.mustContain);
                 }
               } else {
-                fail(`Path ${probe.path} returned invalid proxy request`);
+                // Request is an external rewrite
+                if (probe.destPath) {
+                  const { custom: customOrigin } = Request.origin;
+                  const originRequest = new URL(
+                    `${customOrigin.protocol}://${customOrigin.domainName}${
+                      Request.uri
+                    }${Request.querystring ? `?${Request.querystring}` : ''}`
+                  );
+
+                  // Check for custom ports
+                  if (customOrigin.port !== 80 && customOrigin.port !== 443) {
+                    originRequest.port = customOrigin.port.toString();
+                  }
+
+                  expect(originRequest).toEqual(new URL(probe.destPath));
+                }
+              }
+            } else if (Request.origin?.s3) {
+              // Request should be served by static file system (S3)
+              // Check static routes
+              const { uri } = Request;
+              if (config.staticRoutes.find((route) => route === uri)) {
+                const filePath = uri.replace(/^\//, '');
+
+                // Download the file from the S3
+                const fileContent = await s3
+                  .getObject({
+                    Bucket: staticFilesBucket.bucketName,
+                    Key: filePath,
+                  })
+                  .promise()
+                  .then(({ Body }) => {
+                    if (Body) {
+                      return Body.toString();
+                    }
+
+                    throw new Error(`File is empty: ${filePath}`);
+                  });
+
+                if (probe.mustContain) {
+                  expect(fileContent).toContain(probe.mustContain);
+                }
+              } else {
+                fail(
+                  `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
+                );
               }
             } else {
-              // Request-Response
-              const Response = Request as CloudFrontResultResponse;
+              fail(`Path ${probe.path} returned invalid proxy request`);
+            }
+          } else {
+            // Request-Response
+            const Response = Request as CloudFrontResultResponse;
 
-              if (probe.status) {
-                expect(Response.status).toBe(probe.status.toString());
-              }
+            if (probe.status) {
+              expect(Response.status).toBe(probe.status.toString());
+            }
 
-              for (const header in probe.responseHeaders) {
-                const lowerHeader = header.toLowerCase();
-                expect(Response.headers![lowerHeader]).toBeDefined();
-                expect(Response.headers![lowerHeader]).toContainEqual(
-                  expect.objectContaining({
-                    value: probe.responseHeaders[header],
-                  })
-                );
-              }
+            for (const header in probe.responseHeaders) {
+              const lowerHeader = header.toLowerCase();
+              expect(Response.headers![lowerHeader]).toBeDefined();
+              expect(Response.headers![lowerHeader]).toContainEqual(
+                expect.objectContaining({
+                  value: probe.responseHeaders[header],
+                })
+              );
+            }
 
-              if (probe.statusDescription) {
-                expect(Response.statusDescription).toBe(
-                  probe.statusDescription
-                );
-              }
+            if (probe.statusDescription) {
+              expect(Response.statusDescription).toBe(probe.statusDescription);
             }
           }
-        },
-        TEST_TIMEOUT
-      );
+        }
+      });
     });
   }
 });

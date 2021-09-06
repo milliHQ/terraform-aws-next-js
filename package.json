@@ -13,23 +13,20 @@
     "test:e2e": "jest test/routes.test.ts"
   },
   "devDependencies": {
-    "@dealmore/sammy": "^1.6.1",
+    "@dealmore/sammy": "^2.0.0",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
     "@types/jest": "^26.0.19",
     "@types/node": "^14.0.0",
-    "@types/unzipper": "^0.10.3",
     "aws-sdk": "*",
     "dotenv": "^8.2.0",
-    "etl": "^0.6.12",
     "fs-extra": "^9.1.0",
     "hjson": "^3.2.2",
     "jest": "^26.6.3",
     "prettier": "^2.0.5",
     "tmp": "^0.2.1",
     "ts-jest": "^26.5.5",
-    "typescript": "^4.2.4",
-    "unzipper": "^0.10.11"
+    "typescript": "^4.4.2"
   },
   "resolutions": {
     "archiver": "^5.3.0",

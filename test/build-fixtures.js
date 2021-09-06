@@ -4,14 +4,13 @@
 
 const { readdir, stat } = require('fs').promises;
 const path = require('path');
-const { spawn, spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const tmp = require('tmp');
 const fs = require('fs-extra');
 const { parse: parseJSON } = require('hjson');
 
 const DEBUG = false;
 const pathToFixtures = path.join(__dirname, 'fixtures');
-const yarnCommand = 'yarnpkg';
 
 // Get subdirs from a given path
 const getDirs = async (_path) => {
@@ -23,14 +22,6 @@ const getDirs = async (_path) => {
   }
   return dirs;
 };
-
-async function buildProxy(debug = false) {
-  const pathToProxy = path.join(__dirname, '../packages/proxy');
-  spawnSync(yarnCommand, ['build'], {
-    cwd: pathToProxy,
-    stdio: debug ? 'inherit' : 'ignore',
-  });
-}
 
 async function buildFixtures(debug = false) {
   const fixtures = (await getDirs(pathToFixtures)).map((_path) =>
@@ -101,7 +92,6 @@ async function buildFixtures(debug = false) {
 }
 
 async function main() {
-  await buildProxy(DEBUG);
   await buildFixtures(DEBUG);
 }
 
