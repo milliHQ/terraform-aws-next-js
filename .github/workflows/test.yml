@@ -88,17 +88,38 @@ jobs:
       # Don't worry these are fake AWS credentials for AWS SAM
       AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
       AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
+
     steps:
       - name: Setup AWS SAM
         run: |
           brew tap aws/tap
           brew install aws-sam-cli
           sam --version
+
       - uses: actions/checkout@v2
-      - name: Download e2e fixtures
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            .yarn
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Download prebuilt e2e fixtures
         uses: actions/download-artifact@v2
         with:
           name: e2e-fixtures
-      - run: yarn install --frozen-lockfile --check-files
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --cache-folder .yarn
+
       - name: Run e2e-test
         run: yarn test:e2e --runInBand
+
+      - name: Output SAM logs
+        run: |
+          printf "\n\nOutput of sam-local.log:\n"
+          cat sam-local.log
+          printf "\n\nOutput of sam-api.log:\n"
+          cat sam-api.log
