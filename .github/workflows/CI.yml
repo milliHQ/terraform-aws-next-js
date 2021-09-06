@@ -29,16 +29,16 @@ jobs:
         run: yarn --frozen-lockfile --cache-folder .yarn
 
       - name: Build runtime
-        run: yarn @dealmore/tf-next-runtime build
+        run: yarn workspace @dealmore/tf-next-runtime build
 
       - name: Build tf-next
         run: yarn workspace tf-next build
 
       - name: Build proxy
-        run: yarn @dealmore/terraform-next-proxy build
+        run: yarn workspace @dealmore/terraform-next-proxy build
 
       - name: Build deploy-trigger
-        run: yarn @dealmore/terraform-next-deploy-trigger build
+        run: yarn workspace @dealmore/terraform-next-deploy-trigger build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
