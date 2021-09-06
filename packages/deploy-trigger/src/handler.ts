@@ -180,13 +180,16 @@ async function s3Handler(Record: S3EventRecord) {
     manifest,
   });
 
-  const [multiPaths, singlePaths] = prepareInvalidations(invalidationPaths);
-  // await createCloudFrontInvalidation(
-  //   multiPaths,
-  //   singlePaths,
-  //   distributionId,
-  //   0
-  // );
+  // Allow skipping the creation of the invalidation for local e2e tests
+  if (!process.env.__DEBUG__SKIP_INVALIDATIONS) {
+    const [multiPaths, singlePaths] = prepareInvalidations(invalidationPaths);
+    await createCloudFrontInvalidation(
+      multiPaths,
+      singlePaths,
+      distributionId,
+      0
+    );
+  }
 }
 
 async function sqsHandler(Record: SQSRecord) {

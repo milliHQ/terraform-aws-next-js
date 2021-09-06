@@ -144,8 +144,9 @@ describe('Test proxy config', () => {
               filename: pathToDeployTriggerPackage,
               environment: {
                 TARGET_BUCKET: staticFilesBucket.bucketName,
-                // Disable object expiration - no CF invalidation is created
                 EXPIRE_AFTER_DAYS: '0',
+                // No CF invalidation is created
+                __DEBUG__SKIP_INVALIDATIONS: 'true',
                 __DEBUG__USE_LOCAL_BUCKET: JSON.stringify({
                   endpoint: s3Endpoint,
                   accessKeyId: process.env.MINIO_ACCESS_KEY,
