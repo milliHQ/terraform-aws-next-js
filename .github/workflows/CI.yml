@@ -127,11 +127,20 @@ jobs:
   test-e2e:
     needs: [build, test-e2e-prepare]
     runs-on: ubuntu-latest
+    services:
+      s3:
+        image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
+        env:
+          MINIO_ACCESS_KEY: test
+          MINIO_SECRET_KEY: testtest
     env:
       SAM_CLI_TELEMETRY: 0
       # Don't worry these are fake AWS credentials for AWS SAM
       AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
       AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
+      MINIO_ACCESS_KEY: test
+      MINIO_SECRET_KEY: testtest
+      S3_ENDPOINT: s3:9000
 
     steps:
       - name: Setup AWS SAM
@@ -148,7 +157,7 @@ jobs:
           path: |
             .yarn
             **/node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-e2e-${{ hashFiles('yarn.lock') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v2
