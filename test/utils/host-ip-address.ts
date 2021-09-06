@@ -16,7 +16,7 @@ function getLocalIpAddressFromHost() {
           results[name] = [];
         }
 
-        results[name].push(net.address);
+        results[name]!.push(net.address);
       }
     }
   }
