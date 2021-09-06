@@ -1,8 +1,12 @@
 import * as fs from 'fs';
 import { S3 } from 'aws-sdk';
 
+import {
+  BucketHandler,
+  s3CreateBucket as createBucket,
+} from '../../../../test/utils';
 import { deployTrigger } from '../deploy-trigger';
-import { BucketHandler, createBucket, generateZipBundle } from './utils';
+import { generateZipBundle } from './utils';
 
 describe('deploy-trigger', () => {
   let s3: S3;
