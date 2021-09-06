@@ -1,4 +1,3 @@
-import { STATUS_CODES } from 'http';
 import {
   CloudFrontHeaders,
   CloudFrontResultResponse,
@@ -6,18 +5,19 @@ import {
   CloudFrontRequest,
 } from 'aws-lambda';
 
-import { fetchProxyConfig } from './util/fetch-proxy-config';
 import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
-import { ProxyConfig, RouteResult } from './types';
+import { STATUS_CODES } from 'http';
+import { URL } from 'url';
 import { Proxy } from './proxy';
+import { RouteResult } from './types';
 import {
   createCustomOriginFromApiGateway,
   createCustomOriginFromUrl,
   serveRequestFromCustomOrigin,
   serveRequestFromS3Origin,
 } from './util/custom-origin';
+import { fetchProxyConfig } from './util/fetch-proxy-config';
 
-let proxyConfig: ProxyConfig;
 let proxy: Proxy;
 
 /**
@@ -32,7 +32,7 @@ function isRedirect(
     routeResult.status <= 309
   ) {
     if ('Location' in routeResult.headers) {
-      let headers: CloudFrontHeaders = {};
+      const headers: CloudFrontHeaders = {};
 
       // If the redirect is permanent, cache the result
       if (routeResult.status === 301 || routeResult.status === 308) {
@@ -71,23 +71,80 @@ async function main(
    * Changing properties inside of the function may cause unwanted side-effects
    * that are difficult to track.
    */
-  const { request } = event.Records[0].cf;
-  const configEndpoint = request.origin!.s3!.customHeaders[
-    'x-env-config-endpoint'
-  ][0].value;
-  const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
-    .value;
-  let headers: Record<string, string> = {};
+  const request = event.Records[0]?.cf.request;
 
-  try {
-    if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
-      proxy = new Proxy(
-        proxyConfig.routes,
-        proxyConfig.lambdaRoutes,
-        proxyConfig.staticRoutes
+  if (request === undefined) {
+    console.error('Could not find any records in CF event.');
+    // @ts-ignore - TODO: generate a error request response object here
+    return request;
+  }
+
+  const customHeaders = request.origin?.s3?.customHeaders;
+
+  // Custom headers should exist, because we assign them to the CF
+  // distribution in the TF code.
+  if (customHeaders === undefined) {
+    console.error('Could not find custom headers in request.');
+    return request;
+  }
+
+  const domainName = customHeaders['x-env-domain-name']?.[0]?.value;
+  const configEndpoint = customHeaders['x-env-config-endpoint']?.[0]?.value;
+  let apiEndpoint = customHeaders['x-env-api-endpoint']?.[0]?.value;
+
+  if (configEndpoint === undefined || apiEndpoint === undefined) {
+    console.error('Could not find required endpoints in custom headers.');
+    return request;
+  }
+
+  let headers: Record<string, string> = {};
+  let deploymentIdentifier = undefined;
+
+  // We need to re-fetch the proxy config for every request, because it could be
+  // made to a different deployment than the previous request.
+  let proxyConfig = undefined;
+
+  const hostHeader = request.headers.host?.[0]?.value;
+  if (
+    hostHeader &&
+    domainName &&
+    hostHeader !== domainName &&
+    hostHeader.endsWith(domainName)
+  ) {
+    deploymentIdentifier = hostHeader.split('.')[0];
+
+    // Rewrite proxy config path
+    const configEndpointURL = new URL(configEndpoint);
+    configEndpointURL.pathname = `/${deploymentIdentifier}${configEndpointURL.pathname}`;
+
+    try {
+      proxyConfig = await fetchProxyConfig(configEndpointURL.toString());
+    } catch (err) {
+      console.log(
+        `Did not find proxy configuration for deployment ${deploymentIdentifier}. ` +
+          'Retrying with default proxy configuration.'
       );
     }
+
+    // Rewrite API endpoint
+    if (proxyConfig?.apiId) {
+      const parts = apiEndpoint.split('.');
+      apiEndpoint = [proxyConfig.apiId, ...parts.slice(1)].join('.');
+    }
+  }
+
+  try {
+    // If we haven't fetched the proxy config for a deployment identifier yet,
+    // fetch the default here.
+    if (!proxyConfig) {
+      proxyConfig = await fetchProxyConfig(configEndpoint);
+    }
+
+    proxy = new Proxy(
+      proxyConfig.routes,
+      proxyConfig.lambdaRoutes,
+      proxyConfig.staticRoutes
+    );
   } catch (err) {
     console.error('Error while initialization:', err);
     return serveRequestFromS3Origin(request);
@@ -98,7 +155,7 @@ async function main(
   if (request.uri in proxyConfig.prerenders) {
     const customOrigin = createCustomOriginFromApiGateway(
       apiEndpoint,
-      `/${proxyConfig.prerenders[request.uri].lambda}`
+      `/${proxyConfig.prerenders[request.uri]?.lambda}`
     );
     return serveRequestFromCustomOrigin(request, customOrigin);
   }
@@ -180,6 +237,7 @@ export async function handler(
   } catch (error) {
     // Something went terribly wrong - Should never be called!
     console.error('Unexpected error occurred: ', error);
+    // @ts-ignore - Create request-response error object here.
     return event.Records[0].cf.request;
   }
 }

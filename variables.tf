@@ -178,6 +178,15 @@ variable "tags_s3_bucket" {
   default     = {}
 }
 
+#####################
+# Preview Deployments
+#####################
+variable "domain_name" {
+  description = "This is used to figure out which preview deployment to route to."
+  type        = string
+  default     = null
+}
+
 ################
 # Debug Settings
 ################

@@ -47,7 +47,6 @@ export async function deployTrigger({
   deployBucket,
   versionId,
 }: Props): Promise<Response> {
-  let buildId = '';
   const params = {
     Key: key,
     Bucket: sourceBucket,
@@ -58,15 +57,11 @@ export async function deployTrigger({
   // If none is present, create a random id
   const zipHeaders = await s3.headObject(params).promise();
 
-  if (zipHeaders.Metadata && BuildIdMetaDataKey in zipHeaders.Metadata) {
-    buildId = zipHeaders.Metadata[BuildIdMetaDataKey];
-  } else if (zipHeaders.ETag) {
+  const buildId = zipHeaders.Metadata?.[BuildIdMetaDataKey] ??
     // Fallback 1: If no metadata is present, use the etag
-    buildId = zipHeaders.ETag;
-  } else {
+    zipHeaders.ETag ??
     // Fallback 2: If no metadata or etag is present, create random id
-    buildId = generateRandomBuildId();
-  }
+    generateRandomBuildId();
 
   // Get the object that triggered the event
   const zip = s3

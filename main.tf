@@ -299,6 +299,10 @@ locals {
       {
         name  = "x-env-api-endpoint"
         value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
+      },
+      {
+        name  = "x-env-domain-name"
+        value = var.domain_name
       }
     ]
   }

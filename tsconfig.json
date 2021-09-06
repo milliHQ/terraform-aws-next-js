@@ -2,7 +2,10 @@
   "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "noUncheckedIndexedAccess": true
   },
   "exclude": ["node_modules", "examples/**/*"]
 }

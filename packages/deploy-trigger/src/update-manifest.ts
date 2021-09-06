@@ -196,7 +196,8 @@ async function updateManifest({
       continue;
     }
 
-    const file = manifestFiles[fileKey];
+    // We know the file exists because of the check above
+    const file = manifestFiles[fileKey]!;
     let isDeleted = false;
 
     // Get the files that can be expired
