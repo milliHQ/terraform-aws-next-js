@@ -323,7 +323,7 @@ locals {
       },
       {
         name  = "x-env-domain-name"
-        value = var.domain_name
+        value = var.domain_name != null ? var.domain_name : ""
       }
     ]
   }
