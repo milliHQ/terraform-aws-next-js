@@ -5,10 +5,7 @@ import { STATUS_CODES } from 'http';
 import { URL } from 'url';
 import { Proxy } from './proxy';
 import { HTTPHeaders, RouteResult } from './types';
-import {
-  createCustomOriginFromApiGateway,
-  createCustomOriginFromUrl,
-} from './util/custom-origin';
+import { createCustomOriginFromApiGateway, createCustomOriginFromUrl } from './util/custom-origin';
 import { fetchProxyConfig } from './util/fetch-proxy-config';
 
 let proxy: Proxy;
@@ -214,8 +211,18 @@ export async function handler(event: CloudFrontRequestEvent) {
         request.uri = proxyResult.dest;
       }
 
+      // Modify `Host` header to match the S3 host. If the `Host` header is
+      // the actual `Host` header we get a `SignatureDoesNotMatch`.
+      if (request.origin?.s3?.domainName) {
+        headers.host = request.origin?.s3?.domainName;
+      }
+
       // Replace the last / with /index when requesting the resource from S3
       request.uri = request.uri.replace(/\/$/, '/index');
+
+      if (deploymentIdentifier) {
+        request.uri = `/${deploymentIdentifier}${request.uri}`;
+      }
 
       // Send 404 directly to S3 bucket for handling without rewrite
       if (notFound) {

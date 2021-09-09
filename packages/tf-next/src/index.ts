@@ -1,4 +1,6 @@
 import cuid from 'cuid';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import yargs from 'yargs';
 
 // TODO: Have a central configuration for AWS API versions
@@ -13,6 +15,10 @@ yargs
     'Build the next.js project',
     (yargs_) => {
       return yargs_
+        .option('multipleDeployments', {
+          type: 'boolean',
+          description: 'Runs the build with a deployment id',
+        })
         .option('skipDownload', {
           type: 'boolean',
           description: 'Runs the build in the current working directory',
@@ -22,13 +28,14 @@ yargs
           description: 'Run with verbose logging',
         });
     },
-    async ({ skipDownload, verbose }) => {
+    async ({ multipleDeployments, skipDownload, verbose }) => {
       const cwd = process.cwd();
 
       (await import('./commands/build')).default({
         skipDownload,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
+        deploymentId: multipleDeployments ? cuid() : undefined,
       });
     }
   )
@@ -51,7 +58,19 @@ yargs
     },
     async ({ verbose }) => {
       const cwd = process.cwd();
-      const deploymentId = cuid();
+      const configFile = path.join(cwd, '.next-tf', 'config.json');
+      let deploymentId = cuid();
+      let staticFilesArchive = 'static-website-files.zip';
+
+      try {
+        const config = JSON.parse((await fs.readFile(configFile)).toString());
+        if (config.deploymentId) {
+          deploymentId = config.deploymentId;
+        }
+        staticFilesArchive = config.staticFilesArchive;
+      } catch (err) {
+        console.error(`Could not parse ${configFile}. Please run build first.`);
+      }
 
       // TODO:
       // Figure out a good way to pass the current terraform state. Especially
@@ -65,6 +84,7 @@ yargs
         deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
+        staticFilesArchive,
         terraformState,
       });
 
