@@ -1,8 +1,9 @@
 import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
-import { promises } from 'fs';
-import { query } from 'jsonpath';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inspect } from 'util';
+
+const jp = require('jsonpath');
 
 const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
@@ -16,6 +17,7 @@ interface CreateDeploymentProps {
   deploymentId: string;
   logLevel: LogLevel;
   cwd: string;
+  staticFilesArchive: string;
   terraformState: any;
   target?: 'AWS';
 }
@@ -54,7 +56,7 @@ async function createIAM(
 ): Promise<RoleArns> {
   const roleArns: RoleArns = {};
 
-  const lambdaLoggingPolicy = query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
+  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
   if (lambdaLoggingPolicy.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
@@ -107,13 +109,13 @@ async function createLambdas(
   const arns: LambdaArns = {};
 
   // TODO: We should get the environment variables from somewhere else
-  const existingFunction = query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
+  const existingFunction = jp.query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
   if (existingFunction.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
 
   for (const key in lambdaConfigurations) {
-    const fileContent = await promises.readFile(path.join(configDir, lambdaConfigurations[key]!.filename));
+    const fileContent = await fs.readFile(path.join(configDir, lambdaConfigurations[key]!.filename));
     const createdLambda = await lambda.createFunction({
       Code: {
         ZipFile: fileContent,
@@ -160,7 +162,7 @@ async function createAPIGateway(
   terraformState: any,
 ): Promise<{ apiId: string, executeArn: string }> {
   // TODO: This needs to be fixed, so we select the correct topic
-  const snsTopics = query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
+  const snsTopics = jp.query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
   if (snsTopics.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
@@ -216,7 +218,7 @@ async function createAPIGateway(
   //   tags = merge(var.tags, var.vpc_link_tags, lookup(each.value, "tags", {}))
   // }
 
-  const snsTopic = snsTopics.find((topic) => topic.values.arn.includes('tf-next'));
+  const snsTopic = snsTopics.find((topic: any) => topic.values.arn.includes('tf-next'));
 
   if (!snsTopic) {
     throw new Error(`Could not find SNS topic created by tf-next.`);
@@ -260,6 +262,7 @@ async function createDeploymentCommand({
   deploymentId,
   logLevel,
   cwd,
+  staticFilesArchive,
   terraformState,
   target = 'AWS',
 }: CreateDeploymentProps) {
@@ -337,22 +340,35 @@ async function createDeploymentCommand({
   };
 
   // Upload proxy config to bucket
-  const s3Bucket = query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
-  if (s3Bucket.length === 0) {
+  const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  if (proxyConfigStore.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
 
   await s3.putObject({
     Body: JSON.stringify(modifiedProxyConfig),
-    Bucket: s3Bucket[0].values.bucket,
+    Bucket: proxyConfigStore[0].values.bucket,
     ContentType: 'application/json',
     Key: `${deploymentId}/proxy-config.json`,
   }).promise();
 
   log(deploymentId, 'created proxy config.', logLevel);
 
-  // Image optimizer stuff
   // Upload static assets
+  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_upload")]');
+  if (staticDeploy.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
+
+  await s3.putObject({
+    Body: (await fs.readFile(path.join(cwd, '.next-tf', staticFilesArchive))),
+    Bucket: staticDeploy[0].values.bucket,
+    Key: staticFilesArchive,
+  }).promise();
+
+  log(deploymentId, 'uploaded static assets.', logLevel);
+
+  // Image optimizer stuff
 }
 
 export default createDeploymentCommand;

@@ -1,6 +1,7 @@
 import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
-import { query } from 'jsonpath';
 import * as path from 'path';
+
+const jp = require('jsonpath');
 
 const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
@@ -33,7 +34,7 @@ async function deleteIAM(
   lambdaConfigurations: LambdaConfigurations,
   terraformState: any,
 ) {
-  const lambdaLoggingPolicy = query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
+  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
   if (lambdaLoggingPolicy.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
@@ -145,7 +146,7 @@ async function deleteDeploymentCommand({
   log(deploymentId, 'deleted log groups and roles.', logLevel);
 
   // Delete proxy config from bucket
-  const s3Bucket = query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  const s3Bucket = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
   if (s3Bucket.length === 0) {
     throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
   }
@@ -157,8 +158,30 @@ async function deleteDeploymentCommand({
 
   log(deploymentId, 'deleted proxy config.', logLevel);
 
+  // Delete static assets
+  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_deploy")]');
+  if (staticDeploy.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
+
+  const files = await s3.listObjects({
+    Bucket: staticDeploy[0].values.bucket,
+    Prefix: deploymentId,
+  }).promise();
+
+  if (files.Contents) {
+    const Objects: S3.ObjectIdentifierList = files.Contents.filter((file) => file.Key)
+      .map((file) => ({ Key: file.Key! }));
+
+    if (Objects.length > 0) {
+      await s3.deleteObjects({
+        Bucket: staticDeploy[0].values.bucket,
+        Delete: { Objects },
+      }).promise();
+    }
+  }
+
   // Image optimizer stuff
-  // Upload static assets
 }
 
 export default deleteDeploymentCommand;

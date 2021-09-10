@@ -1,23 +1,19 @@
 import { build } from '@dealmore/tf-next-runtime';
-import tmp from 'tmp';
 import {
-  glob,
-  Lambda,
-  FileFsRef,
-  streamToBuffer,
-  Prerender,
-  download,
+  download, FileFsRef, glob,
+  Lambda, Prerender, streamToBuffer
 } from '@vercel/build-utils';
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
-import * as util from 'util';
 import findWorkspaceRoot from 'find-yarn-workspace-root';
-
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import tmp from 'tmp';
+import * as util from 'util';
 import { ConfigOutput } from '../types';
-import { removeRoutesByPrefix } from '../utils/routes';
 import { findEntryPoint } from '../utils';
+import { removeRoutesByPrefix } from '../utils/routes';
+
 
 // Config file version (For detecting incompatibility issues in Terraform)
 // See: https://github.com/dealmore/terraform-aws-next-js/issues/5
@@ -47,6 +43,7 @@ interface PrerenderOutputProps {
 
 interface OutputProps {
   buildId: string;
+  deploymentId?: string;
   images?: {
     domains: string[];
     sizes: number[];
@@ -64,7 +61,8 @@ function normalizeRoute(input: string) {
 
 function writeStaticWebsiteFiles(
   outputFile: string,
-  files: StaticWebsiteFiles
+  files: StaticWebsiteFiles,
+  deploymentId?: string,
 ) {
   return new Promise<void>(async (resolve, reject) => {
     // Create a zip package for the static website files
@@ -84,9 +82,18 @@ function writeStaticWebsiteFiles(
       reject(err);
     });
 
+    let deploymentIdPath = '';
+    if (deploymentId) {
+      deploymentIdPath = `/${deploymentId}`;
+    }
+
     for (const [key, file] of Object.entries(files)) {
       const buf = await streamToBuffer(file.toStream());
-      archive.append(buf, { name: key });
+      let name = key;
+      if(!key.startsWith('_next/static/')) {
+        name = `${deploymentIdPath}/${key}`;
+      }
+      archive.append(buf, { name });
     }
 
     archive.finalize();
@@ -99,6 +106,7 @@ function writeOutput(props: OutputProps) {
     staticRoutes: [],
     routes: props.routes,
     buildId: props.buildId,
+    deploymentId: props.deploymentId,
     prerenders: props.prerenders,
     staticFilesArchive: 'static-website-files.zip',
     version: TF_NEXT_VERSION,
@@ -129,7 +137,8 @@ function writeOutput(props: OutputProps) {
 
   const staticFilesArchive = writeStaticWebsiteFiles(
     path.join(props.outputDir, config.staticFilesArchive),
-    props.staticWebsiteFiles
+    props.staticWebsiteFiles,
+    props.deploymentId,
   );
 
   // Write config.json
@@ -149,6 +158,7 @@ interface BuildProps {
   logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
   cwd: string;
+  deploymentId?: string;
   target?: 'AWS';
 }
 
@@ -157,6 +167,7 @@ async function buildCommand({
   logLevel,
   deleteBuildCache = true,
   cwd,
+  deploymentId,
   target = 'AWS',
 }: BuildProps) {
   let buildOutput: OutputProps | null = null;
@@ -254,6 +265,7 @@ async function buildCommand({
 
     buildOutput = {
       buildId,
+      deploymentId,
       prerenders: prerenderedOutput,
       routes: optimizedRoutes,
       lambdas,
