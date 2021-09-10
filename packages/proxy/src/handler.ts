@@ -218,7 +218,12 @@ async function main(
 
   // Route is served by S3 bucket
   const notFound = proxyResult.phase === 'error' && proxyResult.status === 404;
-  const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
+  let uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
+
+  if (deploymentIdentifier) {
+    request.uri = `/${deploymentIdentifier}${request.uri}`;
+  }
+
   return serveRequestFromS3Origin(request, uri);
 }
 

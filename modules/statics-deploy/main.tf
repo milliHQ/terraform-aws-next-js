@@ -93,8 +93,8 @@ resource "aws_s3_bucket_policy" "origin_access" {
 # Lambda
 ########
 
-# TODO: Look into if it would be more sense to combine all policies here into
-# a single ressorce
+# TODO: Look into if it would make more sense to combine all policies here into
+# a single resource
 
 #
 # Lambda permissions for updating the static files bucket and to create
