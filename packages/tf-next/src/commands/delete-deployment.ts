@@ -1,5 +1,6 @@
 import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
 import * as path from 'path';
+import { inspect } from 'util';
 
 const jp = require('jsonpath');
 
@@ -11,12 +12,48 @@ const s3 = new S3();
 
 type LogLevel = 'verbose' | 'none' | undefined;
 
+interface DeleteDeploymentConfiguration {
+  deploymentName: string;
+  lambdaAttachToVpc: boolean;
+  lambdaLoggingPolicyArn: string;
+  proxyConfigBucket: string;
+  staticDeployBucket: string;
+}
+
 interface DeleteDeploymentProps {
   deploymentId: string;
   logLevel: LogLevel;
   cwd: string;
   terraformState: any;
   target?: 'AWS';
+}
+
+// TODO: Find a good way to read the deployment configuration (basically what is used
+//   in `create-deployment`).
+async function readConfig(terraformState: any): Promise<DeleteDeploymentConfiguration> {
+  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
+  const existingFunction = jp.query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
+  const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_deploy")]');
+
+  if (lambdaLoggingPolicy.length === 0 || existingFunction.length === 0 ||
+    proxyConfigStore.length === 0 || staticDeploy.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to delete deployments via `tf-next delete-deployment`.');
+  }
+
+  const vpcConfig = existingFunction[0].values.vpc_config;
+
+  try {
+    return {
+      deploymentName: 'tf-next',
+      lambdaAttachToVpc: vpcConfig.length > 0,
+      lambdaLoggingPolicyArn: lambdaLoggingPolicy[0].values.arn,
+      proxyConfigBucket: proxyConfigStore[0].values.bucket,
+      staticDeployBucket: staticDeploy[0].values.bucket,
+    };
+  } catch(err) {
+    throw new Error(`Could not read configuration successfully: ${inspect(err, undefined, 10)}`);
+  }
 }
 
 type LambdaConfigurations = {[key: string]: LambdaConfiguration};
@@ -32,13 +69,8 @@ interface LambdaConfiguration {
 async function deleteIAM(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
-  terraformState: any,
+  config: DeleteDeploymentConfiguration,
 ) {
-  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
-  if (lambdaLoggingPolicy.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   for (const key in lambdaConfigurations) {
     const functionName = `${key}-${deploymentId}`;
     const logGroupName = `/aws/lambda/${functionName}`;
@@ -48,9 +80,16 @@ async function deleteIAM(
     }).promise();
 
     await iam.detachRolePolicy({
-      PolicyArn: lambdaLoggingPolicy[0].values.arn,
+      PolicyArn: config.lambdaLoggingPolicyArn,
       RoleName: functionName,
     }).promise();
+
+    if (config.lambdaAttachToVpc) {
+      await iam.detachRolePolicy({
+        PolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
+        RoleName: functionName,
+      }).promise();
+    }
 
     await iam.deleteRole({
       RoleName: functionName,
@@ -107,10 +146,11 @@ async function deleteDeploymentCommand({
   terraformState,
   target = 'AWS',
 }: DeleteDeploymentProps) {
+  const config = await readConfig(terraformState);
+
   const configDir = path.join(cwd, '.next-tf');
   const configFile = require(path.join(configDir, 'config.json'));
   const lambdaConfigurations = configFile.lambdas;
-  const deploymentName = 'tf-next';
 
   // Delete lambda permissions
   await deleteLambdaPermissions(
@@ -123,7 +163,7 @@ async function deleteDeploymentCommand({
   // Delete API Gateway
   await deleteAPIGateway(
     deploymentId,
-    deploymentName,
+    config.deploymentName,
   );
 
   log(deploymentId, 'deleted API gateway.', logLevel);
@@ -140,32 +180,22 @@ async function deleteDeploymentCommand({
   await deleteIAM(
     deploymentId,
     lambdaConfigurations,
-    terraformState,
+    config,
   );
 
   log(deploymentId, 'deleted log groups and roles.', logLevel);
 
   // Delete proxy config from bucket
-  const s3Bucket = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
-  if (s3Bucket.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   await s3.deleteObject({
-    Bucket: s3Bucket[0].values.bucket,
+    Bucket: config.proxyConfigBucket,
     Key: `${deploymentId}/proxy-config.json`,
   }).promise();
 
   log(deploymentId, 'deleted proxy config.', logLevel);
 
   // Delete static assets
-  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_deploy")]');
-  if (staticDeploy.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   const files = await s3.listObjects({
-    Bucket: staticDeploy[0].values.bucket,
+    Bucket: config.staticDeployBucket,
     Prefix: deploymentId,
   }).promise();
 
@@ -175,7 +205,7 @@ async function deleteDeploymentCommand({
 
     if (Objects.length > 0) {
       await s3.deleteObjects({
-        Bucket: staticDeploy[0].values.bucket,
+        Bucket: config.staticDeployBucket,
         Delete: { Objects },
       }).promise();
     }
