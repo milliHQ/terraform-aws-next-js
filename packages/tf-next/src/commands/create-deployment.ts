@@ -22,6 +22,22 @@ interface CreateDeploymentProps {
   target?: 'AWS';
 }
 
+interface CreateDeploymentConfiguration {
+  accountId: string;
+  defaultRuntime: string;
+  defaultFunctionMemory: number;
+  deploymentName: string;
+  lambdaAttachToVpc: boolean;
+  lambdaEnvironmentVariables: Lambda.EnvironmentVariables;
+  lambdaLoggingPolicyArn: string;
+  lambdaTimeout: number;
+  proxyConfigBucket: string;
+  region: string;
+  staticDeployBucket: string;
+  vpcSecurityGroupIds: string[];
+  vpcSubnetIds: string[];
+}
+
 type LambdaConfigurations = {[key: string]: LambdaConfiguration};
 
 interface LambdaConfiguration {
@@ -49,27 +65,83 @@ const assumeRolePolicy = `{
   ]
 }`;
 
+// In the future this will be read from environment variables attached to the
+// deploy-trigger configuration.
+async function readConfig(terraformState: any): Promise<CreateDeploymentConfiguration> {
+  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
+  const existingFunction = jp.query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
+  const snsTopics = jp.query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
+  const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
+  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_upload")]');
+
+  if (lambdaLoggingPolicy.length === 0 || existingFunction.length === 0 || snsTopics.length === 0
+    || proxyConfigStore.length === 0 || staticDeploy.length === 0) {
+    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
+  }
+
+  const snsTopic = snsTopics.find((topic: any) => topic.values.arn.includes('tf-next'));
+
+  if (!snsTopic) {
+    throw new Error(`Could not find SNS topic created by tf-next.`);
+  }
+
+  const topicArn = snsTopic.values.arn.split(':');
+  const vpcConfig = existingFunction[0].values.vpc_config;
+
+  // TODO: We'll make these configurable, once we pass the configuration
+  //   via environment variables to the deploy-trigger lambda: lambdaTimeout,
+  //   deploymentName, defaultRuntime, tags, lambdaRolePermissionsBoundary
+
+  try {
+    const config: CreateDeploymentConfiguration = {
+      accountId: topicArn[4],
+      defaultFunctionMemory: 1024,
+      defaultRuntime: 'nodejs14.x',
+      deploymentName: 'tf-next',
+      lambdaAttachToVpc: false,
+      lambdaEnvironmentVariables: existingFunction[0].values.environment[0].variables,
+      lambdaLoggingPolicyArn: lambdaLoggingPolicy[0].values.arn,
+      lambdaTimeout: 10,
+      proxyConfigBucket: proxyConfigStore[0].values.bucket,
+      region: topicArn[3],
+      staticDeployBucket: staticDeploy[0].values.bucket,
+      vpcSecurityGroupIds: [],
+      vpcSubnetIds: [],
+    };
+
+    if (vpcConfig.length > 0) {
+      config.lambdaAttachToVpc = true;
+      config.vpcSecurityGroupIds = vpcConfig[0].security_group_ids;
+      config.vpcSubnetIds = vpcConfig[0].subnet_ids;
+    }
+
+    return config
+  } catch(err) {
+    throw new Error(`Could not read configuration successfully: ${inspect(err, undefined, 10)}`);
+  }
+}
+
+async function wait(ms: number): Promise<void> {
+  return new Promise((resolve, _) => {
+    setTimeout(() => resolve(), ms);
+  });
+}
+
 async function createIAM(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
-  terraformState: any,
+  config: CreateDeploymentConfiguration,
 ): Promise<RoleArns> {
   const roleArns: RoleArns = {};
-
-  const lambdaLoggingPolicy = jp.query(terraformState, '$..*[?(@.type=="aws_iam_policy" && @.name=="lambda_logging")]');
-  if (lambdaLoggingPolicy.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
 
   for (const key in lambdaConfigurations) {
     const functionName = `${key}-${deploymentId}`;
 
-    // TODO: Handle lambda_role_permissions_boundary
     const role = await iam.createRole({
       AssumeRolePolicyDocument: assumeRolePolicy,
       RoleName: functionName,
       Description: 'Managed by Terraform Next.js',
-      Tags: [], // TODO
+      Tags: [],
     }).promise();
     roleArns[key] = role.Role.Arn;
 
@@ -77,7 +149,6 @@ async function createIAM(
 
     await cloudWatch.createLogGroup({
       logGroupName,
-      // TODO: tags: {},
     }).promise();
 
     await cloudWatch.putRetentionPolicy({
@@ -86,10 +157,22 @@ async function createIAM(
     }).promise();
 
     await iam.attachRolePolicy({
-      PolicyArn: lambdaLoggingPolicy[0].values.arn,
+      PolicyArn: config.lambdaLoggingPolicyArn,
       RoleName: functionName,
     }).promise();
+
+    if (config.lambdaAttachToVpc) {
+      await iam.attachRolePolicy({
+        PolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
+        RoleName: functionName,
+      }).promise();
+    }
   }
+
+  // We wait for 6s, because trying to use the roles too quickly after deleting them
+  // can lead to an `InvalidParameterValueException` with the message
+  // `The role defined for the function cannot be assumed by Lambda.`.
+  await wait(6000);
 
   return roleArns;
 }
@@ -97,26 +180,15 @@ async function createIAM(
 async function createLambdas(
   deploymentId: string,
   configDir: string,
-  defaultRuntime: string,
-  defaultFunctionMemory: number,
-  lambdaTimeout: number,
   lambdaConfigurations: LambdaConfigurations,
   roleArns: RoleArns,
-  terraformState: any,
+  config: CreateDeploymentConfiguration,
 ): Promise<LambdaArns> {
-  // TODO: Do we ever need to update existing functions, or do we just always create new ones?
-
   const arns: LambdaArns = {};
-
-  // TODO: We should get the environment variables from somewhere else
-  const existingFunction = jp.query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
-  if (existingFunction.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
 
   for (const key in lambdaConfigurations) {
     const fileContent = await fs.readFile(path.join(configDir, lambdaConfigurations[key]!.filename));
-    const createdLambda = await lambda.createFunction({
+    const params: Lambda.Types.CreateFunctionRequest = {
       Code: {
         ZipFile: fileContent,
       },
@@ -124,24 +196,22 @@ async function createLambdas(
       Role: roleArns[key]!, // We know this exists because we created it in `createIAM`
       Description: 'Managed by Terraform-next.js',
       Environment: {
-        Variables: existingFunction[0].values.environment[0].variables,
+        Variables: config.lambdaEnvironmentVariables,
       },
       Handler: lambdaConfigurations[key]?.handler || '',
-      MemorySize: lambdaConfigurations[key]?.memory || defaultFunctionMemory,
+      MemorySize: lambdaConfigurations[key]?.memory || config.defaultFunctionMemory,
       PackageType: 'Zip', // Default in TF
       Publish: false, // Default in TF
-      Runtime: lambdaConfigurations[key]?.runtime || defaultRuntime,
-      Tags: {}, // TODO
-      Timeout: lambdaTimeout,
-      VpcConfig: {}, // TODO: Should get this from somewhere
-      //   dynamic "vpc_config" {
-      //     for_each = var.lambda_attach_to_vpc ? [true] : []
-      //     content {
-      //       security_group_ids = var.vpc_security_group_ids
-      //       subnet_ids         = var.vpc_subnet_ids
-      //     }
-      //   }
-    }).promise();
+      Runtime: lambdaConfigurations[key]?.runtime || config.defaultRuntime,
+      Tags: {},
+      Timeout: config.lambdaTimeout,
+      VpcConfig: {},
+    };
+    if (config.lambdaAttachToVpc) {
+      params.VpcConfig!.SecurityGroupIds = config.vpcSecurityGroupIds;
+      params.VpcConfig!.SubnetIds = config.vpcSubnetIds;
+    }
+    const createdLambda = await lambda.createFunction(params).promise();
 
     if (createdLambda.FunctionArn) {
       arns[key] = createdLambda.FunctionArn;
@@ -155,20 +225,12 @@ async function createLambdas(
 
 async function createAPIGateway(
   deploymentId: string,
-  deploymentName: string,
-  lambdaTimeout: number,
   lambdaConfigurations: LambdaConfigurations,
   lambdaArns: LambdaArns,
-  terraformState: any,
+  config: CreateDeploymentConfiguration,
 ): Promise<{ apiId: string, executeArn: string }> {
-  // TODO: This needs to be fixed, so we select the correct topic
-  const snsTopics = jp.query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
-  if (snsTopics.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   const api = await apiGatewayV2.createApi({
-    Name: `${deploymentName} - ${deploymentId}`,
+    Name: `${config.deploymentName} - ${deploymentId}`,
     ProtocolType: 'HTTP',
     ApiKeySelectionExpression: '$request.header.x-api-key',
     Description: 'Managed by Terraform-next.js',
@@ -185,7 +247,6 @@ async function createAPIGateway(
     StageName: '$default',
     AutoDeploy: true,
     Description: 'Managed by Terraform-next.js',
-    // TODO: Tags: {},
   }).promise();
 
   for (const key in lambdaConfigurations) {
@@ -196,43 +257,21 @@ async function createAPIGateway(
       IntegrationMethod: 'POST',
       IntegrationUri: lambdaArns[key],
       PayloadFormatVersion: '2.0',
-      TimeoutInMillis: lambdaTimeout * 1000,
+      TimeoutInMillis: config.lambdaTimeout * 1000,
     }).promise();
 
     await apiGatewayV2.createRoute({
       ApiId: api.ApiId,
       RouteKey: `ANY ${lambdaConfigurations[key]?.route}/{proxy+}`,
-      AuthorizationType: 'NONE', // TODO
+      AuthorizationType: 'NONE',
       Target: `integrations/${integration.IntegrationId}`,
     }).promise();
   }
 
-  // TODO: # VPC Link (Private API)
-  // resource "aws_apigatewayv2_vpc_link" "this" {
-  //   for_each = var.create && var.create_vpc_link ? var.vpc_links : {}
-
-  //   name               = lookup(each.value, "name", each.key)
-  //   security_group_ids = each.value["security_group_ids"]
-  //   subnet_ids         = each.value["subnet_ids"]
-
-  //   tags = merge(var.tags, var.vpc_link_tags, lookup(each.value, "tags", {}))
-  // }
-
-  const snsTopic = snsTopics.find((topic: any) => topic.values.arn.includes('tf-next'));
-
-  if (!snsTopic) {
-    throw new Error(`Could not find SNS topic created by tf-next.`);
-  }
-
-  // TODO: Find a better way to get this information
-  const topicArn = snsTopic.values.arn.split(':');
-  const region = topicArn[3];
-  const accountId = topicArn[4];
-
   // The ARN prefix to be used in an aws_lambda_permission's source_arn attribute or in an aws_iam_policy to authorize access to the @connections API.
   return {
     apiId: api.ApiId,
-    executeArn: `arn:aws:execute-api:${region}:${accountId}:${api.ApiId}`,
+    executeArn: `arn:aws:execute-api:${config.region}:${config.accountId}:${api.ApiId}`,
   };
 }
 
@@ -266,16 +305,7 @@ async function createDeploymentCommand({
   terraformState,
   target = 'AWS',
 }: CreateDeploymentProps) {
-  // TODO:
-  //    make lambdaTimeout configurable
-  //    make deploymentName configurable
-  //    make defaultRuntime configurable
-  //    allow tags to be passed through
-
-  const lambdaTimeout = 10;
-  const deploymentName = 'tf-next';
-  const defaultRuntime = 'nodejs14.x';
-  const defaultFunctionMemory = 1024;
+  const config = await readConfig(terraformState);
 
   const configDir = path.join(cwd, '.next-tf');
   const configFile = require(path.join(configDir, 'config.json'));
@@ -285,7 +315,7 @@ async function createDeploymentCommand({
   const roleArns = await createIAM(
     deploymentId,
     lambdaConfigurations,
-    terraformState,
+    config,
   );
 
   log(deploymentId, 'created log groups and roles.', logLevel);
@@ -294,12 +324,9 @@ async function createDeploymentCommand({
   const lambdaArns = await createLambdas(
     deploymentId,
     configDir,
-    defaultRuntime,
-    defaultFunctionMemory,
-    lambdaTimeout,
     lambdaConfigurations,
     roleArns,
-    terraformState,
+    config,
   );
 
   log(deploymentId, 'created lambda functions.', logLevel);
@@ -307,11 +334,9 @@ async function createDeploymentCommand({
   // Create API Gateway
   const { apiId, executeArn } = await createAPIGateway(
     deploymentId,
-    deploymentName,
-    lambdaTimeout,
     lambdaConfigurations,
     lambdaArns,
-    terraformState,
+    config,
   );
 
   log(deploymentId, 'created API gateway.', logLevel);
@@ -340,14 +365,9 @@ async function createDeploymentCommand({
   };
 
   // Upload proxy config to bucket
-  const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
-  if (proxyConfigStore.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   await s3.putObject({
     Body: JSON.stringify(modifiedProxyConfig),
-    Bucket: proxyConfigStore[0].values.bucket,
+    Bucket: config.proxyConfigBucket,
     ContentType: 'application/json',
     Key: `${deploymentId}/proxy-config.json`,
   }).promise();
@@ -355,14 +375,9 @@ async function createDeploymentCommand({
   log(deploymentId, 'created proxy config.', logLevel);
 
   // Upload static assets
-  const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_upload")]');
-  if (staticDeploy.length === 0) {
-    throw new Error('Please first run `terraform apply` before trying to create deployments via `tf-next create-deployment`.');
-  }
-
   await s3.putObject({
     Body: (await fs.readFile(path.join(cwd, '.next-tf', staticFilesArchive))),
-    Bucket: staticDeploy[0].values.bucket,
+    Bucket: config.staticDeployBucket,
     Key: staticFilesArchive,
   }).promise();
 
