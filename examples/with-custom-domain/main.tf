@@ -27,8 +27,7 @@ provider "aws" {
 variable "custom_domain" {
   description = "Your custom domain"
   type        = string
-  # default = "example.com"
-  default = "tf-next.dealmore.de"
+  default     = "example.com"
 }
 
 # Assuming that the ZONE of your domain is already registrated in your AWS account (Route 53)
@@ -91,7 +90,7 @@ module "cloudfront_cert" {
 ##########################
 
 module "tf_next" {
-  # source = "dealmore/next-js/aws"
+  source = "dealmore/next-js/aws"
 
   # Prevent creation of the main CloudFront distribution
   cloudfront_create_distribution = false
@@ -104,13 +103,13 @@ module "tf_next" {
   }
 
   # Uncomment when using in the cloned monorepo for tf-next development
-  source = "../.."
+  # source = "../.."
   # debug_use_local_packages = true
 }
 
-##################################
-# Existing CloudFront distribution
-##################################
+#########################
+# CloudFront distribution
+#########################
 
 # You can fully customize all the settings of the CloudFront distribution
 # as described in the AWS Provider documentation:
