@@ -402,3 +402,23 @@ test('[proxy-unit] i18n default locale', () => {
     target: undefined,
   });
 });
+
+test('[proxy-unit] static index route', () => {
+  const routesConfig = [
+    {
+      handle: 'filesystem' as const,
+    },
+  ];
+  const result = new Proxy(routesConfig, [], ['/index']).route('/');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/index',
+    target: 'filesystem',
+    continue: false,
+    status: undefined,
+    headers: {},
+    isDestUrl: false,
+    phase: 'filesystem',
+  });
+});
