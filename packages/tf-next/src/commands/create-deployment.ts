@@ -1,12 +1,14 @@
-import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
+import { ApiGatewayV2, CloudWatchLogs, DynamoDB, IAM, Lambda, S3 } from 'aws-sdk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inspect } from 'util';
+import { ProxyConfig } from '../types';
 
 const jp = require('jsonpath');
 
 const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
+const dynamoDB = new DynamoDB();
 const iam = new IAM();
 const lambda = new Lambda();
 const s3 = new S3();
@@ -32,6 +34,7 @@ interface CreateDeploymentConfiguration {
   lambdaLoggingPolicyArn: string;
   lambdaTimeout: number;
   proxyConfigBucket: string;
+  proxyConfigTable: string;
   region: string;
   staticDeployBucket: string;
   vpcSecurityGroupIds: string[];
@@ -73,6 +76,7 @@ async function readConfig(terraformState: any): Promise<CreateDeploymentConfigur
   const snsTopics = jp.query(terraformState, '$..*[?(@.type=="aws_sns_topic" && @.name=="this")]');
   const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
   const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_upload")]');
+  const proxyConfigTable = jp.query(terraformState, '$..*[?(@.type=="aws_dynamodb_table" && @.name=="proxy_config")]');
 
   if (lambdaLoggingPolicy.length === 0 || existingFunction.length === 0 || snsTopics.length === 0
     || proxyConfigStore.length === 0 || staticDeploy.length === 0) {
@@ -99,10 +103,11 @@ async function readConfig(terraformState: any): Promise<CreateDeploymentConfigur
       defaultRuntime: 'nodejs14.x',
       deploymentName: 'tf-next',
       lambdaAttachToVpc: false,
-      lambdaEnvironmentVariables: existingFunction[0].values.environment[0].variables,
+      lambdaEnvironmentVariables: existingFunction[0].values.environment[0]?.variables || {},
       lambdaLoggingPolicyArn: lambdaLoggingPolicy[0].values.arn,
       lambdaTimeout: 10,
       proxyConfigBucket: proxyConfigStore[0].values.bucket,
+      proxyConfigTable: proxyConfigTable[0].values.name,
       region: topicArn[3],
       staticDeployBucket: staticDeploy[0].values.bucket,
       vpcSecurityGroupIds: [],
@@ -291,6 +296,34 @@ async function createLambdaPermissions(
   }
 }
 
+async function uploadProxyConfig(
+  deploymentId: string,
+  config: ProxyConfig,
+  bucket: string,
+  table: string,
+) {
+  const configString = JSON.stringify(config);
+
+  await s3.putObject({
+    Body: configString,
+    Bucket: bucket,
+    ContentType: 'application/json',
+    Key: `${deploymentId}/proxy-config.json`,
+  }).promise();
+
+  await dynamoDB.putItem({
+    TableName: table,
+    Item: {
+      alias: {
+        S: deploymentId,
+      },
+      proxyConfig: {
+        S: configString,
+      },
+    },
+  }).promise();
+}
+
 function log(deploymentId: string, message: string, logLevel: LogLevel) {
   if (logLevel === 'verbose') {
     console.log(`Deployment ${deploymentId}: ${message}`);
@@ -356,7 +389,7 @@ async function createDeploymentCommand({
     lambdaRoutes.push(lambdaConfigurations[key].route || '/');
   }
 
-  const modifiedProxyConfig = {
+  const modifiedProxyConfig: ProxyConfig = {
     apiId,
     routes: configFile.routes,
     prerenders: configFile.prerenders,
@@ -365,12 +398,12 @@ async function createDeploymentCommand({
   };
 
   // Upload proxy config to bucket
-  await s3.putObject({
-    Body: JSON.stringify(modifiedProxyConfig),
-    Bucket: config.proxyConfigBucket,
-    ContentType: 'application/json',
-    Key: `${deploymentId}/proxy-config.json`,
-  }).promise();
+  await uploadProxyConfig(
+    deploymentId,
+    modifiedProxyConfig,
+    config.proxyConfigBucket,
+    config.proxyConfigTable,
+  );
 
   log(deploymentId, 'created proxy config.', logLevel);
 

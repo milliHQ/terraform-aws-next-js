@@ -1,4 +1,4 @@
-import { ApiGatewayV2, CloudWatchLogs, IAM, Lambda, S3 } from 'aws-sdk';
+import { ApiGatewayV2, CloudWatchLogs, DynamoDB, IAM, Lambda, S3 } from 'aws-sdk';
 import * as path from 'path';
 import { inspect } from 'util';
 
@@ -6,6 +6,7 @@ const jp = require('jsonpath');
 
 const apiGatewayV2 = new ApiGatewayV2();
 const cloudWatch = new CloudWatchLogs();
+const dynamoDB = new DynamoDB();
 const iam = new IAM();
 const lambda = new Lambda();
 const s3 = new S3();
@@ -17,6 +18,7 @@ interface DeleteDeploymentConfiguration {
   lambdaAttachToVpc: boolean;
   lambdaLoggingPolicyArn: string;
   proxyConfigBucket: string;
+  proxyConfigTable: string;
   staticDeployBucket: string;
 }
 
@@ -35,6 +37,7 @@ async function readConfig(terraformState: any): Promise<DeleteDeploymentConfigur
   const existingFunction = jp.query(terraformState, '$..*[?(@.type=="aws_lambda_function" && @.index=="__NEXT_PAGE_LAMBDA_0")]');
   const proxyConfigStore = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="proxy_config_store")]');
   const staticDeploy = jp.query(terraformState, '$..*[?(@.type=="aws_s3_bucket" && @.name=="static_deploy")]');
+  const proxyConfigTable = jp.query(terraformState, '$..*[?(@.type=="aws_dynamodb_table" && @.name=="proxy_config")]');
 
   if (lambdaLoggingPolicy.length === 0 || existingFunction.length === 0 ||
     proxyConfigStore.length === 0 || staticDeploy.length === 0) {
@@ -49,6 +52,7 @@ async function readConfig(terraformState: any): Promise<DeleteDeploymentConfigur
       lambdaAttachToVpc: vpcConfig.length > 0,
       lambdaLoggingPolicyArn: lambdaLoggingPolicy[0].values.arn,
       proxyConfigBucket: proxyConfigStore[0].values.bucket,
+      proxyConfigTable: proxyConfigTable[0].values.name,
       staticDeployBucket: staticDeploy[0].values.bucket,
     };
   } catch(err) {
@@ -133,6 +137,25 @@ async function deleteLambdaPermissions(
   }
 }
 
+async function deleteProxyConfig(
+  deploymentId: string,
+  bucket: string,
+  table: string,
+) {
+  await s3.deleteObject({
+    Bucket: bucket,
+    Key: `${deploymentId}/proxy-config.json`,
+  }).promise();
+
+  // TODO: Make sure there is no alias pointing to this deployment
+  await dynamoDB.deleteItem({
+    TableName: table,
+    Key: {
+      alias: {S: deploymentId},
+    },
+  }).promise();
+}
+
 function log(deploymentId: string, message: string, logLevel: LogLevel) {
   if (logLevel === 'verbose') {
     console.log(`Deployment ${deploymentId}: ${message}`);
@@ -185,11 +208,12 @@ async function deleteDeploymentCommand({
 
   log(deploymentId, 'deleted log groups and roles.', logLevel);
 
-  // Delete proxy config from bucket
-  await s3.deleteObject({
-    Bucket: config.proxyConfigBucket,
-    Key: `${deploymentId}/proxy-config.json`,
-  }).promise();
+  // Delete proxy config
+  await deleteProxyConfig(
+    deploymentId,
+    config.proxyConfigBucket,
+    config.proxyConfigTable,
+  );
 
   log(deploymentId, 'deleted proxy config.', logLevel);
 

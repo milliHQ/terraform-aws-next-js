@@ -190,6 +190,7 @@ module "proxy_config" {
   cloudfront_price_class = var.cloudfront_price_class
   proxy_config_json      = local.proxy_config_json
   proxy_config_version   = local.config_file_version
+  multiple_deployments   = var.multiple_deployments
 
   deployment_name = var.deployment_name
   tags            = var.tags
@@ -214,6 +215,7 @@ module "proxy" {
 
   debug_use_local_packages = var.debug_use_local_packages
   tf_next_module_root      = path.module
+  proxy_config_table_arn   = module.proxy_config.table_arn
 
   providers = {
     aws.global_region = aws.global_region
@@ -260,6 +262,8 @@ resource "aws_cloudfront_origin_request_policy" "this" {
     query_string_behavior = "all"
   }
 }
+
+data "aws_region" "current" {}
 
 resource "aws_cloudfront_cache_policy" "this" {
   name    = "${random_id.policy_name.hex}-cache"
@@ -316,6 +320,14 @@ locals {
       {
         name  = "x-env-config-endpoint"
         value = "http://${module.proxy_config.config_endpoint}"
+      },
+      {
+        name  = "x-env-config-table"
+        value = module.proxy_config.table_name
+      },
+      {
+        name  = "x-env-config-region"
+        value = data.aws_region.current.name
       },
       {
         name  = "x-env-api-endpoint"

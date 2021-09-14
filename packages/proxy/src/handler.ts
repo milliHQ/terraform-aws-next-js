@@ -1,5 +1,5 @@
 import {
-  CloudFrontHeaders, CloudFrontRequestEvent, CloudFrontResultResponse,
+  CloudFrontHeaders, CloudFrontRequestEvent, CloudFrontResultResponse
 } from 'aws-lambda';
 import { STATUS_CODES } from 'http';
 import { URL } from 'url';
@@ -81,6 +81,8 @@ export async function handler(event: CloudFrontRequestEvent) {
 
   const domainName = customHeaders['x-env-domain-name']?.[0]?.value;
   const configEndpoint = customHeaders['x-env-config-endpoint']?.[0]?.value;
+  const configTable = customHeaders['x-env-config-table']?.[0]?.value;
+  const configRegion = customHeaders['x-env-config-region']?.[0]?.value;
   let apiEndpoint = customHeaders['x-env-api-endpoint']?.[0]?.value;
 
   if (configEndpoint === undefined || apiEndpoint === undefined) {
@@ -104,7 +106,12 @@ export async function handler(event: CloudFrontRequestEvent) {
     configEndpointURL.pathname = `/${deploymentIdentifier}${configEndpointURL.pathname}`;
 
     try {
-      proxyConfig = await fetchProxyConfig(configEndpointURL.toString());
+      proxyConfig = await fetchProxyConfig(
+        configEndpointURL.toString(),
+        configTable,
+        configRegion,
+        deploymentIdentifier,
+      );
     } catch (err) {
       console.log(
         `Did not find proxy configuration for deployment ${deploymentIdentifier}. ` +
@@ -123,7 +130,7 @@ export async function handler(event: CloudFrontRequestEvent) {
     // If we haven't fetched the proxy config for a deployment identifier yet,
     // fetch the default here.
     if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
+      proxyConfig = await fetchProxyConfig(configEndpoint, configTable, configRegion, ':root:');
     }
 
     proxy = new Proxy(

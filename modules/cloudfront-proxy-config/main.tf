@@ -4,6 +4,25 @@ locals {
   proxy_config_max_age = 15 * 60
 }
 
+################
+# DynamoDB Table
+################
+
+resource "aws_dynamodb_table" "proxy_config" {
+  count = var.multiple_deployments ? 1 : 0
+
+  name         = var.proxy_config_table_name
+  billing_mode = "PAY_PER_REQUEST"
+
+  # This is either the deployment id or an alias
+  hash_key = "alias"
+
+  attribute {
+    name = "alias"
+    type = "S"
+  }
+}
+
 ########
 # Bucket
 ########

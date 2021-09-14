@@ -27,3 +27,11 @@ export interface ConfigOutput {
   };
   version: number;
 }
+
+export interface ProxyConfig {
+  routes: Route[];
+  lambdaRoutes: string[];
+  staticRoutes: string[];
+  prerenders: Record<string, { lambda: string }>;
+  apiId?: string;
+}
