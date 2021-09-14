@@ -40,6 +40,11 @@
       "responseHeaders": {
         "location": "/hello"
       }
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "mustContain": "isSSR: <!-- -->false"
     }
   ]
 }
