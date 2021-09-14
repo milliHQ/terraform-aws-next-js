@@ -104,19 +104,20 @@ export class Proxy {
         // Check if the path is a static file that should be served from the
         // filesystem
         if (routeConfig.handle === 'filesystem') {
-          // Remove tailing `/` for filesystem check
-          const filePath = reqPathname.replace(/\/+$/, '');
+          // Replace tailing `/` with `/index`
+          const filePath = reqPathname.replace(/\/$/, '/index');
 
           // Check if the route matches a route from the filesystem
           if (this._checkFileSystem(filePath)) {
             result = {
               found: true,
               target: 'filesystem',
-              dest: reqPathname,
+              dest: filePath,
               headers: combinedHeaders,
               continue: false,
               isDestUrl: false,
               status,
+              phase,
             };
             break;
           }
