@@ -422,3 +422,55 @@ test('[proxy-unit] static index route', () => {
     phase: 'filesystem',
   });
 });
+
+test('[proxy-unit] dynamic route rewrite', () => {
+  const routesConfig = [
+    {
+      src: '^\\/sitemap(?:\\/([^\\/]+?))\\.xml$',
+      dest: '/api/sitemap/$1',
+      check: true,
+    },
+    {
+      handle: 'resource' as const,
+    },
+    {
+      handle: 'rewrite' as const,
+    },
+    {
+      src: '^/api/?$',
+      dest: '/__NEXT_API_LAMBDA_0',
+      headers: {
+        'x-nextjs-page': '/api',
+      },
+      check: true,
+    },
+    {
+      src: '^/api/sitemap/pages/?$',
+      dest: '/__NEXT_API_LAMBDA_0',
+      headers: {
+        'x-nextjs-page': '/api/sitemap/pages',
+      },
+      check: true,
+    },
+  ];
+  const result = new Proxy(routesConfig, ['/__NEXT_API_LAMBDA_0'], []).route(
+    '/sitemap/pages.xml'
+  );
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/__NEXT_API_LAMBDA_0',
+    target: 'lambda',
+    continue: false,
+    status: undefined,
+    headers: {
+      'x-nextjs-page': '/api/sitemap/pages',
+    },
+    isDestUrl: false,
+    phase: 'rewrite',
+    matched_route: routesConfig[4],
+    matched_route_idx: 4,
+    uri_args: new URLSearchParams(''),
+    userDest: true,
+  });
+});

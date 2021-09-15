@@ -822,4 +822,141 @@ describe('[proxy] Handler', () => {
     },
     TIMEOUT
   );
+
+  test(
+    'Correctly redirect /sitemap/pages.xml to /api/sitemap/pages',
+    async () => {
+      const proxyConfig: ProxyConfig = {
+        staticRoutes: [],
+        lambdaRoutes: ['/__NEXT_API_LAMBDA_0'],
+        routes: [
+          {
+            src: '^\\/sitemap(?:\\/([^\\/]+?))\\.xml$',
+            dest: '/api/sitemap/$1',
+            check: true,
+          },
+          {
+            handle: 'resource' as const,
+          },
+          {
+            handle: 'rewrite' as const,
+          },
+          {
+            src: '^/api/?$',
+            dest: '/__NEXT_API_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/api',
+            },
+            check: true,
+          },
+          {
+            src: '^/api/sitemap/pages/?$',
+            dest: '/__NEXT_API_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/api/sitemap/pages',
+            },
+            check: true,
+          },
+        ],
+        prerenders: {},
+      };
+
+      const requestPath = '/sitemap/pages.xml';
+
+      // Prepare configServer
+      configServer.proxyConfig = proxyConfig;
+
+      // Origin Request
+      // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html#example-origin-request
+      const event: CloudFrontRequestEvent = {
+        Records: [
+          {
+            cf: {
+              config: {
+                distributionDomainName: 'd111111abcdef8.cloudfront.net',
+                distributionId: 'EDFDVBD6EXAMPLE',
+                eventType: 'origin-request',
+                requestId:
+                  '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              },
+              request: {
+                clientIp: '203.0.113.178',
+                headers: {
+                  'x-forwarded-for': [
+                    {
+                      key: 'X-Forwarded-For',
+                      value: '203.0.113.178',
+                    },
+                  ],
+                  'user-agent': [
+                    {
+                      key: 'User-Agent',
+                      value: 'Amazon CloudFront',
+                    },
+                  ],
+                  via: [
+                    {
+                      key: 'Via',
+                      value:
+                        '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)',
+                    },
+                  ],
+                  host: [
+                    {
+                      key: 'Host',
+                      value: 'example.org',
+                    },
+                  ],
+                  'cache-control': [
+                    {
+                      key: 'Cache-Control',
+                      value: 'no-cache, cf-no-cache',
+                    },
+                  ],
+                },
+                method: 'GET',
+                origin: {
+                  s3: {
+                    customHeaders: {
+                      'x-env-config-endpoint': [
+                        {
+                          key: 'x-env-config-endpoint',
+                          value: configEndpoint,
+                        },
+                      ],
+                      'x-env-api-endpoint': [
+                        {
+                          key: 'x-env-api-endpoint',
+                          value: 'example.localhost',
+                        },
+                      ],
+                    },
+                    region: 'us-east-1',
+                    authMethod: 'origin-access-identity',
+                    domainName: 's3.localhost',
+                    path: '',
+                  },
+                },
+                querystring: '',
+                uri: requestPath,
+              },
+            },
+          },
+        ],
+      };
+
+      const result = (await handler(event)) as CloudFrontRequest;
+
+      expect(result.origin?.custom).toEqual(
+        expect.objectContaining({
+          domainName: 'example.localhost',
+          path: '/__NEXT_API_LAMBDA_0',
+          port: 443,
+          protocol: 'https',
+        })
+      );
+      expect(result.uri).toBe('/sitemap/pages.xml');
+    },
+    TIMEOUT
+  );
 });

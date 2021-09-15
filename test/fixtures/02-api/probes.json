@@ -1,17 +1,22 @@
 {
   "builds": [{ "src": "package.json", "use": "tf-next" }],
   "probes": [
+    // {
+    //   "path": "/api",
+    //   "status": 200,
+    //   "responseHeaders": {
+    //     "Set-Cookie": "cookie-1, cookie-2"
+    //   }
+    // },
+    // {
+    //   "path": "/api/actions/12345/info",
+    //   "status": 200,
+    //   "mustContain": "actionId: 12345"
+    // },
     {
-      "path": "/api",
+      "path": "/sitemap/pages.xml",
       "status": 200,
-      "responseHeaders": {
-        "Set-Cookie": "cookie-1, cookie-2"
-      }
-    },
-    {
-      "path": "/api/actions/12345/info",
-      "status": 200,
-      "mustContain": "actionId: 12345"
+      "mustContain": "<hello>world</hello>"
     }
   ]
 }
