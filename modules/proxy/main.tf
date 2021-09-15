@@ -13,6 +13,13 @@ module "proxy_package" {
 # Lambda@Edge
 #############
 
+data "aws_iam_policy_document" "dynamo_access" {
+  statement {
+    actions   = ["dynamodb:GetItem"]
+    resources = [var.proxy_config_table_arn]
+  }
+}
+
 module "edge_proxy" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "2.4.0"
@@ -24,6 +31,8 @@ module "edge_proxy" {
   handler                   = "handler.handler"
   runtime                   = var.lambda_default_runtime
   role_permissions_boundary = var.lambda_role_permissions_boundary
+  policy_json               = var.proxy_config_table_arn != null ? data.aws_iam_policy_document.dynamo_access.json : null
+  attach_policy_json        = var.proxy_config_table_arn != null
 
   create_package         = false
   local_existing_package = module.proxy_package.abs_path

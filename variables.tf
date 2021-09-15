@@ -178,13 +178,19 @@ variable "tags_s3_bucket" {
   default     = {}
 }
 
-#####################
-# Preview Deployments
-#####################
+######################
+# Multiple Deployments
+######################
 variable "domain_name" {
   description = "This is used to figure out which preview deployment to route to."
   type        = string
   default     = null
+}
+
+variable "multiple_deployments" {
+  description = "Have multiple deployments and domain aliases."
+  type        = bool
+  default     = false
 }
 
 ################

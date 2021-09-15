@@ -43,7 +43,87 @@ yargs
     'list-deployments',
     'List existing deployments',
     async () => {
-      (await import('./commands/list-deployments')).default({});
+      // TODO:
+      // Figure out a good way to pass the current terraform state. Especially
+      // considering that there could be multiple environments (preview,
+      // production). For development/testing, we'll save the current state,
+      // that we get when running `$ terraform show -json` into a file called
+      // `terraform.config.json` at the root of this package.
+      const terraformState = require('../terraform.config.json');
+
+      (await import('./commands/list-deployments')).default({terraformState});
+    }
+  )
+  .command(
+    'delete-alias',
+    'Delete an alias',
+    (yargs_) => {
+      return yargs_
+        .option('alias', {
+          type: 'string',
+          description: 'The alias to delete',
+          demandOption: true,
+        });
+    },
+    async({ alias }) => {
+      // TODO:
+      // Figure out a good way to pass the current terraform state. Especially
+      // considering that there could be multiple environments (preview,
+      // production). For development/testing, we'll save the current state,
+      // that we get when running `$ terraform show -json` into a file called
+      // `terraform.config.json` at the root of this package.
+      const terraformState = require('../terraform.config.json');
+
+      await (await import('./commands/delete-alias')).default({
+        alias,
+        terraformState,
+      });
+
+      console.log(`Deleted alias ${alias}.`);
+
+    }
+  )
+  .command(
+    'update-alias',
+    'Create or update an alias for an existing deployment',
+    (yargs_) => {
+      return yargs_
+        .option('alias', {
+          type: 'string',
+          description: 'Name of the alias',
+        })
+        .option('deploymentId', {
+          type: 'string',
+          description: 'The id of the deployment to alias',
+          demandOption: true,
+        })
+        .option('parent', {
+          type: 'boolean',
+          description: 'Alias to the parent domain',
+          default: false,
+        });
+    },
+    async({ alias, deploymentId, parent }) => {
+      if (!alias && !parent || parent && alias) {
+        throw new Error('Please specify either `parent` or `alias`.');
+      }
+
+      // TODO:
+      // Figure out a good way to pass the current terraform state. Especially
+      // considering that there could be multiple environments (preview,
+      // production). For development/testing, we'll save the current state,
+      // that we get when running `$ terraform show -json` into a file called
+      // `terraform.config.json` at the root of this package.
+      const terraformState = require('../terraform.config.json');
+
+      await (await import('./commands/update-alias')).default({
+        deploymentId,
+        alias,
+        parent,
+        terraformState,
+      });
+
+      console.log(`Aliased deployment ${deploymentId} to ${parent ? 'parent domain' : alias}.`);
     }
   )
   .command(

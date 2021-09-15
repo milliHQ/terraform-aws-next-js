@@ -15,6 +15,22 @@ variable "proxy_config_version" {
   }
 }
 
+################
+# DynamoDB Table
+################
+
+variable "multiple_deployments" {
+  description = "Have multiple deployments and domain aliases."
+  type        = bool
+  default     = false
+}
+
+variable "proxy_config_table_name" {
+  description = "Name of the DynamoDB table to store proxy configurations."
+  type        = string
+  default     = "tf-next-proxy-config"
+}
+
 ############
 # CloudFront
 ############

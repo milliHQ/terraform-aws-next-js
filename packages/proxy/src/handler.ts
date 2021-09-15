@@ -90,6 +90,8 @@ async function main(
 
   const domainName = customHeaders['x-env-domain-name']?.[0]?.value;
   const configEndpoint = customHeaders['x-env-config-endpoint']?.[0]?.value;
+  const configTable = customHeaders['x-env-config-table']?.[0]?.value;
+  const configRegion = customHeaders['x-env-config-region']?.[0]?.value;
   let apiEndpoint = customHeaders['x-env-api-endpoint']?.[0]?.value;
 
   if (configEndpoint === undefined || apiEndpoint === undefined) {
@@ -118,7 +120,12 @@ async function main(
     configEndpointURL.pathname = `/${deploymentIdentifier}${configEndpointURL.pathname}`;
 
     try {
-      proxyConfig = await fetchProxyConfig(configEndpointURL.toString());
+      proxyConfig = await fetchProxyConfig(
+        configEndpointURL.toString(),
+        configTable,
+        configRegion,
+        deploymentIdentifier
+      );
     } catch (err) {
       console.log(
         `Did not find proxy configuration for deployment ${deploymentIdentifier}. ` +
@@ -137,7 +144,12 @@ async function main(
     // If we haven't fetched the proxy config for a deployment identifier yet,
     // fetch the default here.
     if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
+      proxyConfig = await fetchProxyConfig(
+        configEndpoint,
+        configTable,
+        configRegion,
+        ':root:'
+      );
     }
 
     proxy = new Proxy(
