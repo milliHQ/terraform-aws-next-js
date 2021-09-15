@@ -234,6 +234,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws\_iam\_role access for the lambda | `string` | `null` | no |
 | lambda\_runtime | Lambda Function runtime | `string` | `"nodejs14.x"` | no |
 | lambda\_timeout | Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
+| multiple\_deployments | Have multiple deployments and domain aliases. | `bool` | `false` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 | tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
 | tags\_s3\_bucket | Tag metadata to label AWS S3 buckets. Overrides tags with the same name in input variable tags. | `map(string)` | `{}` | no |
