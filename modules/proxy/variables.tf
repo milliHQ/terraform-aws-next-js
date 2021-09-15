@@ -17,6 +17,11 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
+variable "proxy_config_table_arn" {
+  type    = string
+  default = null
+}
+
 ##########
 # Labeling
 ##########

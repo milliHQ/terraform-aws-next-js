@@ -1,5 +1,6 @@
-import { fetchTimeout } from './fetch-timeout';
+import { DynamoDB } from 'aws-sdk';
 import { ProxyConfig } from '../types';
+import { fetchTimeout } from './fetch-timeout';
 
 // Timeout the connection before 30000ms to be able to print an error message
 // See Lambda@Edge Limits for origin-request event here:
@@ -11,7 +12,30 @@ const FETCH_TIMEOUT = 29500;
  * @param endpointUrl URL where the config should be fetched from
  * @returns Parsed config object
  */
-export function fetchProxyConfig(endpointUrl: string) {
+export async function fetchProxyConfig(endpointUrl: string, table?: string, region?: string, alias?: string) {
+  if (table) {
+    const dynamoDB = new DynamoDB({
+      region,
+    });
+
+    const item = await dynamoDB.getItem({
+      TableName: table,
+      Key: {
+        alias: { S: alias },
+      }
+    }).promise();
+
+    if (item.Item?.proxyConfig?.S) {
+      try {
+        const config = JSON.parse(item.Item.proxyConfig.S);
+        return config as ProxyConfig;
+      } catch (_) {
+        // If something fails, we continue with the default
+        // behaviour of trying to fetch the config from the bucket
+      }
+    }
+  }
+
   return fetchTimeout(FETCH_TIMEOUT, endpointUrl).then(
     (res) => res.json() as Promise<ProxyConfig>
   );
