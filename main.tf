@@ -237,6 +237,21 @@ data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
   name = "Managed-CachingOptimized"
 }
 
+##
+# Origin request policy
+#
+# Determines which headers are forwarded to the S3 or Lambda origin.
+# Is only used for the default cache behavior.
+##
+locals {
+  # Default headers that should be forwarded to the origins
+  cloudfront_origin_default_headers = ["x-nextjs-page"]
+  cloudfront_origin_headers = sort(concat(
+    local.cloudfront_origin_default_headers,
+    var.cloudfront_origin_headers
+  ))
+}
+
 resource "aws_cloudfront_origin_request_policy" "this" {
   name    = "${random_id.policy_name.hex}-origin"
   comment = "Managed by Terraform Next.js"
@@ -246,13 +261,10 @@ resource "aws_cloudfront_origin_request_policy" "this" {
   }
 
   headers_config {
-    header_behavior = length(var.cloudfront_origin_headers) == 0 ? "none" : "whitelist"
+    header_behavior = "whitelist"
 
-    dynamic "headers" {
-      for_each = length(var.cloudfront_origin_headers) == 0 ? [] : [true]
-      content {
-        items = var.cloudfront_origin_headers
-      }
+    headers {
+      items = local.cloudfront_origin_headers
     }
   }
 
