@@ -215,6 +215,7 @@ module "proxy" {
 
   debug_use_local_packages = var.debug_use_local_packages
   tf_next_module_root      = path.module
+  multiple_deployments     = var.multiple_deployments
   proxy_config_table_arn   = module.proxy_config.table_arn
 
   providers = {
