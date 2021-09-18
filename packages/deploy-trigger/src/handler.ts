@@ -1,16 +1,23 @@
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import { S3, CloudFront, SQS } from 'aws-sdk';
-
+import unzipper from 'unzipper';
+import { inspect } from 'util';
 import { deployTrigger } from './deploy-trigger';
 import { ExpireValue } from './types';
 import { updateManifest } from './update-manifest';
 import { deploymentConfigurationKey } from './constants';
 import { getOrCreateManifest } from './get-or-create-manifest';
+import createDeployment from './create-deployment';
 import {
   createInvalidation,
   prepareInvalidations,
 } from './create-invalidation';
-import { generateRandomId } from './utils';
+import {
+  generateRandomId,
+  readEnvConfig,
+  readConfigFile,
+  readLambdas,
+} from './utils';
 
 interface InvalidationSQSMessage {
   id: string;
@@ -147,12 +154,76 @@ async function s3Handler(Record: S3EventRecord) {
   }
   const deployBucket = process.env.TARGET_BUCKET;
   const distributionId = process.env.DISTRIBUTION_ID;
-  const expireAfterDays: ExpireValue = parseExpireAfterDays();
+  const staticFilesArchive = process.env.STATIC_FILES_ARCHIVE;
+  const deploymentFile = process.env.DEPLOYMENT_FILE;
 
   // Get needed information of the event
   const { object } = Record.s3;
   const { versionId, key } = object;
   const sourceBucket = Record.s3.bucket.name;
+
+  // We upload the static files archive and a deployment zip to the source bucket.
+  // The deployment zip contains the config file and the lambdas. We then upload the
+  // static files to the deploy bucket and create the deployment infra based on the
+  // lambdas and config file.
+  if (key === staticFilesArchive) {
+    await staticFilesOnS3(s3, deployBucket, sourceBucket, key, distributionId, versionId);
+    console.log(`Uploaded static files to ${deployBucket}`);
+  } else if (key === deploymentFile) {
+    const deploymentId = await deploymentFileOnS3(
+      s3,
+      sourceBucket,
+      key,
+      versionId,
+    );
+    console.log(`Created deployment ${deploymentId}`);
+  } else {
+    console.log(`Received unexpected file: ${key}`);
+  }
+}
+
+async function deploymentFileOnS3(
+  s3: S3,
+  sourceBucket: string,
+  key: string,
+  versionId?: string,
+) {
+  const directory = await unzipper.Open.s3(s3, { Bucket: sourceBucket, Key: key });
+  const configFile = await readConfigFile(directory.files, key);
+
+  if (!configFile.deploymentId) {
+    throw new Error(`Config does not contain deploymentId: ${inspect(configFile)}`);
+  }
+
+  const lambdas = await readLambdas(directory.files);
+  const config = readEnvConfig();
+
+  await createDeployment({
+    deploymentId: configFile.deploymentId,
+    lambdas,
+    config,
+    configFile,
+  });
+
+  // Cleanup
+  await s3.deleteObject({
+    Key: key,
+    Bucket: sourceBucket,
+    VersionId: versionId,
+  }).promise();
+
+  return configFile.deploymentId;
+}
+
+async function staticFilesOnS3(
+  s3: S3,
+  deployBucket: string,
+  sourceBucket: string,
+  key: string,
+  distributionId: string,
+  versionId?: string,
+) {
+  const expireAfterDays: ExpireValue = parseExpireAfterDays();
 
   const manifest = await getOrCreateManifest(
     s3,

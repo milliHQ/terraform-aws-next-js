@@ -3,9 +3,9 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import yargs from 'yargs';
 
-// TODO: Have a central configuration for AWS API versions
 // TODO: Handle trying to delete a deployment that doesn't exist
 // TODO: Handle trying to create a deployment with an id that already exists
+// TODO: What's a good way to get the aws region except for having to set it as env variable?
 
 yargs
   .scriptName('tf-next')
@@ -131,15 +131,21 @@ yargs
     'Create a new deployment that runs in parallel to the existing deployments',
     (yargs_) => {
       return yargs_
+        .option('deployBucket', {
+          type: 'string',
+          description: 'The bucket where the deployment files are uploaded',
+          demandOption: true,
+        })
         .option('verbose', {
           type: 'boolean',
           description: 'Run with verbose logging',
         });
     },
-    async ({ verbose }) => {
+    async ({ deployBucket, verbose }) => {
       const cwd = process.cwd();
       const configFile = path.join(cwd, '.next-tf', 'config.json');
       let deploymentId = cuid();
+      let deploymentArchive = 'deployment.zip';
       let staticFilesArchive = 'static-website-files.zip';
 
       try {
@@ -152,20 +158,13 @@ yargs
         console.error(`Could not parse ${configFile}. Please run build first.`);
       }
 
-      // TODO:
-      // Figure out a good way to pass the current terraform state. Especially
-      // considering that there could be multiple environments (preview,
-      // production). For development/testing, we'll save the current state,
-      // that we get when running `$ terraform show -json` into a file called
-      // `terraform.config.json` at the root of this package.
-      const terraformState = require('../terraform.config.json');
-
       await (await import('./commands/create-deployment')).default({
         deploymentId,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
+        deploymentArchive,
         staticFilesArchive,
-        terraformState,
+        deployBucket,
       });
 
       console.log(`Created deployment ${deploymentId}.`)
