@@ -15,3 +15,8 @@ node_modules
 
 # Log files
 *.log
+
+# direnv
+.direnv
+.envrc
+
