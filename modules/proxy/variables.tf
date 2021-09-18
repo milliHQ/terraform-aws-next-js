@@ -22,6 +22,11 @@ variable "proxy_config_table_arn" {
   default = null
 }
 
+variable "multiple_deployments" {
+  type    = bool
+  default = false
+}
+
 ##########
 # Labeling
 ##########
