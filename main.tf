@@ -204,6 +204,7 @@ module "proxy" {
 
   debug_use_local_packages = var.debug_use_local_packages
   tf_next_module_root      = path.module
+  multiple_deployments     = var.multiple_deployments
   proxy_config_table_arn   = module.proxy_config.table_arn
 
   providers = {
@@ -302,7 +303,7 @@ locals {
       },
       {
         name  = "x-env-config-table"
-        value = module.proxy_config.table_name
+        value = var.multiple_deployments ? module.proxy_config.table_name : ""
       },
       {
         name  = "x-env-config-region"

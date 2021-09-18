@@ -14,6 +14,7 @@ module "proxy_package" {
 #############
 
 data "aws_iam_policy_document" "dynamo_access" {
+  count = var.multiple_deployments ? 1 : 0
   statement {
     actions   = ["dynamodb:GetItem"]
     resources = [var.proxy_config_table_arn]
@@ -31,8 +32,8 @@ module "edge_proxy" {
   handler                   = "handler.handler"
   runtime                   = var.lambda_default_runtime
   role_permissions_boundary = var.lambda_role_permissions_boundary
-  policy_json               = var.proxy_config_table_arn != null ? data.aws_iam_policy_document.dynamo_access.json : null
-  attach_policy_json        = var.proxy_config_table_arn != null
+  policy_json               = var.multiple_deployments ? data.aws_iam_policy_document.dynamo_access[0].json : null
+  attach_policy_json        = var.multiple_deployments
 
   create_package         = false
   local_existing_package = module.proxy_package.abs_path
