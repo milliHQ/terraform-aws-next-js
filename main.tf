@@ -324,7 +324,7 @@ locals {
       },
       {
         name  = "x-env-config-table"
-        value = module.proxy_config.table_name
+        value = var.multiple_deployments ? module.proxy_config.table_name : ""
       },
       {
         name  = "x-env-config-region"
