@@ -158,8 +158,8 @@ data "aws_iam_policy_document" "access_sqs_queue" {
 }
 
 module "lambda_content" {
-  source  = "dealmore/download/npm"
-  version = "1.1.0"
+  source  = "milliHQ/download/npm"
+  version = "2.0.0"
 
   module_name    = "@dealmore/terraform-next-deploy-trigger"
   module_version = var.deploy_trigger_module_version
