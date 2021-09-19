@@ -138,12 +138,15 @@ test('[proxy-unit] slug group and shared lambda', () => {
 });
 
 test('[proxy-unit] multiple named groups', () => {
-  const routesConfig = [
+  const routesConfig: Route[] = [
     {
       src: '^/(?<teamSlug>[^/]+?)/(?<project>[^/]+?)/(?<id>[^/]+?)(?:/)?$',
       dest:
         '/[teamSlug]/[project]/[id]?teamSlug=$teamSlug&project=$project&id=$id',
       check: true,
+    },
+    {
+      handle: 'filesystem',
     },
   ];
   const result = new Proxy(
@@ -158,12 +161,9 @@ test('[proxy-unit] multiple named groups', () => {
     continue: false,
     status: undefined,
     headers: {},
-    uri_args: new URLSearchParams('teamSlug=another&project=invite&id=hello'),
-    matched_route: routesConfig[0],
-    matched_route_idx: 0,
-    userDest: true,
     isDestUrl: false,
-    phase: undefined,
+    phase: 'filesystem',
+    target: 'filesystem',
   });
 });
 
