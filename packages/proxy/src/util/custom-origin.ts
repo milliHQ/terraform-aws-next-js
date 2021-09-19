@@ -24,7 +24,7 @@ export function createCustomOriginFromUrl(
   return [
     {
       domainName: _url.hostname,
-      path: '', // Must not have a tailing / at the end
+      path: '', // Must not have a trailing / at the end
       customHeaders: {},
       keepaliveTimeout: 5,
       port,

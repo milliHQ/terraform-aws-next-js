@@ -1,32 +1,32 @@
 {
   "version": 2,
-  "builds": [{ "src": "package.json", "use": "@vercel/next" }],
+  "builds": [{ "src": "package.json", "use": "tf-next" }],
   "probes": [
     { "path": "/foo/", "status": 200, "mustContain": "foo page" },
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/foo",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/foo/$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/foo/$/"
+      // }
     },
     { "path": "/abc/def/", "status": 200, "mustContain": "nested page" },
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/abc/def",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/abc/def/$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/abc/def/$/"
+      // }
     },
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/test.txt/",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/test\\.txt$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/test\\.txt$/"
+      // }
     },
     {
       "fetchOptions": { "redirect": "manual" },
@@ -37,10 +37,10 @@
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/blog/post-1",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/blog/post-1/$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/blog/post-1/$/"
+      // }
     },
     {
       "fetchOptions": { "redirect": "manual" },
@@ -51,10 +51,10 @@
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/_next/data/testing-build-id/blog/post-1.json/",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/_next/data/testing-build-id/blog/post-1.json$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/_next/data/testing-build-id/blog/post-1.json$/"
+      // }
     },
     {
       "fetchOptions": { "redirect": "manual" },
@@ -65,10 +65,10 @@
     {
       "fetchOptions": { "redirect": "manual" },
       "path": "/api/hello",
-      "status": 308,
-      "responseHeaders": {
-        "refresh": "/url=/api/hello/$/"
-      }
+      "status": 308
+      // "responseHeaders": {
+      //   "refresh": "/url=/api/hello/$/"
+      // }
     },
     {
       "fetchOptions": { "redirect": "manual" },
