@@ -68,9 +68,39 @@ export class Proxy {
     this.staticRoutes = new Set<string>(staticRoutes);
   }
 
-  _checkFileSystem = (path: string) => {
-    return this.staticRoutes.has(path);
-  };
+  /**
+   * Checks if the requested path matches a static file from the filesystem
+   *
+   * @param requestedFilePath - Path to the potential file
+   * @returns Absolute path to the file that is matched, otherwise null
+   */
+  private _checkFileSystem(requestedFilePath: string): string | null {
+    // 1: Check if the original filePath is present
+    if (this.staticRoutes.has(requestedFilePath)) {
+      return requestedFilePath;
+    }
+
+    // 2: The last character in the requested filePath is a `/`
+    if (requestedFilePath.charAt(requestedFilePath.length - 1) === '/') {
+      // 2.1: Remove trailing `/`
+      const requestedFilePathWithoutTrailingSlash = requestedFilePath.slice(
+        0,
+        -1
+      );
+      if (this.staticRoutes.has(requestedFilePathWithoutTrailingSlash)) {
+        return requestedFilePathWithoutTrailingSlash;
+      }
+
+      // 2.2: Replace trailing `/` with `/index`
+      const requestedFilePathWithIndexExtension = `${requestedFilePath}index`;
+      if (this.staticRoutes.has(requestedFilePathWithIndexExtension)) {
+        return requestedFilePathWithIndexExtension;
+      }
+    }
+
+    // requestedFilePath does not match a static route
+    return null;
+  }
 
   route(reqUrl: string) {
     const parsedUrl = parseUrl(reqUrl);
@@ -104,11 +134,10 @@ export class Proxy {
         // Check if the path is a static file that should be served from the
         // filesystem
         if (routeConfig.handle === 'filesystem') {
-          // Replace tailing `/` with `/index`
-          const filePath = reqPathname.replace(/\/$/, '/index');
+          const filePath = this._checkFileSystem(reqPathname);
 
           // Check if the route matches a route from the filesystem
-          if (this._checkFileSystem(filePath)) {
+          if (filePath !== null) {
             result = {
               found: true,
               target: 'filesystem',
@@ -206,19 +235,12 @@ export class Proxy {
             // for the next iteration
             const nextUrl = parseUrl(destPath);
             reqPathname = nextUrl.pathname!;
-
-            // Check if we have a static route
-            // Convert to filePath first, since routes with tailing `/` are
-            // stored as `/index` in filesystem
-            const filePath = reqPathname.replace(/\/$/, '/index');
-            if (!this.staticRoutes.has(filePath)) {
-              appendURLSearchParams(searchParams, nextUrl.searchParams);
-              continue;
-            }
+            appendURLSearchParams(searchParams, nextUrl.searchParams);
+            continue;
           }
         }
 
-        if (!destPath.startsWith('/')) {
+        if (destPath.charAt(0) !== '/') {
           destPath = `/${destPath}`;
         }
 

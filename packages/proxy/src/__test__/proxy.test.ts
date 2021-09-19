@@ -111,12 +111,12 @@ describe('Proxy', () => {
       );
     });
 
-    test('/hello/: Tailing slash', () => {
+    test('/hello/: Trailing slash', () => {
       const route = proxy.route('/hello/');
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
-          dest: '/hello/',
+          dest: '/hello',
           status: 308,
           headers: {
             Location: '/hello',
@@ -125,15 +125,15 @@ describe('Proxy', () => {
       );
     });
 
-    test('/unknown-route-with-tailing-slash/: Redirect tailing slash of unknown route', () => {
-      const route = proxy.route('/unknown-route-with-tailing-slash/');
+    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', () => {
+      const route = proxy.route('/unknown-route-with-trailing-slash/');
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
-          dest: '/unknown-route-with-tailing-slash/',
+          dest: '/unknown-route-with-trailing-slash/',
           status: 308,
           headers: {
-            Location: '/unknown-route-with-tailing-slash',
+            Location: '/unknown-route-with-trailing-slash',
           },
         })
       );
@@ -153,15 +153,15 @@ describe('Proxy', () => {
       );
     });
 
-    test('/unknown-route-with-tailing-slash/: Redirect tailing slash of unknown route', () => {
-      const route = proxy.route('/unknown-route-with-tailing-slash/');
+    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', () => {
+      const route = proxy.route('/unknown-route-with-trailing-slash/');
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
-          dest: '/unknown-route-with-tailing-slash/',
+          dest: '/unknown-route-with-trailing-slash/',
           status: 308,
           headers: {
-            Location: '/unknown-route-with-tailing-slash',
+            Location: '/unknown-route-with-trailing-slash',
           },
         })
       );

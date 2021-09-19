@@ -222,8 +222,8 @@ test('[proxy-unit] Continue after first route found', () => {
   });
 });
 
-test('[proxy-unit] Redirect: Remove tailing slash', () => {
-  const routesConfig = [
+test('[proxy-unit] Redirect: Remove trailing slash', () => {
+  const routesConfig: Route[] = [
     {
       src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
       headers: {
@@ -232,23 +232,22 @@ test('[proxy-unit] Redirect: Remove tailing slash', () => {
       status: 308,
       continue: true,
     },
+    {
+      handle: 'filesystem',
+    },
   ];
   const proxy = new Proxy(routesConfig, [], ['/test']);
 
   const result1 = proxy.route('/test/');
   expect(result1).toEqual({
     found: true,
-    dest: '/test/',
-    continue: true,
+    dest: '/test',
+    continue: false,
     status: 308,
     headers: { Location: '/test' },
-    uri_args: new URLSearchParams(),
-    matched_route: routesConfig[0],
-    matched_route_idx: 0,
-    userDest: false,
     isDestUrl: false,
-    phase: undefined,
-    target: undefined,
+    phase: 'filesystem',
+    target: 'filesystem',
   });
 
   const result2 = proxy.route('/other-route/');
@@ -265,6 +264,39 @@ test('[proxy-unit] Redirect: Remove tailing slash', () => {
     isDestUrl: false,
     phase: undefined,
     target: undefined,
+  });
+});
+
+test('[proxy-unit] With trailing slash', () => {
+  const routesConfig: Route[] = [
+    {
+      handle: 'filesystem',
+    },
+  ];
+  const proxy = new Proxy(routesConfig, [], ['/index', '/test']);
+
+  const result1 = proxy.route('/test/');
+  expect(result1).toEqual({
+    found: true,
+    dest: '/test',
+    continue: false,
+    status: undefined,
+    headers: {},
+    isDestUrl: false,
+    phase: 'filesystem',
+    target: 'filesystem',
+  });
+
+  const result2 = proxy.route('/');
+  expect(result2).toEqual({
+    found: true,
+    dest: '/index',
+    continue: false,
+    status: undefined,
+    headers: {},
+    isDestUrl: false,
+    phase: 'filesystem',
+    target: 'filesystem',
   });
 });
 
