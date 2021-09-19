@@ -422,7 +422,11 @@ module "cloudfront_main" {
 
   source = "./modules/cloudfront-main"
 
-  cloudfront_price_class             = var.cloudfront_price_class
+  cloudfront_price_class              = var.cloudfront_price_class
+  cloudfront_aliases                  = var.cloudfront_aliases
+  cloudfront_acm_certificate_arn      = var.cloudfront_acm_certificate_arn
+  cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
+
   cloudfront_default_root_object     = local.cloudfront_default_root_object
   cloudfront_origins                 = local.cloudfront_origins
   cloudfront_default_behavior        = local.cloudfront_default_behavior
