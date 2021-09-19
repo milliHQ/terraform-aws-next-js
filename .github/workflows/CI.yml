@@ -36,7 +36,7 @@ jobs:
         run: yarn workspace tf-next build
 
       - name: Build proxy
-        run: yarn workspace @dealmore/terraform-next-proxy build
+        run: yarn workspace @millihq/terraform-next-proxy build
 
       - name: Build deploy-trigger
         run: yarn workspace @dealmore/terraform-next-deploy-trigger build
