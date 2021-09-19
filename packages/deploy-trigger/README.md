@@ -1,6 +1,6 @@
 # Terraform Next.js Deploy trigger component
 
-Deploy trigger component of [Terraform Next.js module for AWS](https://github.com/dealmore/terraform-aws-next-js).
+Deploy trigger component of [Terraform Next.js module for AWS](https://github.com/milliHQ/terraform-aws-next-js).
 
 ## License
 

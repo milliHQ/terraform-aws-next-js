@@ -154,7 +154,7 @@ data "aws_iam_policy_document" "access_static_deployment" {
 module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
-  source  = "dealmore/next-js-image-optimization/aws"
+  source  = "milliHQ/next-js-image-optimization/aws"
   version = ">= 11.0.0"
 
   cloudfront_create_distribution = false
