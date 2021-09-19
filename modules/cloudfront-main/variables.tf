@@ -7,8 +7,8 @@ variable "cloudfront_price_class" {
 }
 
 variable "cloudfront_aliases" {
-  type        = list(string)
-  default     = []
+  type    = list(string)
+  default = []
 }
 
 variable "cloudfront_acm_certificate_arn" {
@@ -17,8 +17,8 @@ variable "cloudfront_acm_certificate_arn" {
 }
 
 variable "cloudfront_minimum_protocol_version" {
-  type        = string
-  default     = "TLSv1"
+  type    = string
+  default = "TLSv1"
 }
 
 variable "cloudfront_default_root_object" {

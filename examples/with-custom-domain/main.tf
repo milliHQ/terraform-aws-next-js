@@ -83,8 +83,8 @@ module "cloudfront_cert" {
   source  = "terraform-aws-modules/acm/aws"
   version = "~> 3.0"
 
-  domain_name = var.custom_domain
-  zone_id     = data.aws_route53_zone.custom_domain_zone.zone_id
+  domain_name               = var.custom_domain
+  zone_id                   = data.aws_route53_zone.custom_domain_zone.zone_id
   subject_alternative_names = slice(local.aliases, 1, length(local.aliases))
 
   tags = {

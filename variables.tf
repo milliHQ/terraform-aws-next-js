@@ -112,8 +112,8 @@ variable "cloudfront_aliases" {
 
 variable "cloudfront_acm_certificate_arn" {
   description = "ACM certificate arn for custom_domain"
-  type    = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "cloudfront_minimum_protocol_version" {
