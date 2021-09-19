@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dealmore/terraform-next.js.git",
+    "url": "https://github.com/milliHQ/terraform-next.js.git",
     "directory": "packages/node-bridge"
   },
   "main": "./dist/bridge.js",

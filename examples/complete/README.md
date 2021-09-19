@@ -1,15 +1,15 @@
 # Terraform Next.js complete example
 
-This example contains a fully featured Next.js app (Static files, API-Routes, SSR) that can be deployed using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/dealmore/next-js/aws) module.
+This example contains a fully featured Next.js app (Static files, API-Routes, SSR) that can be deployed using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/milliHQ/next-js/aws) module.
 
-You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/complete).
+You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete).
 
 ## Setup
 
 Download the files from the example app:
 
 ```sh
-yarn create next-app --example https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/complete my-app
+yarn create next-app --example https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete my-app
 
 cd my-app
 ```

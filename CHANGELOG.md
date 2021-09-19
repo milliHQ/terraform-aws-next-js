@@ -9,17 +9,17 @@ No configuration changes should be necessary when upgrading from the `0.9.0` rel
 
 ### Terraform module
 
-- Upgrades Proxy component to 0.7.0 ([#139](https://github.com/dealmore/terraform-aws-next-js/issues/139), [#141](https://github.com/dealmore/terraform-aws-next-js/pull/141))
-- Upgrades [Terraform Next.js Image Optimization module for AWS](https://github.com/dealmore/terraform-aws-next-js-image-optimization) to `11.x.x` release ([#142](https://github.com/dealmore/terraform-aws-next-js/issues/142), [#144](https://github.com/dealmore/terraform-aws-next-js/pull/144))  
+- Upgrades Proxy component to 0.7.0 ([#139](https://github.com/milliHQ/terraform-aws-next-js/issues/139), [#141](https://github.com/milliHQ/terraform-aws-next-js/pull/141))
+- Upgrades [Terraform Next.js Image Optimization module for AWS](https://github.com/milliHQ/terraform-aws-next-js-image-optimization) to `11.x.x` release ([#142](https://github.com/milliHQ/terraform-aws-next-js/issues/142), [#144](https://github.com/milliHQ/terraform-aws-next-js/pull/144))  
   The image optimizer Lambda now uses `2048mb` RAM by default (from `1024mb`) to improve resizing speed.
   You can change that amount with the newly introduced variable `image_optimization_lambda_memory_size`.
   This has no effect on the Lambda functions that serve the Next.js pages or api routes (they remain at `1024mb` by default).
-- Bump AWS Lambda Terraform module from 1.47.0 to 2.4.0 ([#145](https://github.com/dealmore/terraform-aws-next-js/pull/145))
-- Bump AWS API Gateway Terraform module from 0.11.0 to 1.1.0 ([#146](https://github.com/dealmore/terraform-aws-next-js/pull/146))
+- Bump AWS Lambda Terraform module from 1.47.0 to 2.4.0 ([#145](https://github.com/milliHQ/terraform-aws-next-js/pull/145))
+- Bump AWS API Gateway Terraform module from 0.11.0 to 1.1.0 ([#146](https://github.com/milliHQ/terraform-aws-next-js/pull/146))
 
 ## Proxy (0.7.0)
 
-- Fix root route rewrites ([#139](https://github.com/dealmore/terraform-aws-next-js/issues/139), [#141](https://github.com/dealmore/terraform-aws-next-js/pull/141))
+- Fix root route rewrites ([#139](https://github.com/milliHQ/terraform-aws-next-js/issues/139), [#141](https://github.com/milliHQ/terraform-aws-next-js/pull/141))
 
 ## 0.9.0 - (June 15, 2021)
 
@@ -44,40 +44,40 @@ If you use one of the following input variables read below for more information 
 
 If you are already using one of these input variables you should now create a new CloudFront resource in your `main.tf` file and link it with the Next.js module.
 
-For more information please see the ["with existing CloudFront"](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront) and ["with custom domain"](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/with-custom-domain) examples.
+For more information please see the ["with existing CloudFront"](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront) and ["with custom domain"](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-custom-domain) examples.
 
 ### Terraform module
 
-- Enable usage of external CloudFront resource ([#55](https://github.com/dealmore/terraform-aws-next-js/issues/55), [#134](https://github.com/dealmore/terraform-aws-next-js/pull/134), [#137](https://github.com/dealmore/terraform-aws-next-js/pull/137))
-- Queue CloudFront invalidations ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#125](https://github.com/dealmore/terraform-aws-next-js/pull/125))
-- Attaching Lambda to VPC ([#110](https://github.com/dealmore/terraform-aws-next-js/issues/110), [#111](https://github.com/dealmore/terraform-aws-next-js/pull/111))  
+- Enable usage of external CloudFront resource ([#55](https://github.com/milliHQ/terraform-aws-next-js/issues/55), [#134](https://github.com/milliHQ/terraform-aws-next-js/pull/134), [#137](https://github.com/milliHQ/terraform-aws-next-js/pull/137))
+- Queue CloudFront invalidations ([#48](https://github.com/milliHQ/terraform-aws-next-js/issues/48), [#125](https://github.com/milliHQ/terraform-aws-next-js/pull/125))
+- Attaching Lambda to VPC ([#110](https://github.com/milliHQ/terraform-aws-next-js/issues/110), [#111](https://github.com/milliHQ/terraform-aws-next-js/pull/111))  
   Thanks to [@chamilad](https://github.com/chamilad) for contributing!
-- Remove provider proxy from proxy-config module ([#102](https://github.com/dealmore/terraform-aws-next-js/issues/102), [#124](https://github.com/dealmore/terraform-aws-next-js/pull/124))
+- Remove provider proxy from proxy-config module ([#102](https://github.com/milliHQ/terraform-aws-next-js/issues/102), [#124](https://github.com/milliHQ/terraform-aws-next-js/pull/124))
 
 ## Proxy (0.6.0)
 
-- Support rewriting to an external URL ([#65](https://github.com/dealmore/terraform-aws-next-js/issues/65), [#120](https://github.com/dealmore/terraform-aws-next-js/pull/120))
-- Bump runtime from `nodejs12.x` to `nodejs14.x` ([#136](https://github.com/dealmore/terraform-aws-next-js/pull/136))
+- Support rewriting to an external URL ([#65](https://github.com/milliHQ/terraform-aws-next-js/issues/65), [#120](https://github.com/milliHQ/terraform-aws-next-js/pull/120))
+- Bump runtime from `nodejs12.x` to `nodejs14.x` ([#136](https://github.com/milliHQ/terraform-aws-next-js/pull/136))
 
 ### Deploy trigger (0.4.0)
 
-- Queue CloudFront invalidations ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#125](https://github.com/dealmore/terraform-aws-next-js/pull/125))
+- Queue CloudFront invalidations ([#48](https://github.com/milliHQ/terraform-aws-next-js/issues/48), [#125](https://github.com/milliHQ/terraform-aws-next-js/pull/125))
 
 ## tf-next (0.7.0)
 
-- Adds support for yarn workspaces ([#93](https://github.com/dealmore/terraform-aws-next-js/issues/93), [#107](https://github.com/dealmore/terraform-aws-next-js/pull/107))
+- Adds support for yarn workspaces ([#93](https://github.com/milliHQ/terraform-aws-next-js/issues/93), [#107](https://github.com/milliHQ/terraform-aws-next-js/pull/107))
 
 ### Runtime (1.1.0)
 
-- Bump @vercel/nft from 0.9.5 to 0.10.0 ([#112](https://github.com/dealmore/terraform-aws-next-js/pull/112))
+- Bump @vercel/nft from 0.9.5 to 0.10.0 ([#112](https://github.com/milliHQ/terraform-aws-next-js/pull/112))
 
 ## 0.8.1 - (April 27, 2021)
 
 ### Terraform module
 
-- Fixes compatibility with Terraform 0.15 ([#115](https://github.com/dealmore/terraform-aws-next-js/issues/115), [#118](https://github.com/dealmore/terraform-aws-next-js/pull/118))
-- Bump AWS Lambda Terraform module from 1.34.0 to 1.47.0 ([#117](https://github.com/dealmore/terraform-aws-next-js/pull/117))
-- Bump Next.js Image Optimization module from 10.0.5 to 10.0.8 ([#116](https://github.com/dealmore/terraform-aws-next-js/pull/116))
+- Fixes compatibility with Terraform 0.15 ([#115](https://github.com/milliHQ/terraform-aws-next-js/issues/115), [#118](https://github.com/milliHQ/terraform-aws-next-js/pull/118))
+- Bump AWS Lambda Terraform module from 1.34.0 to 1.47.0 ([#117](https://github.com/milliHQ/terraform-aws-next-js/pull/117))
+- Bump Next.js Image Optimization module from 10.0.5 to 10.0.8 ([#116](https://github.com/milliHQ/terraform-aws-next-js/pull/116))
 
 ## 0.8.0 - (April 05, 2021)
 
@@ -110,73 +110,73 @@ module "tf_next" {
 
 ### Terraform module
 
-- Removes internal AWS provider for `us-east-1` region ([#50](https://github.com/dealmore/terraform-aws-next-js/issues/50), [#101](https://github.com/dealmore/terraform-aws-next-js/pull/101))
-- Enable Brotli compression for CloudFront ([#8](https://github.com/dealmore/terraform-aws-next-js/issues/8), [#82](https://github.com/dealmore/terraform-aws-next-js/pull/82))
-- Adds `cloudfront_geo_restriction` variable ([#97](https://github.com/dealmore/terraform-aws-next-js/pull/97))
-- Use `nodejs14.x` as default runtime for Lambda ([#67](https://github.com/dealmore/terraform-aws-next-js/pull/67), [#80](https://github.com/dealmore/terraform-aws-next-js/issues/80), [#81](https://github.com/dealmore/terraform-aws-next-js/pull/81))
+- Removes internal AWS provider for `us-east-1` region ([#50](https://github.com/milliHQ/terraform-aws-next-js/issues/50), [#101](https://github.com/milliHQ/terraform-aws-next-js/pull/101))
+- Enable Brotli compression for CloudFront ([#8](https://github.com/milliHQ/terraform-aws-next-js/issues/8), [#82](https://github.com/milliHQ/terraform-aws-next-js/pull/82))
+- Adds `cloudfront_geo_restriction` variable ([#97](https://github.com/milliHQ/terraform-aws-next-js/pull/97))
+- Use `nodejs14.x` as default runtime for Lambda ([#67](https://github.com/milliHQ/terraform-aws-next-js/pull/67), [#80](https://github.com/milliHQ/terraform-aws-next-js/issues/80), [#81](https://github.com/milliHQ/terraform-aws-next-js/pull/81))
 
 ### Deploy trigger (0.3.0)
 
-- CloudFront invalidations for static files (e.g. static prerendered HTML or files from `public/`) are only issues if the eTag of the file changes ([#48](https://github.com/dealmore/terraform-aws-next-js/issues/48), [#91](https://github.com/dealmore/terraform-aws-next-js/pull/91))
+- CloudFront invalidations for static files (e.g. static prerendered HTML or files from `public/`) are only issues if the eTag of the file changes ([#48](https://github.com/milliHQ/terraform-aws-next-js/issues/48), [#91](https://github.com/milliHQ/terraform-aws-next-js/pull/91))
 
 ### tf-next (0.6.1)
 
-- Ensure that `INIT_CWD` environment variable is set to the correct working directory ([#87](https://github.com/dealmore/terraform-aws-next-js/pull/87))
+- Ensure that `INIT_CWD` environment variable is set to the correct working directory ([#87](https://github.com/milliHQ/terraform-aws-next-js/pull/87))
 
 ### tf-next (0.6.0)
 
-- Allows dependencies (e.g. Prisma & Blitz.js) to correctly detect the build environment ([#70](https://github.com/dealmore/terraform-aws-next-js/issues/70), [#73](https://github.com/dealmore/terraform-aws-next-js/issues/73), [#85](https://github.com/dealmore/terraform-aws-next-js/pull/85))
+- Allows dependencies (e.g. Prisma & Blitz.js) to correctly detect the build environment ([#70](https://github.com/milliHQ/terraform-aws-next-js/issues/70), [#73](https://github.com/milliHQ/terraform-aws-next-js/issues/73), [#85](https://github.com/milliHQ/terraform-aws-next-js/pull/85))
 
 ## 0.7.4 (April 03, 2021)
 
 ### Terraform module
 
-- Use `concat` instead of `merge` for custom CloudFront origins and cache behaviors ([#66](https://github.com/dealmore/terraform-aws-next-js/issues/66), [#105](https://github.com/dealmore/terraform-aws-next-js/pull/105))
+- Use `concat` instead of `merge` for custom CloudFront origins and cache behaviors ([#66](https://github.com/milliHQ/terraform-aws-next-js/issues/66), [#105](https://github.com/milliHQ/terraform-aws-next-js/pull/105))
 
 ## 0.7.3 (March 08, 2021)
 
 ### Terraform module
 
-- Bump internal module `terraform-aws-modules/apigateway-v2/aws` from `0.5.0` to `0.11.0` ([#68](https://github.com/dealmore/terraform-aws-next-js/pull/68))
-- Bump internal module `dealmore/next-js-image-optimization/aws` from `2.0.0` to `2.0.1` ([#68](https://github.com/dealmore/terraform-aws-next-js/pull/68))
+- Bump internal module `terraform-aws-modules/apigateway-v2/aws` from `0.5.0` to `0.11.0` ([#68](https://github.com/milliHQ/terraform-aws-next-js/pull/68))
+- Bump internal module `dealmore/next-js-image-optimization/aws` from `2.0.0` to `2.0.1` ([#68](https://github.com/milliHQ/terraform-aws-next-js/pull/68))
 
 ## 0.7.2 (March 04, 2021)
 
 ### Terraform module
 
-- Fix for invalid function argument error introduced by `0.7.1` release ([#59](https://github.com/dealmore/terraform-aws-next-js/issues/59))
+- Fix for invalid function argument error introduced by `0.7.1` release ([#59](https://github.com/milliHQ/terraform-aws-next-js/issues/59))
 
 ## 0.7.1 (March 04, 2021)
 
 ### Terraform module
 
-- Add option to set the image optimizer version ([#58](https://github.com/dealmore/terraform-aws-next-js/issues/58))
+- Add option to set the image optimizer version ([#58](https://github.com/milliHQ/terraform-aws-next-js/issues/58))
 
 ## 0.7.0 (February 13, 2021)
 
 This release brings support for [Next.js image optimization](https://nextjs.org/docs/basic-features/image-optimization) 📸.  
 No extra config is needed, simply update the Terraform module and the `tf-next` package to the latest version!  
-Check out our example for more information: [Next image component example](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/next-image)
+Check out our example for more information: [Next image component example](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image)
 
 You can always opt-out from creating resources for image optimization by setting `create_image_optimization = false`.
 
 ### Terraform module
 
-- Adds support for `next/image` component ([#28](https://github.com/dealmore/terraform-aws-next-js/issues/28), [#51](https://github.com/dealmore/terraform-aws-next-js/pull/51))
+- Adds support for `next/image` component ([#28](https://github.com/milliHQ/terraform-aws-next-js/issues/28), [#51](https://github.com/milliHQ/terraform-aws-next-js/pull/51))
 - Refactoring: Outsources a previously private Terraform module, that is now used across multiple projects. Is now avaiable here: [NPM Download Terraform module
-  ](https://registry.terraform.io/modules/dealmore/download/npm) ([#41](https://github.com/dealmore/terraform-aws-next-js/issues/41))
+  ](https://registry.terraform.io/modules/milliHQ/download/npm) ([#41](https://github.com/milliHQ/terraform-aws-next-js/issues/41))
 
 ### tf-next (0.5.0)
 
-- Adds support for `next/image` component ([#28](https://github.com/dealmore/terraform-aws-next-js/issues/28), [#51](https://github.com/dealmore/terraform-aws-next-js/pull/51))
+- Adds support for `next/image` component ([#28](https://github.com/milliHQ/terraform-aws-next-js/issues/28), [#51](https://github.com/milliHQ/terraform-aws-next-js/pull/51))
 
 ### Proxy (0.5.0)
 
-- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/dealmore/terraform-aws-next-js/issues/43))
+- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/milliHQ/terraform-aws-next-js/issues/43))
 
 ### Deploy trigger (0.2.0)
 
-- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/dealmore/terraform-aws-next-js/issues/43))
+- Internal refactoring which changes the way the module is bundled. No feature changes ([#43](https://github.com/milliHQ/terraform-aws-next-js/issues/43))
 
 ## 0.6.2 (January 19, 2021)
 
@@ -189,11 +189,11 @@ You can always opt-out from creating resources for image optimization by setting
 
 ### Terraform module
 
-- Fix: Correctly propagate the permissions boundary (`lambda_role_permissions_boundary`) to all Lambda & Lambda@Edge functions ([#38](https://github.com/dealmore/terraform-aws-next-js/pull/38))
+- Fix: Correctly propagate the permissions boundary (`lambda_role_permissions_boundary`) to all Lambda & Lambda@Edge functions ([#38](https://github.com/milliHQ/terraform-aws-next-js/pull/38))
 
 ### tf-next (0.4.1)
 
-- Fix: Request cookie header should be semi-colon delimitated ([#39](https://github.com/dealmore/terraform-aws-next-js/pull/39))
+- Fix: Request cookie header should be semi-colon delimitated ([#39](https://github.com/milliHQ/terraform-aws-next-js/pull/39))
 
 ## 0.6.0 (January 16, 2021)
 
@@ -208,15 +208,15 @@ yarn upgrade tf-next@latest  # yarn
 
 ### Terraform module
 
-- Upgrade to API Gateway Payload V2.0 ([#29](https://github.com/dealmore/terraform-aws-next-js/issues/29), [#31](https://github.com/dealmore/terraform-aws-next-js/pull/31))  
+- Upgrade to API Gateway Payload V2.0 ([#29](https://github.com/milliHQ/terraform-aws-next-js/issues/29), [#31](https://github.com/milliHQ/terraform-aws-next-js/pull/31))  
   This is only an upgrade of the internally API used by Lambda and API Gateway (Not the resource itself, since we already use API Gateway V2). See this [guide](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html) for a detailed look at the differences between the V1.0 and V2.0 format.
   It fixes a bug where no multi-value headers could be sent by a SSR or API page.
-- Sends an error message when you try to use the Terraform module together with an old version of `tf-next` ([#5](https://github.com/dealmore/terraform-aws-next-js/issues/5), [#37](https://github.com/dealmore/terraform-aws-next-js/pull/37))
+- Sends an error message when you try to use the Terraform module together with an old version of `tf-next` ([#5](https://github.com/milliHQ/terraform-aws-next-js/issues/5), [#37](https://github.com/milliHQ/terraform-aws-next-js/pull/37))
 - Upgrades proxy component to `v0.4.0`
 
 ### tf-next (0.4.0)
 
-- Adds a version number to the config file, so that the Terraform module is able to warn about a possible version mismatch ([#5](https://github.com/dealmore/terraform-aws-next-js/issues/5), [#37](https://github.com/dealmore/terraform-aws-next-js/pull/37))
+- Adds a version number to the config file, so that the Terraform module is able to warn about a possible version mismatch ([#5](https://github.com/milliHQ/terraform-aws-next-js/issues/5), [#37](https://github.com/milliHQ/terraform-aws-next-js/pull/37))
 
 ### Proxy (0.4.0)
 
@@ -226,20 +226,20 @@ yarn upgrade tf-next@latest  # yarn
 
 ### Terraform module
 
-- Fix: Pass permissions boundary to edge proxy lambda ([#35](https://github.com/dealmore/terraform-aws-next-js/pull/35))
+- Fix: Pass permissions boundary to edge proxy lambda ([#35](https://github.com/milliHQ/terraform-aws-next-js/pull/35))
 
 ## 0.5.2 (January 14, 2021)
 
 ### Terraform module
 
-- Adds `tags` variable to set tags on supported AWS resources ([#34](https://github.com/dealmore/terraform-aws-next-js/pull/34))
-- Adds `lambda_role_permissions_boundary` variable for setting a permission boundary for the Lambda role ([#33](https://github.com/dealmore/terraform-aws-next-js/pull/33))
+- Adds `tags` variable to set tags on supported AWS resources ([#34](https://github.com/milliHQ/terraform-aws-next-js/pull/34))
+- Adds `lambda_role_permissions_boundary` variable for setting a permission boundary for the Lambda role ([#33](https://github.com/milliHQ/terraform-aws-next-js/pull/33))
 
 ## 0.5.1 (January 13, 2021)
 
 ### Terraform module
 
-- Adds `cloudfront_hosted_zone_id` output ([#30](https://github.com/dealmore/terraform-aws-next-js/pull/30)).
+- Adds `cloudfront_hosted_zone_id` output ([#30](https://github.com/milliHQ/terraform-aws-next-js/pull/30)).
 
 ## 0.5.0 (January 03, 2021)
 
@@ -248,7 +248,7 @@ With this release we bring native support for [redirects](https://nextjs.org/doc
 
 ### Proxy (0.3.0)
 
-- Adds ability to handle redirects ([#10](https://github.com/dealmore/terraform-aws-next-js/issues/10), [#24](https://github.com/dealmore/terraform-aws-next-js/pull/24)).
+- Adds ability to handle redirects ([#10](https://github.com/milliHQ/terraform-aws-next-js/issues/10), [#24](https://github.com/milliHQ/terraform-aws-next-js/pull/24)).
 
 ### tf-next (0.3.0)
 
@@ -259,7 +259,7 @@ With this release we bring native support for [redirects](https://nextjs.org/doc
 
 ## 0.4.0 (December 30, 2020)
 
-- Adds [new example](https://github.com/dealmore/terraform-aws-next-js/blob/main/examples/custom-domain) how to use custom domains.
+- Adds [new example](https://github.com/milliHQ/terraform-aws-next-js/blob/main/examples/custom-domain) how to use custom domains.
 
 ### Terraform module
 
@@ -282,17 +282,17 @@ With this release we bring native support for [redirects](https://nextjs.org/doc
 
 ## 0.2.0 (December 22, 2020)
 
-> **Note:** This will be the last release with support for Terraform `v12.x`, see [#18](https://github.com/dealmore/terraform-aws-next-js/issues/18) for more information.
+> **Note:** This will be the last release with support for Terraform `v12.x`, see [#18](https://github.com/milliHQ/terraform-aws-next-js/issues/18) for more information.
 
 ### Terraform module
 
 - Destroy non-empty S3 buckets on stack deletion
-- Experimental support for pre-Rendered routes ([#16](https://github.com/dealmore/terraform-aws-next-js/issues/16))
+- Experimental support for pre-Rendered routes ([#16](https://github.com/milliHQ/terraform-aws-next-js/issues/16))
 
 ### Terraform Next Build
 
-- Experimental support for pre-Rendered routes ([#16](https://github.com/dealmore/terraform-aws-next-js/issues/16))
+- Experimental support for pre-Rendered routes ([#16](https://github.com/milliHQ/terraform-aws-next-js/issues/16))
 
 ### Proxy
 
-- Experimental support for pre-Rendered routes ([#16](https://github.com/dealmore/terraform-aws-next-js/issues/16))
+- Experimental support for pre-Rendered routes ([#16](https://github.com/milliHQ/terraform-aws-next-js/issues/16))
