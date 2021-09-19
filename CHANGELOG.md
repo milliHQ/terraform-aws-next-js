@@ -1,6 +1,35 @@
 # Changelog
 
-## 0.9.1 - (June 20, 2021)
+## 0.9.2 (September 19, 2021)
+
+⚠️ Namespace changed ⚠️
+
+We [recently changed](https://github.com/milliHQ/terraform-aws-next-js/issues/194) the namespace of this module from `dealmore` to `milliHQ`. Make sure to upgrade the source of the module accordingly:
+
+```diff
+module "tf_next" {
+-  source = "dealmore/next-js/aws"
++  source = "milliHQ/next-js/aws"
+
+ ...
+}
+```
+
+---
+
+Besides from the namespace change, this release has now an improved experience when using it with [custom domains](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-custom-domain) and some bugfixes to the proxy component when using the [`trailingSlash` option](https://nextjs.org/docs/api-reference/next.config.js/trailing-slash) from Next.js.
+
+### Terraform module
+
+- It's now possible to use domain aliases without creating an external CloudFront distribution ([#192](https://github.com/milliHQ/terraform-aws-next-js/pull/192))
+- Ensure `x-nextjs-page` header gets forwarded ([#190](https://github.com/milliHQ/terraform-aws-next-js/pull/190))
+- Bump `milliHQ/download/npm` from 1.1.0 to 2.0.0 ([#193](https://github.com/milliHQ/terraform-aws-next-js/pull/193))
+
+### Proxy (0.8.0)
+
+- Improve filesystem routes for trailing slashes ([#162](https://github.com/milliHQ/terraform-aws-next-js/pull/162), [#180](https://github.com/milliHQ/terraform-aws-next-js/issues/180), [#182](https://github.com/milliHQ/terraform-aws-next-js/pull/182), [#191](https://github.com/milliHQ/terraform-aws-next-js/pull/191))
+
+## 0.9.1 (June 20, 2021)
 
 This is a maintenance release which upgrades the image optimizer module to the latest version.
 We also changed the behavior of the proxy module so that the default root object in CloudFront is no longer necessary.
@@ -17,7 +46,7 @@ No configuration changes should be necessary when upgrading from the `0.9.0` rel
 - Bump AWS Lambda Terraform module from 1.47.0 to 2.4.0 ([#145](https://github.com/milliHQ/terraform-aws-next-js/pull/145))
 - Bump AWS API Gateway Terraform module from 0.11.0 to 1.1.0 ([#146](https://github.com/milliHQ/terraform-aws-next-js/pull/146))
 
-## Proxy (0.7.0)
+### Proxy (0.7.0)
 
 - Fix root route rewrites ([#139](https://github.com/milliHQ/terraform-aws-next-js/issues/139), [#141](https://github.com/milliHQ/terraform-aws-next-js/pull/141))
 
