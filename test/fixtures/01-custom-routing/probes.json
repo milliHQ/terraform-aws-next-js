@@ -27,11 +27,11 @@
       }
     },
     {
-      "path": "/unknown-route-with-tailing-slash/",
+      "path": "/unknown-route-with-trailing-slash/",
       "status": 308,
       "statusDescription": "Permanent Redirect",
       "responseHeaders": {
-        "location": "/unknown-route-with-tailing-slash"
+        "location": "/unknown-route-with-trailing-slash"
       }
     },
     {
