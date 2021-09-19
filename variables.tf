@@ -13,6 +13,12 @@ variable "create_image_optimization" {
   default     = true
 }
 
+variable "image_optimization_lambda_memory_size" {
+  description = "Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments."
+  type        = number
+  default     = 2048
+}
+
 variable "expire_static_assets" {
   description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
   type        = number
@@ -96,6 +102,24 @@ variable "cloudfront_price_class" {
   description = "Price class for the CloudFront distributions (main & proxy config). One of PriceClass_All, PriceClass_200, PriceClass_100."
   type        = string
   default     = "PriceClass_100"
+}
+
+variable "cloudfront_aliases" {
+  description = "Aliases for custom_domain"
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudfront_acm_certificate_arn" {
+  description = "ACM certificate arn for custom_domain"
+  type        = string
+  default     = null
+}
+
+variable "cloudfront_minimum_protocol_version" {
+  description = "The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1_2016, TLSv1.1_2016, TLSv1.2_2018 or TLSv1.2_2019."
+  type        = string
+  default     = "TLSv1"
 }
 
 variable "cloudfront_origin_headers" {

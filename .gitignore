@@ -12,3 +12,11 @@ node_modules
 
 # Temp files
 *.swp*
+
+# Log files
+*.log
+
+# direnv
+.direnv
+.envrc
+

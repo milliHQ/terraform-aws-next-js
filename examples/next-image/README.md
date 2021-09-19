@@ -1,7 +1,7 @@
 # Terraform Next.js Image component example
 
 This example shows the usage of Next.js together with the `next/image` component.
-You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/next-image).
+You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image).
 
 > **Note:** Support for `next/image` component is enabled in the Terraform Next.js module by default and requires no extra config other than the standard setup!
 
@@ -10,7 +10,7 @@ You can find the full example code on [GitHub](https://github.com/dealmore/terra
 Download the files from the example app:
 
 ```sh
-yarn create next-app --example https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/next-image my-app
+yarn create next-app --example https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image my-app
 
 cd my-app
 ```

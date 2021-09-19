@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - v[0-9]+.[0-9x]+.x
 
 jobs:
   update-docs:
@@ -14,8 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Update Terraform docs in README
-        uses: Dirrk/terraform-docs@v1.0.8
+        uses: terraform-docs/gh-actions@v0.10.0
         with:
-          tf_docs_output_file: README.md
-          tf_docs_git_push: 'true'
-          tf_docs_git_commit_message: 'terraform-docs: Update'
+          config-file: '.terraform-docs.yml'
+          output-file: README.md
+          git-push: 'true'
+          git-commit-message: 'docs: Update Terraform docs'

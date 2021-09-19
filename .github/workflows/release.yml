@@ -6,6 +6,10 @@ on:
       tag:
         description: 'Tag'
         required: true
+      releaseBranch:
+        description: 'Release branch'
+        required: true
+        default: 'release'
 
 jobs:
   release:
@@ -16,9 +20,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: dealmore/gh-action-release-branch@v1.1.0
+      - uses: milliHQ/gh-action-release-branch@v2.0.0
         with:
-          upstream-branch: main
-          release-branch: release
+          release-branch: ${{ github.event.inputs.releaseBranch }}
           release-tag: ${{ github.event.inputs.tag }}
-          exclude: '["packages/**/*", "test/**/*", "package.json", "yarn.lock"]'
+          exclude: |
+            .vscode/**/*
+            packages/**/*
+            test/**/*
+            docker-compose.yml
+            jest.config.js
+            package.json
+            tsconfig.json
+            yarn.lock

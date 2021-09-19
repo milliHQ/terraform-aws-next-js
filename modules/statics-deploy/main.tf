@@ -23,7 +23,7 @@ resource "aws_s3_bucket_notification" "on_create" {
   bucket = aws_s3_bucket.static_upload.id
 
   lambda_function {
-    lambda_function_arn = module.deploy_trigger.this_lambda_function_arn
+    lambda_function_arn = module.deploy_trigger.lambda_function_arn
     events              = ["s3:ObjectCreated:*"]
   }
 }
@@ -158,13 +158,14 @@ data "aws_iam_policy_document" "access_sqs_queue" {
 }
 
 module "lambda_content" {
-  source  = "dealmore/download/npm"
-  version = "1.0.0"
+  source  = "milliHQ/download/npm"
+  version = "2.0.0"
 
   module_name    = "@dealmore/terraform-next-deploy-trigger"
   module_version = var.deploy_trigger_module_version
   path_to_file   = "dist.zip"
   use_local      = var.debug_use_local_packages
+  local_cwd      = var.tf_next_module_root
 }
 
 resource "random_id" "function_name" {
@@ -174,7 +175,7 @@ resource "random_id" "function_name" {
 
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "1.47.0"
+  version = "2.4.0"
 
   function_name             = random_id.function_name.hex
   description               = "Managed by Terraform-next.js"
@@ -307,7 +308,7 @@ data "aws_iam_policy_document" "sqs_queue" {
 
       values = [
         aws_sns_topic.this.arn,
-        module.deploy_trigger.this_lambda_function_arn
+        module.deploy_trigger.lambda_function_arn
       ]
     }
 
@@ -320,7 +321,7 @@ data "aws_iam_policy_document" "sqs_queue" {
     }
 
     resources = [
-      module.deploy_trigger.this_lambda_function_arn,
+      module.deploy_trigger.lambda_function_arn,
     ]
   }
 }
