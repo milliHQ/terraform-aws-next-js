@@ -36,7 +36,7 @@ const SAMLogFileAPI = 'sam-api.log';
 
 const pathToFixtures = path.join(__dirname, 'fixtures');
 const pathToProxyPackage = require.resolve(
-  '@dealmore/terraform-next-proxy/dist.zip',
+  '@millihq/terraform-next-proxy/dist.zip',
   {
     paths: [__dirname],
   }
