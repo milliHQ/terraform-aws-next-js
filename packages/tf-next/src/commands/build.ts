@@ -100,7 +100,7 @@ function writeStaticWebsiteFiles(
   });
 }
 
-function writeOutput(props: OutputProps) {
+async function writeOutput(props: OutputProps) {
   const config: ConfigOutput = {
     lambdas: {},
     staticRoutes: [],
@@ -150,7 +150,16 @@ function writeOutput(props: OutputProps) {
     }
   );
 
-  return Promise.all([writeConfig, staticFilesArchive]);
+  await Promise.all([writeConfig, staticFilesArchive]);
+
+  // Write a zip archive that contains all of the deployment
+  // related files, so we can upload it to the deployment bucket
+  const output = fs.createWriteStream(path.join(props.outputDir, 'deployment.zip'));
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  archive.pipe(output);
+  archive.directory(path.join(props.outputDir, 'lambdas'), 'lambdas');
+  archive.file(path.join(props.outputDir, 'config.json'), { name: 'config.json' });
+  archive.finalize();
 }
 
 interface BuildProps {

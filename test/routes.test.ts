@@ -147,6 +147,7 @@ describe('Test proxy config', () => {
               environment: {
                 TARGET_BUCKET: staticFilesBucket.bucketName,
                 EXPIRE_AFTER_DAYS: '0',
+                STATIC_FILES_ARCHIVE: 'static-website-files.zip',
                 // No CF invalidation is created
                 __DEBUG__SKIP_INVALIDATIONS: 'true',
                 __DEBUG__USE_LOCAL_BUCKET: JSON.stringify({
@@ -324,6 +325,7 @@ describe('Test proxy config', () => {
               // Request should be served by static file system (S3)
               // Check static routes
               const { uri } = Request;
+
               if (config.staticRoutes.find((route) => route === uri)) {
                 const filePath = uri.replace(/^\//, '');
 
