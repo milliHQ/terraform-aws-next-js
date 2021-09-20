@@ -1,7 +1,10 @@
 locals {
   manifest_key   = "_tf-next/deployment.json"
   lambda_timeout = 60
+  account_id     = data.aws_caller_identity.current.account_id
 }
+
+data "aws_caller_identity" "current" {}
 
 ########################
 # Upload Bucket (zipped)
@@ -159,6 +162,40 @@ data "aws_iam_policy_document" "access_sqs_queue" {
   }
 }
 
+#
+# Lambda permissions to create deployment
+#
+data "aws_iam_policy_document" "create_deployment" {
+  count = var.multiple_deployments ? 1 : 0
+
+  statement {
+    actions = [
+      "apigateway:POST",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeVpcs",
+      "iam:AttachRolePolicy",
+      "iam:CreateRole",
+      "iam:PassRole",
+      "lambda:AddPermission",
+      "lambda:CreateFunction",
+      "logs:CreateLogGroup",
+      "logs:PutRetentionPolicy"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    actions   = ["s3:PutObject"]
+    resources = ["${var.proxy_config_bucket_arn}/*"]
+  }
+
+  statement {
+    actions   = ["dynamodb:PutItem"]
+    resources = [var.proxy_config_table_arn]
+  }
+}
+
 module "lambda_content" {
   source  = "milliHQ/download/npm"
   version = "2.0.0"
@@ -204,19 +241,35 @@ module "deploy_trigger" {
   }
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 3
-  policy_jsons = [
+  number_of_policy_jsons = var.multiple_deployments ? 4 : 3
+  policy_jsons = var.multiple_deployments ? [
+    data.aws_iam_policy_document.access_static_deploy.json,
+    data.aws_iam_policy_document.access_static_upload.json,
+    data.aws_iam_policy_document.access_sqs_queue.json,
+    data.aws_iam_policy_document.create_deployment[0].json
+    ] : [
     data.aws_iam_policy_document.access_static_deploy.json,
     data.aws_iam_policy_document.access_static_upload.json,
     data.aws_iam_policy_document.access_sqs_queue.json
   ]
 
   environment_variables = {
-    NODE_ENV          = "production"
-    TARGET_BUCKET     = aws_s3_bucket.static_deploy.id
-    EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
-    DISTRIBUTION_ID   = var.cloudfront_id
-    SQS_QUEUE_URL     = aws_sqs_queue.this.id
+    NODE_ENV                     = "production"
+    TARGET_BUCKET                = aws_s3_bucket.static_deploy.id
+    EXPIRE_AFTER_DAYS            = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
+    DISTRIBUTION_ID              = var.cloudfront_id
+    SQS_QUEUE_URL                = aws_sqs_queue.this.id
+    STATIC_FILES_ARCHIVE         = var.static_files_archive_name
+    DEPLOYMENT_FILE              = "deployment.zip"
+    ATTACH_TO_VPC                = var.lambda_attach_to_vpc
+    VPC_SECURITY_GROUP_IDS       = jsonencode(var.vpc_security_group_ids)
+    VPC_SUBNET_IDS               = jsonencode(var.vpc_subnet_ids)
+    LAMBDA_ENVIRONMENT_VARIABLES = jsonencode(var.lambda_environment_variables)
+    ACCOUNT_ID                   = local.account_id
+    LAMBDA_LOGGING_POLICY_ARN    = var.lambda_logging_policy_arn
+    PROXY_CONFIG_BUCKET          = var.proxy_config_bucket_name
+    PROXY_CONFIG_TABLE           = var.proxy_config_table_name
+    REGION                       = aws_s3_bucket.static_upload.region
   }
 
   event_source_mapping = {

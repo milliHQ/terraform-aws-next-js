@@ -1,9 +1,10 @@
 locals {
   # next-tf config
-  config_dir           = trimsuffix(var.next_tf_dir, "/")
-  config_file          = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas              = lookup(local.config_file, "lambdas", {})
-  static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
+  config_dir                = trimsuffix(var.next_tf_dir, "/")
+  config_file               = jsondecode(file("${local.config_dir}/config.json"))
+  lambdas                   = lookup(local.config_file, "lambdas", {})
+  static_files_archive_name = lookup(local.config_file, "staticFilesArchive", "")
+  static_files_archive      = "${local.config_dir}/${local.static_files_archive_name}"
 
   # Build the proxy config JSON
   config_file_images  = lookup(local.config_file, "images", {})
@@ -32,8 +33,19 @@ locals {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive = local.static_files_archive
-  expire_static_assets = var.expire_static_assets
+  expire_static_assets         = var.expire_static_assets
+  static_files_archive         = local.static_files_archive
+  static_files_archive_name    = local.static_files_archive_name
+  lambda_logging_policy_arn    = aws_iam_policy.lambda_logging.arn
+  lambda_attach_to_vpc         = var.lambda_attach_to_vpc
+  lambda_environment_variables = var.lambda_environment_variables
+  multiple_deployments         = var.multiple_deployments
+  proxy_config_table_name      = module.proxy_config.table_name
+  proxy_config_table_arn       = module.proxy_config.table_arn
+  proxy_config_bucket_name     = module.proxy_config.bucket_name
+  proxy_config_bucket_arn      = module.proxy_config.bucket_arn
+  vpc_security_group_ids       = var.vpc_security_group_ids
+  vpc_subnet_ids               = var.vpc_subnet_ids
 
   cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
   cloudfront_arn = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
