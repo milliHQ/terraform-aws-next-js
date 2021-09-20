@@ -281,6 +281,11 @@ So issues that exist on Vercel are likely to occur on this project too.
 
   You should be able to run`terraform apply` again and the stack creation would progreed without this error.
 
+## Contributing
+
+Contributions are welcome!  
+If you want to improve this module, please take a look at our [contributing guidelines](https://github.com/milliHQ/terraform-aws-next-js/tree/main/CONTRIBUTING.md) to get started.
+
 ## License
 
 Apache-2.0 - see [LICENSE](./LICENSE) for details.
