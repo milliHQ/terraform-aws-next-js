@@ -8,7 +8,7 @@ variable "static_files_archive_name" {
 
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "0.4.0"
+  default = "1.0.0-canary.1"
 }
 
 variable "expire_static_assets" {
