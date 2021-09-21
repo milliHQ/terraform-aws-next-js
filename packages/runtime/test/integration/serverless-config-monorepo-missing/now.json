@@ -1,4 +1,4 @@
 {
   "version": 2,
-  "builds": [{ "src": "nested/package.json", "use": "@dealmore/tf-next-runtime" }]
+  "builds": [{ "src": "nested/package.json", "use": "@millihq/tf-next-runtime" }]
 }

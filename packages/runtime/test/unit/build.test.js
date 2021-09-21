@@ -1,7 +1,7 @@
 const path = require('path');
 const os = require('os');
 const execa = require('execa');
-const { build } = require('@dealmore/tf-next-runtime');
+const { build } = require('@millihq/tf-next-runtime');
 const { download, FileBlob } = require('@vercel/build-utils');
 
 jest.setTimeout(45000);

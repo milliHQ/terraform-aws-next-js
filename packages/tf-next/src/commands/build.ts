@@ -1,4 +1,4 @@
-import { build } from '@dealmore/tf-next-runtime';
+import { build } from '@millihq/tf-next-runtime';
 import {
   download, FileFsRef, glob,
   Lambda, Prerender, streamToBuffer
