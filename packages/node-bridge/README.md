@@ -1,4 +1,4 @@
-# @dealmore/terraform-next-node-bridge
+# @millihq/terraform-next-node-bridge
 
 Fork from [`@vercel/now-node-bridge`](https://github.com/vercel/vercel/tree/master/packages/now-node-bridge).
 

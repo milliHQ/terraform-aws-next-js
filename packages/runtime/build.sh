@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Use customized version of now-node-bridge
 bridge_defs=$(node -e "\
-  console.log(require.resolve('@dealmore/terraform-next-node-bridge/src/bridge.ts')); \
+  console.log(require.resolve('@millihq/terraform-next-node-bridge/src/bridge.ts')); \
 ");
 # bridge_defs="$(dirname $(pwd))/now-node-bridge/src/bridge.ts"
 
