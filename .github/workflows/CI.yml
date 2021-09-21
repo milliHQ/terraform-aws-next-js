@@ -30,7 +30,7 @@ jobs:
         run: yarn --frozen-lockfile --cache-folder .yarn
 
       - name: Build runtime
-        run: yarn workspace @dealmore/tf-next-runtime build
+        run: yarn workspace @millihq/tf-next-runtime build
 
       - name: Build tf-next
         run: yarn workspace tf-next build

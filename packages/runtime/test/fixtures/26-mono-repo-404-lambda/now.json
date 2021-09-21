@@ -7,7 +7,7 @@
   "builds": [
     {
       "src": "packages/webapp/next.config.js",
-      "use": "@dealmore/tf-next-runtime"
+      "use": "@millihq/tf-next-runtime"
     }
   ],
   "probes": [

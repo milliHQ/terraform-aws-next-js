@@ -1,6 +1,5 @@
 {
-  "name": "@dealmore/tf-next-runtime",
-  "version": "1.1.0",
+  "name": "@millihq/tf-next-runtime",
   "license": "Apache-2.0",
   "main": "./dist/index",
   "homepage": "https://registry.terraform.io/modules/milliHQ/next-js/aws",

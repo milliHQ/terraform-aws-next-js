@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@dealmore/tf-next-runtime",
+      "use": "@millihq/tf-next-runtime",
       "config": { "zeroConfig": true }
     }
   ]
