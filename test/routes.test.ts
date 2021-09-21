@@ -42,7 +42,7 @@ const pathToProxyPackage = require.resolve(
   }
 );
 const pathToDeployTriggerPackage = require.resolve(
-  '@dealmore/terraform-next-deploy-trigger/dist.zip',
+  '@millihq/terraform-next-deploy-trigger/dist.zip',
   {
     paths: [__dirname],
   }
