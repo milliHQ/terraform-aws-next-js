@@ -1,9 +1,10 @@
 locals {
   # next-tf config
-  config_dir           = trimsuffix(var.next_tf_dir, "/")
-  config_file          = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas              = lookup(local.config_file, "lambdas", {})
-  static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
+  config_dir                = trimsuffix(var.next_tf_dir, "/")
+  config_file               = jsondecode(file("${local.config_dir}/config.json"))
+  lambdas                   = lookup(local.config_file, "lambdas", {})
+  static_files_archive_name = lookup(local.config_file, "staticFilesArchive", "")
+  static_files_archive      = "${local.config_dir}/${local.static_files_archive_name}"
 
   # Build the proxy config JSON
   config_file_images  = lookup(local.config_file, "images", {})
@@ -40,8 +41,19 @@ resource "random_id" "function_name" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive = local.static_files_archive
-  expire_static_assets = var.expire_static_assets
+  expire_static_assets         = var.expire_static_assets
+  static_files_archive         = local.static_files_archive
+  static_files_archive_name    = local.static_files_archive_name
+  lambda_logging_policy_arn    = aws_iam_policy.lambda_logging.arn
+  lambda_attach_to_vpc         = var.lambda_attach_to_vpc
+  lambda_environment_variables = var.lambda_environment_variables
+  multiple_deployments         = var.multiple_deployments
+  proxy_config_table_name      = module.proxy_config.table_name
+  proxy_config_table_arn       = module.proxy_config.table_arn
+  proxy_config_bucket_name     = module.proxy_config.bucket_name
+  proxy_config_bucket_arn      = module.proxy_config.bucket_arn
+  vpc_security_group_ids       = var.vpc_security_group_ids
+  vpc_subnet_ids               = var.vpc_subnet_ids
 
   cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
   cloudfront_arn = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
@@ -53,6 +65,7 @@ module "statics_deploy" {
   tags            = var.tags
 
   debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
 }
 
 # Lambda
@@ -153,7 +166,7 @@ data "aws_iam_policy_document" "access_static_deployment" {
 module "next_image" {
   count = var.create_image_optimization ? 1 : 0
 
-  source  = "dealmore/next-js-image-optimization/aws"
+  source  = "milliHQ/next-js-image-optimization/aws"
   version = ">= 11.0.0"
 
   cloudfront_create_distribution = false
@@ -189,6 +202,7 @@ module "proxy_config" {
   cloudfront_price_class = var.cloudfront_price_class
   proxy_config_json      = local.proxy_config_json
   proxy_config_version   = local.config_file_version
+  multiple_deployments   = var.multiple_deployments
 
   deployment_name = var.deployment_name
   tags            = var.tags
@@ -212,6 +226,9 @@ module "proxy" {
   tags            = var.tags
 
   debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+  multiple_deployments     = var.multiple_deployments
+  proxy_config_table_arn   = module.proxy_config.table_arn
 
   providers = {
     aws.global_region = aws.global_region
@@ -235,6 +252,21 @@ data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
   name = "Managed-CachingOptimized"
 }
 
+##
+# Origin request policy
+#
+# Determines which headers are forwarded to the S3 or Lambda origin.
+# Is only used for the default cache behavior.
+##
+locals {
+  # Default headers that should be forwarded to the origins
+  cloudfront_origin_default_headers = ["x-nextjs-page"]
+  cloudfront_origin_headers = sort(concat(
+    local.cloudfront_origin_default_headers,
+    var.cloudfront_origin_headers
+  ))
+}
+
 resource "aws_cloudfront_origin_request_policy" "this" {
   name    = "${random_id.policy_name.hex}-origin"
   comment = "Managed by Terraform Next.js"
@@ -244,13 +276,10 @@ resource "aws_cloudfront_origin_request_policy" "this" {
   }
 
   headers_config {
-    header_behavior = length(var.cloudfront_origin_headers) == 0 ? "none" : "whitelist"
+    header_behavior = "whitelist"
 
-    dynamic "headers" {
-      for_each = length(var.cloudfront_origin_headers) == 0 ? [] : [true]
-      content {
-        items = var.cloudfront_origin_headers
-      }
+    headers {
+      items = local.cloudfront_origin_headers
     }
   }
 
@@ -258,6 +287,8 @@ resource "aws_cloudfront_origin_request_policy" "this" {
     query_string_behavior = "all"
   }
 }
+
+data "aws_region" "current" {}
 
 resource "aws_cloudfront_cache_policy" "this" {
   name    = "${random_id.policy_name.hex}-cache"
@@ -316,8 +347,20 @@ locals {
         value = "http://${module.proxy_config.config_endpoint}"
       },
       {
+        name  = "x-env-config-table"
+        value = var.multiple_deployments ? module.proxy_config.table_name : ""
+      },
+      {
+        name  = "x-env-config-region"
+        value = data.aws_region.current.name
+      },
+      {
         name  = "x-env-api-endpoint"
         value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
+      },
+      {
+        name  = "x-env-domain-name"
+        value = var.domain_name != null ? var.domain_name : ""
       }
     ]
   }
@@ -408,7 +451,11 @@ module "cloudfront_main" {
 
   source = "./modules/cloudfront-main"
 
-  cloudfront_price_class             = var.cloudfront_price_class
+  cloudfront_price_class              = var.cloudfront_price_class
+  cloudfront_aliases                  = var.cloudfront_aliases
+  cloudfront_acm_certificate_arn      = var.cloudfront_acm_certificate_arn
+  cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
+
   cloudfront_default_root_object     = local.cloudfront_default_root_object
   cloudfront_origins                 = local.cloudfront_origins
   cloudfront_default_behavior        = local.cloudfront_default_behavior

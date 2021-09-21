@@ -4,7 +4,7 @@
 
 variable "proxy_module_version" {
   type    = string
-  default = "0.7.0"
+  default = "1.0.0-canary.1"
 }
 
 variable "lambda_default_runtime" {
@@ -15,6 +15,16 @@ variable "lambda_default_runtime" {
 variable "lambda_role_permissions_boundary" {
   type    = string
   default = null
+}
+
+variable "proxy_config_table_arn" {
+  type    = string
+  default = null
+}
+
+variable "multiple_deployments" {
+  type    = bool
+  default = false
 }
 
 ##########
@@ -35,4 +45,8 @@ variable "tags" {
 variable "debug_use_local_packages" {
   type    = bool
   default = false
+}
+
+variable "tf_next_module_root" {
+  type = string
 }

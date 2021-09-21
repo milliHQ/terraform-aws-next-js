@@ -1,15 +1,15 @@
 # Terraform Next.js static example
 
-This example shows a simple static Next.js app that is deployed to S3 without lambdas using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/dealmore/next-js/aws) module.
+This example shows a simple static Next.js app that is deployed to S3 without lambdas using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/milliHQ/next-js/aws) module.
 
-You can find the full example code on [GitHub](https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/static).
+You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static).
 
 ## Setup
 
 Download the files from the example app:
 
 ```sh
-yarn create next-app --example https://github.com/dealmore/terraform-aws-next-js/tree/main/examples/static my-app
+yarn create next-app --example https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static my-app
 
 cd my-app
 ```
