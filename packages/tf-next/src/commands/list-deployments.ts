@@ -9,6 +9,13 @@ interface ListDeploymentProps {
   target?: 'AWS';
 }
 
+interface Deployment {
+  deploymentId: string;
+  aliases: string[];
+  createdAt: Date;
+  tag?: string;
+}
+
 async function listDeploymentsCommand({
   terraformState,
   target = 'AWS',
@@ -18,10 +25,12 @@ async function listDeploymentsCommand({
 
   const response = await dynamoDB.scan({
     TableName: proxyConfigTable,
-    ProjectionExpression: "#A, #AT",
+    ProjectionExpression: "#A, #AT, #CA, #T",
     ExpressionAttributeNames: {
       "#A": "alias",
       "#AT": "aliasedTo",
+      "#CA": "createdAt",
+      "#T": "tag",
      },
   }).promise();
 
@@ -32,22 +41,29 @@ async function listDeploymentsCommand({
     return;
   }
 
-  const deployments: any = {};
+  const deployments: {[deploymentId: string]: Deployment} = {};
   for (const alias of aliases) {
     if (alias.aliasedTo?.S && alias.alias?.S) { // If this is an alias
-      deployments[alias.aliasedTo.S] = deployments[alias.aliasedTo.S] || [];
-      deployments[alias.aliasedTo.S].push(alias.alias.S);
+      deployments[alias.aliasedTo.S] = deployments[alias.aliasedTo.S] || {
+        deploymentId: alias.aliasedTo.S,
+        aliases: [],
+        createdAt: new Date(),
+      };
+      deployments[alias.aliasedTo.S]?.aliases.push(alias.alias.S);
     } else if (alias.alias?.S) {                // If this is a deployment
-      deployments[alias.alias.S] = deployments[alias.alias.S] || [];
+      deployments[alias.alias.S] = deployments[alias.alias.S] || {
+        deploymentId: alias.alias.S,
+        aliases: [],
+        createdAt: alias.createdAt?.S ? new Date(alias.createdAt.S) : new Date(),
+        tag: alias.tag?.S,
+      };
     }
   }
 
-  for (const deployment of Object.keys(deployments)) {
-    const deploymentAliases = deployments[deployment] === []
-      ? '' :
-      `, aliases: [${deployments[deployment].join(', ')}]`;
-    console.log(`${deployment}${deploymentAliases}`);
-  }
+  console.table(
+    Object.values(deployments).sort((d1, d2) => d1.createdAt < d2.createdAt ? 1 : -1),
+    ['deploymentId', 'aliases', 'createdAt', 'tag'],
+  );
 }
 
 export default listDeploymentsCommand;

@@ -3,6 +3,7 @@ import { Route } from '@vercel/routing-utils';
 export interface ConfigOutput {
   buildId: string;
   deploymentId?: string;
+  tag?: string;
   routes: Route[];
   staticRoutes: string[];
   staticFilesArchive: string;

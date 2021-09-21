@@ -31,7 +31,7 @@ export interface ProxyConfig {
 
 export type Lambdas = {[path: string]: Buffer}
 
-export interface CreateDeploymentConfiguration {
+export interface DeploymentConfiguration {
   accountId: string;
   defaultRuntime: string;
   defaultFunctionMemory: number;
@@ -42,6 +42,7 @@ export interface CreateDeploymentConfiguration {
   lambdaTimeout: number;
   proxyConfigBucket: string;
   proxyConfigTable: string;
+  staticDeployBucket: string;
   region: string;
   vpcSecurityGroupIds: string[];
   vpcSubnetIds: string[];
