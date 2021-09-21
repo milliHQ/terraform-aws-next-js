@@ -39,7 +39,7 @@ jobs:
         run: yarn workspace @millihq/terraform-next-proxy build
 
       - name: Build deploy-trigger
-        run: yarn workspace @dealmore/terraform-next-deploy-trigger build
+        run: yarn workspace @millihq/terraform-next-deploy-trigger build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
