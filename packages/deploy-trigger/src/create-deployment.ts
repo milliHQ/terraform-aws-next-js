@@ -1,6 +1,6 @@
 import { ApiGatewayV2, CloudWatchLogs, DynamoDB, IAM, Lambda, S3 } from 'aws-sdk';
 import { inspect } from 'util';
-import { CreateDeploymentConfiguration, Lambdas, ProxyConfig } from './types';
+import { DeploymentConfiguration, Lambdas, ProxyConfig } from './types';
 
 // TODO: Have a central configuration for AWS API versions
 
@@ -14,7 +14,7 @@ const s3 = new S3();
 interface CreateDeploymentProps {
   deploymentId: string;
   lambdas: Lambdas;
-  config: CreateDeploymentConfiguration;
+  config: DeploymentConfiguration;
   configFile: any;
 }
 
@@ -54,7 +54,7 @@ async function wait(ms: number): Promise<void> {
 async function createIAM(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
-  config: CreateDeploymentConfiguration,
+  config: DeploymentConfiguration,
 ): Promise<RoleArns> {
   const roleArns: RoleArns = {};
 
@@ -106,7 +106,7 @@ async function createLambdas(
   lambdas: Lambdas,
   lambdaConfigurations: LambdaConfigurations,
   roleArns: RoleArns,
-  config: CreateDeploymentConfiguration,
+  config: DeploymentConfiguration,
 ): Promise<LambdaArns> {
   const arns: LambdaArns = {};
 
@@ -164,7 +164,7 @@ async function createAPIGateway(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
   lambdaArns: LambdaArns,
-  config: CreateDeploymentConfiguration,
+  config: DeploymentConfiguration,
 ): Promise<{ apiId: string, executeArn: string }> {
   const api = await apiGatewayV2.createApi({
     Name: `${config.deploymentName} - ${deploymentId}`,
@@ -233,6 +233,7 @@ async function uploadProxyConfig(
   config: ProxyConfig,
   bucket: string,
   table: string,
+  tag?: string,
 ) {
   const configString = JSON.stringify(config);
 
@@ -252,6 +253,12 @@ async function uploadProxyConfig(
       proxyConfig: {
         S: configString,
       },
+      tag: {
+        S: tag,
+      },
+      createdAt: {
+        S: new Date().toISOString(),
+      }
     },
   }).promise();
 }
@@ -323,12 +330,13 @@ async function createDeployment({
     lambdaRoutes,
   };
 
-  // Upload proxy config to bucket
+  // Upload proxy config to bucket and table
   await uploadProxyConfig(
     deploymentId,
     modifiedProxyConfig,
     config.proxyConfigBucket,
     config.proxyConfigTable,
+    configFile.tag,
   );
 
   log(deploymentId, 'created proxy config.');

@@ -8,6 +8,7 @@ import { updateManifest } from './update-manifest';
 import { deploymentConfigurationKey } from './constants';
 import { getOrCreateManifest } from './get-or-create-manifest';
 import createDeployment from './create-deployment';
+import deleteDeployments from './delete-deployments';
 import {
   createInvalidation,
   prepareInvalidations,
@@ -156,6 +157,7 @@ async function s3Handler(Record: S3EventRecord) {
   const distributionId = process.env.DISTRIBUTION_ID;
   const staticFilesArchive = process.env.STATIC_FILES_ARCHIVE;
   const deploymentFile = process.env.DEPLOYMENT_FILE;
+  const deleteDeploymentFile = process.env.DELETE_DEPLOYMENT_FILE;
 
   // Get needed information of the event
   const { object } = Record.s3;
@@ -169,6 +171,14 @@ async function s3Handler(Record: S3EventRecord) {
   if (key === staticFilesArchive) {
     await staticFilesOnS3(s3, deployBucket, sourceBucket, key, distributionId, versionId);
     console.log(`Uploaded static files to ${deployBucket}`);
+  } else if (key === deleteDeploymentFile) {
+    const response = await deleteDeploymentFileOnS3(
+      s3,
+      sourceBucket,
+      key,
+      versionId,
+    );
+    console.log(`Deleted deployment(s) ${response}`);
   } else if (key === deploymentFile) {
     const deploymentId = await deploymentFileOnS3(
       s3,
@@ -180,6 +190,46 @@ async function s3Handler(Record: S3EventRecord) {
   } else {
     console.log(`Received unexpected file: ${key}`);
   }
+}
+
+async function deleteDeploymentFileOnS3(
+  s3: S3,
+  sourceBucket: string,
+  key: string,
+  versionId?: string,
+) {
+  let whatToDelete: any = undefined;
+
+  const file = await s3.getObject({
+    Key: key,
+    Bucket: sourceBucket,
+    VersionId: versionId,
+  }).promise();
+
+  if (!file.Body) {
+    throw new Error(`Could not read body of ${key}`);
+  }
+
+  try {
+    whatToDelete = JSON.parse(file.Body.toString());
+  } catch (err) {
+    console.error(`Could not parse ${key}: ${inspect(err)}`);
+    throw err;
+  }
+
+  const response = await deleteDeployments({
+    config: readEnvConfig(),
+    whatToDelete,
+  });
+
+  // Cleanup
+  await s3.deleteObject({
+    Key: key,
+    Bucket: sourceBucket,
+    VersionId: versionId,
+  }).promise();
+
+  return response;
 }
 
 async function deploymentFileOnS3(

@@ -1,7 +1,7 @@
 import { pseudoRandomBytes } from 'crypto';
 import { inspect } from 'util';
 import unzipper from 'unzipper';
-import { CreateDeploymentConfiguration, Lambdas, VpcConfig } from './types';
+import { DeploymentConfiguration, Lambdas, VpcConfig } from './types';
 
 export function generateRandomId(length: number) {
   return pseudoRandomBytes(length).toString('hex');
@@ -67,13 +67,14 @@ function readLambdaEnvironmentVariables(): {[key: string]: string} {
   }
 }
 
-export function readEnvConfig(): CreateDeploymentConfiguration {
+export function readEnvConfig(): DeploymentConfiguration {
   const accountId = process.env.ACCOUNT_ID;
   const lambdaEnvironmentVariables = readLambdaEnvironmentVariables();
   const lambdaLoggingPolicyArn = process.env.LAMBDA_LOGGING_POLICY_ARN;
   const proxyConfigBucket = process.env.PROXY_CONFIG_BUCKET;
   const proxyConfigTable = process.env.PROXY_CONFIG_TABLE;
   const region = process.env.REGION;
+  const staticDeployBucket = process.env.TARGET_BUCKET;
   const vpcConfig = readVpcConfig();
 
   if (!accountId || !proxyConfigTable || !proxyConfigBucket ||
@@ -95,6 +96,7 @@ export function readEnvConfig(): CreateDeploymentConfiguration {
     proxyConfigBucket,
     proxyConfigTable,
     region,
+    staticDeployBucket,
     vpcSecurityGroupIds: vpcConfig.vpcSecurityGroupIds,
     vpcSubnetIds: vpcConfig.vpcSubnetIds,
   };
