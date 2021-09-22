@@ -44,6 +44,7 @@ interface PrerenderOutputProps {
 interface OutputProps {
   buildId: string;
   deploymentId?: string;
+  tag?: string;
   images?: {
     domains: string[];
     sizes: number[];
@@ -111,6 +112,7 @@ async function writeOutput(props: OutputProps) {
     staticFilesArchive: 'static-website-files.zip',
     version: TF_NEXT_VERSION,
     images: props.images,
+    tag: props.tag,
   };
 
   for (const [key, lambda] of Object.entries(props.lambdas)) {
@@ -168,6 +170,7 @@ interface BuildProps {
   deleteBuildCache?: boolean;
   cwd: string;
   deploymentId?: string;
+  tag?: string;
   target?: 'AWS';
 }
 
@@ -177,6 +180,7 @@ async function buildCommand({
   deleteBuildCache = true,
   cwd,
   deploymentId,
+  tag,
   target = 'AWS',
 }: BuildProps) {
   let buildOutput: OutputProps | null = null;
@@ -275,6 +279,7 @@ async function buildCommand({
     buildOutput = {
       buildId,
       deploymentId,
+      tag,
       prerenders: prerenderedOutput,
       routes: optimizedRoutes,
       lambdas,

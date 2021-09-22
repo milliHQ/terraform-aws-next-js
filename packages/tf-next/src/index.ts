@@ -19,6 +19,11 @@ yargs
           type: 'boolean',
           description: 'Runs the build with a deployment id',
         })
+        .option('tag', {
+          type: 'string',
+          description: 'Can be used to group deployments, so they can be deleted together. ' +
+            'For example deployments per branch.',
+        })
         .option('skipDownload', {
           type: 'boolean',
           description: 'Runs the build in the current working directory',
@@ -28,7 +33,7 @@ yargs
           description: 'Run with verbose logging',
         });
     },
-    async ({ multipleDeployments, skipDownload, verbose }) => {
+    async ({ multipleDeployments, skipDownload, tag, verbose }) => {
       const cwd = process.cwd();
 
       (await import('./commands/build')).default({
@@ -36,6 +41,7 @@ yargs
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
         deploymentId: multipleDeployments ? cuid() : undefined,
+        tag,
       });
     }
   )
@@ -171,39 +177,40 @@ yargs
     }
   )
   .command(
-    'delete-deployment',
+    'delete-deployments',
     'Delete an existing deployment',
     (yargs_) => {
       return yargs_
+        .option('deployBucket', {
+          type: 'string',
+          description: 'The bucket where the delete deployment files are uploaded',
+          demandOption: true,
+        })
         .option('deploymentId', {
           type: 'string',
           description: 'The id of the deployment to delete',
-          demandOption: true,
         })
-        .option('verbose', {
-          type: 'boolean',
-          description: 'Run with verbose logging',
+        .option('tag', {
+          type: 'string',
+          description: 'The tag associated with all deployments to be deleted',
         });
     },
-    async ({ deploymentId, verbose }) => {
-      const cwd = process.cwd();
+    async ({ deployBucket, deploymentId, tag }) => {
+      if (!tag && !deploymentId) {
+        throw new Error('Please provider either a deploymentId or a tag.');
+      }
 
-      // TODO:
-      // Figure out a good way to pass the current terraform state. Especially
-      // considering that there could be multiple environments (preview,
-      // production). For development/testing, we'll save the current state,
-      // that we get when running `$ terraform show -json` into a file called
-      // `terraform.config.json` at the root of this package.
-      const terraformState = require('../terraform.config.json');
-
-      await (await import('./commands/delete-deployment')).default({
+      await (await import('./commands/delete-deployments')).default({
         deploymentId,
-        logLevel: verbose ? 'verbose' : 'none',
-        cwd,
-        terraformState,
+        tag,
+        deployBucket,
       });
 
-      console.log(`Deleted deployment ${deploymentId}.`)
+      if (deploymentId) {
+        console.log(`Deleted deployment ${deploymentId}.`)
+      } else {
+        console.log(`Deleted deployments for ${tag}.`);
+      }
     }
   )
   .help()

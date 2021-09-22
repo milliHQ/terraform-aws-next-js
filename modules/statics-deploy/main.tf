@@ -194,6 +194,35 @@ data "aws_iam_policy_document" "create_deployment" {
   }
 }
 
+#
+# Lambda permissions to delete deployment
+#
+data "aws_iam_policy_document" "delete_deployment" {
+  count = var.multiple_deployments ? 1 : 0
+
+  statement {
+    actions = [
+      "apigateway:DELETE",
+      "iam:DetachRolePolicy",
+      "iam:DeleteRole",
+      "lambda:RemovePermission",
+      "lambda:DeleteFunction",
+      "logs:DeleteLogGroup",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    actions   = ["s3:DeleteObject"]
+    resources = ["${var.proxy_config_bucket_arn}/*"]
+  }
+
+  statement {
+    actions   = ["dynamodb:DeleteItem", "dynamodb:GetItem", "dynamodb:Scan"]
+    resources = [var.proxy_config_table_arn]
+  }
+}
+
 module "lambda_content" {
   source  = "milliHQ/download/npm"
   version = "2.0.0"
@@ -244,12 +273,13 @@ module "deploy_trigger" {
   }
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = var.multiple_deployments ? 4 : 3
+  number_of_policy_jsons = var.multiple_deployments ? 5 : 3
   policy_jsons = var.multiple_deployments ? [
     data.aws_iam_policy_document.access_static_deploy.json,
     data.aws_iam_policy_document.access_static_upload.json,
     data.aws_iam_policy_document.access_sqs_queue.json,
-    data.aws_iam_policy_document.create_deployment[0].json
+    data.aws_iam_policy_document.create_deployment[0].json,
+    data.aws_iam_policy_document.delete_deployment[0].json
     ] : [
     data.aws_iam_policy_document.access_static_deploy.json,
     data.aws_iam_policy_document.access_static_upload.json,
@@ -264,6 +294,7 @@ module "deploy_trigger" {
     SQS_QUEUE_URL                = aws_sqs_queue.this.id
     STATIC_FILES_ARCHIVE         = var.static_files_archive_name
     DEPLOYMENT_FILE              = "deployment.zip"
+    DELETE_DEPLOYMENT_FILE       = "deleteDeployment.json"
     ATTACH_TO_VPC                = var.lambda_attach_to_vpc
     VPC_SECURITY_GROUP_IDS       = jsonencode(var.vpc_security_group_ids)
     VPC_SUBNET_IDS               = jsonencode(var.vpc_subnet_ids)
