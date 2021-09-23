@@ -287,13 +287,36 @@ async function createDeployment({
   log(deploymentId, 'created log groups and roles.');
 
   // Create lambdas
-  const lambdaArns = await createLambdas(
-    deploymentId,
-    lambdas,
-    lambdaConfigurations,
-    roleArns,
-    config,
-  );
+  let lambdaArns: LambdaArns | null = null
+
+  const waitingTimes = [6000, 9000, 18000]
+  const retryLimit = 3
+  let currentRetry = 0
+  while(true) {
+    try {
+      lambdaArns = await createLambdas(
+        deploymentId,
+        lambdas,
+        lambdaConfigurations,
+        roleArns,
+        config,
+      );
+      break;
+    } catch(error: any) {
+      log(deploymentId, "Failed to createLambdas");
+      if (error.code !== 'InvalidParameterValueException') throw error;
+
+      if (currentRetry + 1 >= retryLimit) break;
+
+      log(deploymentId, `It will be retried(${currentRetry+1}) after ${waitingTimes[currentRetry]}ms`);
+      await wait(waitingTimes[currentRetry] || 6000);
+      currentRetry++;
+    }
+  }
+
+  if (!lambdaArns) {
+    throw new Error('lambdaArns must not be null')
+  }
 
   log(deploymentId, 'created lambda functions.');
 
