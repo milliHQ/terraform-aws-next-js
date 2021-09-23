@@ -41,6 +41,12 @@ variable "multiple_deployments" {
   default     = false
 }
 
+variable "domain_name" {
+  description = "This is used to figure out the TF_NEXT_URL."
+  type        = string
+  default     = null
+}
+
 ###########
 # SQS Queue
 ###########

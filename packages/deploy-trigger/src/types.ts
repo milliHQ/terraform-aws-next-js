@@ -36,6 +36,7 @@ export interface DeploymentConfiguration {
   defaultRuntime: string;
   defaultFunctionMemory: number;
   deploymentName: string;
+  domain: string;
   lambdaAttachToVpc: boolean;
   lambdaEnvironmentVariables: Lambda.EnvironmentVariables;
   lambdaLoggingPolicyArn: string;
