@@ -101,3 +101,55 @@ export function readEnvConfig(): DeploymentConfiguration {
     vpcSubnetIds: vpcConfig.vpcSubnetIds,
   };
 }
+
+export async function wait(ms: number): Promise<void> {
+  return new Promise((resolve, _) => {
+    setTimeout(() => { resolve(); }, ms);
+  });
+}
+
+interface RunWithRetryOptions {
+  defaultWaitTime: number
+  waitingTimes: number[]
+  retryLimit: number
+  initialDelay: number
+}
+
+/**
+ * Run function with delay and retry.
+ * @param fn Function to call
+ * @param needRetry If error occurs while running fn, check error object wheater to need retry or just throw
+ * @param options RunWithRetryOptions
+ * @returns Promise<T>
+ */
+export async function runWithDelay<T>(fn: () => Promise<T>, needRetry: (error: any) => boolean, options?: RunWithRetryOptions) {
+  const defaultWaitTime = options?.defaultWaitTime || 6000;
+  const waitingTimes = options?.waitingTimes || [6000, 9000, 18000];  // idx:0 is used for initial delay.
+  const retryLimit = options?.retryLimit !== undefined ? options.retryLimit : 3;
+  const initialDelay = options?.initialDelay || defaultWaitTime;
+
+  if (initialDelay > 0) {
+    await wait(initialDelay);
+  }
+
+  let currentRetry = -1   // -1 means initial call, but not retry.
+  while(currentRetry < retryLimit) {
+    if (currentRetry > -1) {
+      console.log(`It will be retried(${currentRetry+1}) after ${waitingTimes[currentRetry]}ms`);
+    }
+
+    try {
+      return await fn()
+    } catch(error: any) {
+      if (needRetry(error)) {
+        currentRetry++;
+        await wait(waitingTimes[currentRetry] || defaultWaitTime);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error('Failure. The number of retries has reached maxRetry.');
+}

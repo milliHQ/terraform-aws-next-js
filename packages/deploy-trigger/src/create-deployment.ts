@@ -1,6 +1,7 @@
 import { ApiGatewayV2, CloudWatchLogs, DynamoDB, IAM, Lambda, S3 } from 'aws-sdk';
 import { inspect } from 'util';
 import { DeploymentConfiguration, Lambdas, ProxyConfig } from './types';
+import { runWithDelay } from './utils'
 
 // TODO: Have a central configuration for AWS API versions
 
@@ -45,12 +46,6 @@ const assumeRolePolicy = `{
   ]
 }`;
 
-async function wait(ms: number): Promise<void> {
-  return new Promise((resolve, _) => {
-    setTimeout(() => { resolve(); }, ms);
-  });
-}
-
 async function createIAM(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
@@ -92,11 +87,6 @@ async function createIAM(
       }).promise();
     }
   }
-
-  // We wait for 6s, because trying to use the roles too quickly after deleting them
-  // can lead to an `InvalidParameterValueException` with the message
-  // `The role defined for the function cannot be assumed by Lambda`.
-  await wait(6000);
 
   return roleArns;
 }
@@ -287,36 +277,18 @@ async function createDeployment({
   log(deploymentId, 'created log groups and roles.');
 
   // Create lambdas
-  let lambdaArns: LambdaArns | null = null
-
-  const waitingTimes = [6000, 9000, 18000]
-  const retryLimit = 3
-  let currentRetry = 0
-  while(true) {
-    try {
-      lambdaArns = await createLambdas(
-        deploymentId,
-        lambdas,
-        lambdaConfigurations,
-        roleArns,
-        config,
-      );
-      break;
-    } catch(error: any) {
-      log(deploymentId, "Failed to createLambdas");
-      if (error.code !== 'InvalidParameterValueException') throw error;
-
-      if (currentRetry + 1 >= retryLimit) break;
-
-      log(deploymentId, `It will be retried(${currentRetry+1}) after ${waitingTimes[currentRetry]}ms`);
-      await wait(waitingTimes[currentRetry] || 6000);
-      currentRetry++;
-    }
-  }
-
-  if (!lambdaArns) {
-    throw new Error('lambdaArns must not be null')
-  }
+  // We need some delay and retry, because trying to use the roleArns too quickly after deleting them
+  // can lead to an `InvalidParameterValueException` with the message
+  // `The role defined for the function cannot be assumed by Lambda`.
+  const needRetry = (e: any) => e.code === 'InvalidParameterValueException';
+  const runCreateLambda = async () => await createLambdas(
+    deploymentId,
+    lambdas,
+    lambdaConfigurations,
+    roleArns,
+    config,
+  );
+  const lambdaArns = await runWithDelay(runCreateLambda, needRetry)
 
   log(deploymentId, 'created lambda functions.');
 
