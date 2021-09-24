@@ -1,6 +1,7 @@
 import { ApiGatewayV2, CloudWatchLogs, DynamoDB, IAM, Lambda, S3 } from 'aws-sdk';
 import { inspect } from 'util';
 import { DeploymentConfiguration, Lambdas, ProxyConfig } from './types';
+import { runWithDelay } from './utils'
 
 // TODO: Have a central configuration for AWS API versions
 
@@ -45,12 +46,6 @@ const assumeRolePolicy = `{
   ]
 }`;
 
-async function wait(ms: number): Promise<void> {
-  return new Promise((resolve, _) => {
-    setTimeout(() => { resolve(); }, ms);
-  });
-}
-
 async function createIAM(
   deploymentId: string,
   lambdaConfigurations: LambdaConfigurations,
@@ -92,11 +87,6 @@ async function createIAM(
       }).promise();
     }
   }
-
-  // We wait for 6s, because trying to use the roles too quickly after deleting them
-  // can lead to an `InvalidParameterValueException` with the message
-  // `The role defined for the function cannot be assumed by Lambda`.
-  await wait(6000);
 
   return roleArns;
 }
@@ -287,13 +277,18 @@ async function createDeployment({
   log(deploymentId, 'created log groups and roles.');
 
   // Create lambdas
-  const lambdaArns = await createLambdas(
+  // We need some delay and retry, because trying to use the roleArns too quickly after deleting them
+  // can lead to an `InvalidParameterValueException` with the message
+  // `The role defined for the function cannot be assumed by Lambda`.
+  const needRetry = (e: any) => e.code === 'InvalidParameterValueException';
+  const runCreateLambda = async () => await createLambdas(
     deploymentId,
     lambdas,
     lambdaConfigurations,
     roleArns,
     config,
   );
+  const lambdaArns = await runWithDelay(runCreateLambda, needRetry)
 
   log(deploymentId, 'created lambda functions.');
 
