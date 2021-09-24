@@ -11,6 +11,23 @@ export interface ProxyConfig {
   apiId?: string;
 }
 
+/**
+ * A item DynamoDB tf-next-proxy-config table
+ */
+export interface DeploymentInDB {
+  alias: string
+  aliasedTo?: string
+  createAt?: string
+  proxyConfig: string
+}
+
+export interface Deployment {
+  alias: string
+  aliasedTo?: string
+  createAt?: string
+  proxyConfig: ProxyConfig
+}
+
 export interface RouteResult {
   // `true` if a route was matched, `false` otherwise
   found: boolean;

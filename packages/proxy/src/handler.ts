@@ -6,7 +6,7 @@ import { URL } from 'url';
 import { Proxy } from './proxy';
 import { HTTPHeaders, RouteResult } from './types';
 import { createCustomOriginFromApiGateway, createCustomOriginFromUrl } from './util/custom-origin';
-import { fetchProxyConfig } from './util/fetch-proxy-config';
+import { fetchDeployment } from './util/fetch-deployment';
 
 let proxy: Proxy;
 
@@ -95,7 +95,7 @@ export async function handler(event: CloudFrontRequestEvent) {
 
   // We need to re-fetch the proxy config for every request, because it could be
   // made to a different deployment than the previous request.
-  let proxyConfig = undefined;
+  let deployment = undefined;
 
   const hostHeader = request.headers.host?.[0]?.value;
   if (hostHeader && domainName && hostHeader !== domainName && hostHeader.endsWith(domainName)) {
@@ -106,12 +106,15 @@ export async function handler(event: CloudFrontRequestEvent) {
     configEndpointURL.pathname = `/${deploymentIdentifier}${configEndpointURL.pathname}`;
 
     try {
-      proxyConfig = await fetchProxyConfig(
+      deployment = await fetchDeployment(
         configEndpointURL.toString(),
         configTable,
         configRegion,
         deploymentIdentifier,
       );
+      if (deployment && deployment.aliasedTo) {
+        deploymentIdentifier = deployment.aliasedTo;
+      }
     } catch (err) {
       console.log(
         `Did not find proxy configuration for deployment ${deploymentIdentifier}. ` +
@@ -120,23 +123,23 @@ export async function handler(event: CloudFrontRequestEvent) {
     }
 
     // Rewrite API endpoint
-    if (proxyConfig?.apiId) {
+    if (deployment?.proxyConfig?.apiId) {
       const parts = apiEndpoint.split('.');
-      apiEndpoint = [proxyConfig.apiId, ...parts.slice(1)].join('.');
+      apiEndpoint = [deployment.proxyConfig.apiId, ...parts.slice(1)].join('.');
     }
   }
 
   try {
     // If we haven't fetched the proxy config for a deployment identifier yet,
     // fetch the default here.
-    if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint, configTable, configRegion, ':root:');
+    if (!deployment) {
+      deployment = await fetchDeployment(configEndpoint, configTable, configRegion, ':root:');
     }
 
     proxy = new Proxy(
-      proxyConfig.routes,
-      proxyConfig.lambdaRoutes,
-      proxyConfig.staticRoutes,
+      deployment.proxyConfig.routes,
+      deployment.proxyConfig.lambdaRoutes,
+      deployment.proxyConfig.staticRoutes,
     );
   } catch (err) {
     console.error('Error while initialization:', err);
@@ -150,11 +153,11 @@ export async function handler(event: CloudFrontRequestEvent) {
 
   // Check if we have a prerender route
   // Bypasses proxy
-  if (request.uri in proxyConfig.prerenders) {
+  if (request.uri in deployment.proxyConfig.prerenders) {
     // Modify request to be served from Api Gateway
     const customOrigin = createCustomOriginFromApiGateway(
       apiEndpoint,
-      `/${proxyConfig.prerenders[request.uri]?.lambda}`,
+      `/${deployment.proxyConfig.prerenders[request.uri]?.lambda}`,
     );
     request.origin = {
       custom: customOrigin,
