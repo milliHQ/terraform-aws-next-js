@@ -33,6 +33,7 @@ locals {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
+  domain_name                  = var.domain_name
   expire_static_assets         = var.expire_static_assets
   static_files_archive         = local.static_files_archive
   static_files_archive_name    = local.static_files_archive_name

@@ -100,7 +100,8 @@ async function createLambdas(
 ): Promise<LambdaArns> {
   const arns: LambdaArns = {};
 
-  console.log('createLambdas', Object.keys(lambdaConfigurations), lambdas);
+  const environmentVariables = config.lambdaEnvironmentVariables;
+  environmentVariables.TF_NEXT_URL = `https://${deploymentId}.${config.domain}`;
 
   for (const key in lambdaConfigurations) {
     // TODO: An alternative approach would be to upload the lambdas as separate zip files
@@ -123,7 +124,7 @@ async function createLambdas(
       Role: roleArns[key]!, // We know this exists, because we created it in `createIAM`
       Description: 'Managed by Terraform-next.js',
       Environment: {
-        Variables: config.lambdaEnvironmentVariables,
+        Variables: environmentVariables,
       },
       Handler: lambdaConfigurations[key]?.handler || '',
       MemorySize: lambdaConfigurations[key]?.memory || config.defaultFunctionMemory,

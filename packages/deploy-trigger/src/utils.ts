@@ -69,6 +69,7 @@ function readLambdaEnvironmentVariables(): {[key: string]: string} {
 
 export function readEnvConfig(): DeploymentConfiguration {
   const accountId = process.env.ACCOUNT_ID;
+  const domain = process.env.DOMAIN;
   const lambdaEnvironmentVariables = readLambdaEnvironmentVariables();
   const lambdaLoggingPolicyArn = process.env.LAMBDA_LOGGING_POLICY_ARN;
   const proxyConfigBucket = process.env.PROXY_CONFIG_BUCKET;
@@ -77,7 +78,7 @@ export function readEnvConfig(): DeploymentConfiguration {
   const staticDeployBucket = process.env.TARGET_BUCKET;
   const vpcConfig = readVpcConfig();
 
-  if (!accountId || !proxyConfigTable || !proxyConfigBucket ||
+  if (!accountId || !proxyConfigTable || !proxyConfigBucket || !domain ||
     !region || !lambdaLoggingPolicyArn) {
     throw new Error(
       'The environment variables do not contain all necessary information to create a deployment'
@@ -89,6 +90,7 @@ export function readEnvConfig(): DeploymentConfiguration {
     defaultFunctionMemory: 1024,
     defaultRuntime: 'nodejs14.x',
     deploymentName: 'tf-next',
+    domain,
     lambdaAttachToVpc: vpcConfig.attachToVpc,
     lambdaEnvironmentVariables,
     lambdaLoggingPolicyArn,

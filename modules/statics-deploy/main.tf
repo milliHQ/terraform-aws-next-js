@@ -297,6 +297,7 @@ module "deploy_trigger" {
     VPC_SUBNET_IDS               = jsonencode(var.vpc_subnet_ids)
     LAMBDA_ENVIRONMENT_VARIABLES = jsonencode(var.lambda_environment_variables)
     ACCOUNT_ID                   = local.account_id
+    DOMAIN                       = var.domain_name
     LAMBDA_LOGGING_POLICY_ARN    = var.lambda_logging_policy_arn
     PROXY_CONFIG_BUCKET          = var.proxy_config_bucket_name
     PROXY_CONFIG_TABLE           = var.proxy_config_table_name
