@@ -227,7 +227,12 @@ module "proxy" {
 # Origin & Cache Policies
 #########################
 
-# Managed origin policy
+# Managed origin policy for default behavior
+data "aws_cloudfront_origin_request_policy" "managed_all_viewer" {
+  name = "Managed-AllViewer"
+}
+
+# Managed origin policy for static assets
 data "aws_cloudfront_origin_request_policy" "managed_cors_s3_origin" {
   name = "Managed-CORS-S3Origin"
 }
@@ -237,40 +242,16 @@ data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
   name = "Managed-CachingOptimized"
 }
 
-##
-# Origin request policy
-#
-# Determines which headers are forwarded to the S3 or Lambda origin.
-# Is only used for the default cache behavior.
-##
 locals {
-  # Default headers that should be forwarded to the origins
-  cloudfront_origin_default_headers = ["x-nextjs-page"]
-  cloudfront_origin_headers = sort(concat(
-    local.cloudfront_origin_default_headers,
-    var.cloudfront_origin_headers
+  # Default headers on which the cache key should be determined
+  #
+  # host - When using multiple domains host header ensures that each
+  #        (sub-)domain has a unique cache key
+  cloudfront_cache_default_key_headers = ["host"]
+  cloudfront_cache_key_headers = sort(concat(
+    local.cloudfront_cache_default_key_headers,
+    var.cloudfront_cache_key_headers
   ))
-}
-
-resource "aws_cloudfront_origin_request_policy" "this" {
-  name    = "${random_id.policy_name.hex}-origin"
-  comment = "Managed by Terraform Next.js"
-
-  cookies_config {
-    cookie_behavior = "all"
-  }
-
-  headers_config {
-    header_behavior = "whitelist"
-
-    headers {
-      items = local.cloudfront_origin_headers
-    }
-  }
-
-  query_strings_config {
-    query_string_behavior = "all"
-  }
 }
 
 resource "aws_cloudfront_cache_policy" "this" {
@@ -288,13 +269,10 @@ resource "aws_cloudfront_cache_policy" "this" {
     }
 
     headers_config {
-      header_behavior = length(var.cloudfront_cache_key_headers) == 0 ? "none" : "whitelist"
+      header_behavior = "whitelist"
 
-      dynamic "headers" {
-        for_each = length(var.cloudfront_cache_key_headers) == 0 ? [] : [true]
-        content {
-          items = var.cloudfront_cache_key_headers
-        }
+      headers {
+        items = local.cloudfront_cache_key_headers
       }
     }
 
@@ -365,7 +343,7 @@ locals {
       compress               = true
       viewer_protocol_policy = "redirect-to-https"
 
-      origin_request_policy_id = aws_cloudfront_origin_request_policy.this.id
+      origin_request_policy_id = var.cloudfront_origin_request_policy != null ? var.cloudfront_origin_request_policy : data.aws_cloudfront_origin_request_policy.managed_all_viewer.id
       cache_policy_id          = aws_cloudfront_cache_policy.this.id
 
       lambda_function_association = {
