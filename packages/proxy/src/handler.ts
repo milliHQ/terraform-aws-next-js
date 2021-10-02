@@ -1,22 +1,23 @@
+import { URL } from 'url';
+import { STATUS_CODES } from 'http';
+
 import {
   CloudFrontHeaders,
-  CloudFrontResultResponse,
-  CloudFrontRequestEvent,
   CloudFrontRequest,
+  CloudFrontRequestEvent,
+  CloudFrontResultResponse,
 } from 'aws-lambda';
 
+import { fetchDeployment } from './util/fetch-deployment';
 import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
-import { STATUS_CODES } from 'http';
-import { URL } from 'url';
-import { Proxy } from './proxy';
-import { RouteResult } from './types';
 import {
   createCustomOriginFromApiGateway,
   createCustomOriginFromUrl,
   serveRequestFromCustomOrigin,
   serveRequestFromS3Origin,
 } from './util/custom-origin';
-import { fetchDeployment } from './util/fetch-deployment';
+import { Proxy } from './proxy';
+import { RouteResult } from './types';
 
 let proxy: Proxy;
 
@@ -72,20 +73,17 @@ async function main(
    * that are difficult to track.
    */
   const request = event.Records[0]?.cf.request;
-
   if (request === undefined) {
     console.error('Could not find any records in CF event.');
     // @ts-ignore - TODO: generate a error request response object here
     return request;
   }
 
-  const customHeaders = request.origin?.s3?.customHeaders;
-
   // Custom headers should exist, because we assign them to the CF
   // distribution in the TF code.
+  const customHeaders = request.origin?.s3?.customHeaders;
   if (customHeaders === undefined) {
-    console.error('Could not find custom headers in request.');
-    return request;
+    throw new Error('Could not find custom headers in request.');
   }
 
   const domainName = customHeaders['x-env-domain-name']?.[0]?.value;
@@ -95,11 +93,9 @@ async function main(
   let apiEndpoint = customHeaders['x-env-api-endpoint']?.[0]?.value;
 
   if (configEndpoint === undefined || apiEndpoint === undefined) {
-    console.error('Could not find required endpoints in custom headers.');
-    return request;
+    throw new Error('Could not find required endpoints in custom headers.');
   }
 
-  let headers: Record<string, string> = {};
   let deploymentIdentifier = undefined;
 
   // We need to re-fetch the proxy config for every request, because it could be
@@ -168,7 +164,6 @@ async function main(
   // Check if we have a prerender route
   // Bypasses proxy
   if (request.uri in deployment.proxyConfig.prerenders) {
-    // Modify request to be served from Api Gateway
     const customOrigin = createCustomOriginFromApiGateway(
       apiEndpoint,
       `/${deployment.proxyConfig.prerenders[request.uri]?.lambda}`
@@ -236,8 +231,9 @@ async function main(
   const notFound = proxyResult.phase === 'error' && proxyResult.status === 404;
   let uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
 
+  // Prefix S3 path with deploymentIdentifier
   if (deploymentIdentifier) {
-    request.uri = `/${deploymentIdentifier}${request.uri}`;
+    uri = `/${deploymentIdentifier}${uri}`;
   }
 
   return serveRequestFromS3Origin(request, uri);

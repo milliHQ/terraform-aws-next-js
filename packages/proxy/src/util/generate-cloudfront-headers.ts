@@ -20,7 +20,11 @@ function generateCloudFrontHeaders(
   const cloudFrontHeaders: CloudFrontHeaders = { ...initialHeaders };
   for (const key in headers) {
     const lowercaseKey = key.toLowerCase();
-    cloudFrontHeaders[lowercaseKey] = [{ key, value: headers[key] }];
+    const value = headers[key];
+
+    if (value) {
+      cloudFrontHeaders[lowercaseKey] = [{ key, value }];
+    }
   }
 
   return cloudFrontHeaders;
