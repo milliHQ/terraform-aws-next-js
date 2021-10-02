@@ -122,10 +122,10 @@ variable "cloudfront_minimum_protocol_version" {
   default     = "TLSv1"
 }
 
-variable "cloudfront_origin_headers" {
-  description = "Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront_cache_key_headers."
-  type        = list(string)
-  default     = []
+variable "cloudfront_origin_request_policy" {
+  description = "Id of a custom request policy that overrides the default policy (AllViewer). Can be custom or managed."
+  type        = string
+  default     = null
 }
 
 variable "cloudfront_cache_key_headers" {

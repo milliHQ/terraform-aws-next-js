@@ -1,5 +1,9 @@
 import { URL } from 'url';
-import { CloudFrontCustomOrigin } from 'aws-lambda';
+
+import { CloudFrontCustomOrigin, CloudFrontRequest } from 'aws-lambda';
+
+import { generateCloudFrontHeaders } from './generate-cloudfront-headers';
+import { HTTPHeaders } from '../types';
 
 /**
  * Converts the input URL into a CloudFront custom origin
@@ -58,3 +62,82 @@ export function createCustomOriginFromApiGateway(
     sslProtocols: ['TLSv1.2'],
   };
 }
+
+function serveRequestFromCustomOrigin(
+  request: CloudFrontRequest,
+  customOrigin: CloudFrontCustomOrigin,
+  headers: HTTPHeaders = {},
+  querystring?: string,
+  uri?: string
+): CloudFrontRequest {
+  // Change request origin to custom origin
+  request.origin = {
+    custom: customOrigin,
+  };
+
+  const headersToAddToRequest: HTTPHeaders = {
+    ...headers,
+    host: customOrigin.domainName,
+  };
+
+  // If the client has a `Host header defined, forward it as `X-Forwarded-Host`
+  // to the origin
+  if ('host' in request.headers) {
+    headersToAddToRequest['X-Forwarded-Host'] = request.headers.host[0].value;
+  }
+
+  // Modify `Host` header to match the external host
+  request.headers = generateCloudFrontHeaders(
+    request.headers,
+    headersToAddToRequest
+  );
+
+  // Append querstring if we have one, otherwise set to ''
+  if (typeof querystring === 'string') {
+    request.querystring = querystring;
+  } else {
+    request.querystring = '';
+  }
+
+  // Change uri if defined
+  if (typeof uri === 'string') {
+    request.uri = uri;
+  }
+
+  return request;
+}
+
+/**
+ * Modifies a CloudFront response object so that the response gets served by S3.
+ *
+ * @param request - Incoming request from the handler. Gets modified by the
+ *    function.
+ * @returns Modified request that is served from S3.
+ */
+function serveRequestFromS3Origin(
+  request: CloudFrontRequest,
+  uri?: string
+): CloudFrontRequest {
+  // Modify `Host` header to match the S3 host. If the `Host` header is
+  // the actual `Host` header from the client we get a `SignatureDoesNotMatch`.
+  if (!request.origin?.s3?.domainName) {
+    throw new Error(
+      'S3 domain name not present in request.origin.s3.domainName'
+    );
+  }
+
+  request.headers = generateCloudFrontHeaders(request.headers, {
+    host: request.origin.s3.domainName,
+  });
+
+  if (typeof uri === 'string') {
+    request.uri = uri;
+  }
+
+  // Querystring is not supported by S3 origin
+  request.querystring = '';
+
+  return request;
+}
+
+export { serveRequestFromS3Origin, serveRequestFromCustomOrigin };
