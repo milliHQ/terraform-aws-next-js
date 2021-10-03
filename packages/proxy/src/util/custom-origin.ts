@@ -82,7 +82,7 @@ function serveRequestFromCustomOrigin(
 
   // If the client has a `Host header defined, forward it as `X-Forwarded-Host`
   // to the origin
-  if ('host' in request.headers) {
+  if (request.headers.host?.[0]?.value) {
     headersToAddToRequest['X-Forwarded-Host'] = request.headers.host[0].value;
   }
 
