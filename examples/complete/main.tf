@@ -21,7 +21,7 @@ provider "aws" {
 }
 
 module "tf_next" {
-  source = "dealmore/next-js/aws"
+  source = "milliHQ/next-js/aws"
 
   deployment_name = "terraform-next-js-example-complete"
 
