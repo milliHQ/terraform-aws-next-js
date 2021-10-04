@@ -25,7 +25,7 @@ provider "aws" {
 ##########################
 
 module "tf_next" {
-  source = "dealmore/next-js/aws"
+  source = "milliHQ/next-js/aws"
 
   # Prevent creation of the main CloudFront distribution
   cloudfront_create_distribution = false
