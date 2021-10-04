@@ -198,7 +198,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 | Name | Version |
 |------|---------|
-| terraform | >= 0.13 |
+| terraform | >= 0.15 |
 | aws | >= 3.43.0 |
 | random | >= 2.3.0 |
 
