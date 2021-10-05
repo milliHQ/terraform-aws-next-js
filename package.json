@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@dealmore/sammy": "^2.0.0",
+    "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
     "@types/jest": "^27.0.2",

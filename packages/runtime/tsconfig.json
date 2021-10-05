@@ -1,10 +1,6 @@
 {
+  "extends": "@tsconfig/node10/tsconfig.json",
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "lib": ["esnext"],
-    "target": "es2018",
-    "module": "commonjs",
     "outDir": "dist",
     "sourceMap": false,
     "declaration": true
