@@ -14,7 +14,7 @@ import {
   ProxySAM,
   normalizeCloudFrontHeaders,
   ConfigLambda,
-} from '@dealmore/sammy';
+} from '@millihq/sammy';
 import S3 from 'aws-sdk/clients/s3';
 
 import {

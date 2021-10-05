@@ -18,6 +18,7 @@
     "dist"
   ],
   "devDependencies": {
+    "@tsconfig/node10": "^1.0.8",
     "@types/aws-lambda": "^8.10.76",
     "@types/buffer-crc32": "0.2.0",
     "@types/find-up": "4.0.0",
