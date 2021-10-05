@@ -3,7 +3,6 @@
   "compilerOptions": {
     "declaration": false,
     "sourceMap": true,
-    "experimentalDecorators": true,
     "esModuleInterop": true,
     "noUncheckedIndexedAccess": true
   },
