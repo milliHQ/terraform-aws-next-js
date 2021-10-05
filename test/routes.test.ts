@@ -345,12 +345,14 @@ describe('Test proxy config', () => {
                   expect(fileContent).toContain(probe.mustContain);
                 }
               } else {
-                fail(
+                throw new Error(
                   `Could not resolve ${probe.path} to an existing lambda! (Resolved to: ${uri})`
                 );
               }
             } else {
-              fail(`Path ${probe.path} returned invalid proxy request`);
+              throw new Error(
+                `Path ${probe.path} returned invalid proxy request`
+              );
             }
           } else {
             // Request-Response
