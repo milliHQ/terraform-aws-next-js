@@ -13,7 +13,8 @@
     "test:e2e": "jest test/routes.test.ts"
   },
   "devDependencies": {
-    "@dealmore/sammy": "^2.0.0",
+    "@millihq/sammy": "^2.0.1",
+    "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
     "@types/jest": "^27.0.2",

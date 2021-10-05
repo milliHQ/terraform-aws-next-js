@@ -581,19 +581,6 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@dealmore/sammy@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-2.0.0.tgz#dce836799f6991cd92cd763caaba6a4787bd0750"
-  integrity sha512-rTLCOWKXS74H0jC4RBNQfiqb6vgo4beGwYwus0uxyEAQhMCrZpC9CpuzDecY+Jd1+oKMkI7+1gdupN1wAIwHUw==
-  dependencies:
-    aws-sdk "^2.804.0"
-    change-case "^4.1.2"
-    get-port "^5.1.1"
-    node-fetch "^2.6.1"
-    tmp "^0.2.1"
-    unzipper "^0.10.11"
-    yaml "^1.10.0"
-
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz#fd3db1d59ecf7cf121e80650bb86712f9b55eced"
@@ -779,6 +766,19 @@
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
 
+"@millihq/sammy@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@millihq/sammy/-/sammy-2.0.1.tgz#3200fbdb58449fd50d5df394dd9f21741650af77"
+  integrity sha512-6j76MsB5cKWJrlRD4D2bGeI74N1IzeM5PJS4HJWHkZmnhVgkbMxuDOazyS+A0ps8+m8HQ+Wa3n8li5iVGcbjNQ==
+  dependencies:
+    aws-sdk "^2.804.0"
+    change-case "^4.1.2"
+    get-port "^5.1.1"
+    node-fetch "^2.6.1"
+    tmp "^0.2.1"
+    unzipper "^0.10.11"
+    yaml "^1.10.0"
+
 "@sinonjs/commons@^1.7.0":
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/@sinonjs/commons/-/commons-1.8.0.tgz#c8d68821a854c555bba172f3b06959a0039b236d"
@@ -797,6 +797,16 @@
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@tootallnate/once/-/once-1.1.2.tgz#ccb91445360179a04e7fe6aff78c00ffc1eeaf82"
   integrity sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==
+
+"@tsconfig/node10@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.8.tgz#c1e4e80d6f964fbecb3359c43bd48b40f7cadad9"
+  integrity sha512-6XFfSQmMgq0CFLY1MslA/CPUfhIL919M1rMsa5lP2P097N2Wd1sSX0tx1u4olM16fLNhtHZpRhedZJphNJqmZg==
+
+"@tsconfig/node14@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tsconfig/node14/-/node14-1.0.1.tgz#95f2d167ffb9b8d2068b0b235302fafd4df711f2"
+  integrity sha512-509r2+yARFfHHE7T6Puu2jjkoycftovhXRqW328PDXTVGKihlb1P8Z9mMZH04ebyajfRY7dedfGynlrFHJUQCg==
 
 "@types/anymatch@*":
   version "1.3.1"

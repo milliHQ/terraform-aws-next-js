@@ -14,7 +14,7 @@ import {
   ProxySAM,
   normalizeCloudFrontHeaders,
   ConfigLambda,
-} from '@dealmore/sammy';
+} from '@millihq/sammy';
 import S3 from 'aws-sdk/clients/s3';
 
 import {
@@ -239,6 +239,7 @@ describe('Test proxy config', () => {
         };
 
         proxySAM = await generateProxySAM({
+          runtime: 'nodejs14.x',
           pathToProxyPackage,
           proxyConfig: JSON.stringify(proxyConfig),
           onData(data: string) {
