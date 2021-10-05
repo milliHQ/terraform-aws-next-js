@@ -77,9 +77,7 @@ describe('Test proxy config', () => {
     });
   });
 
-  for (const fixture of fs
-    .readdirSync(pathToFixtures)
-    .filter((fixture) => fixture.startsWith('00-trailing-slash-add'))) {
+  for (const fixture of fs.readdirSync(pathToFixtures)) {
     describe(`Testing fixture: ${fixture}`, () => {
       const pathToFixture = path.join(pathToFixtures, fixture);
       let config: ConfigOutput;
