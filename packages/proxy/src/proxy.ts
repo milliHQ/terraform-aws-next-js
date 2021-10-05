@@ -2,6 +2,7 @@ import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
 
 import isURL from './util/is-url';
+import { resolveRouteParameters } from './util/resolve-route-parameters';
 import { RouteResult, HTTPHeaders } from './types';
 
 // Since we have no replacement for url.parse, thanks Node.js
@@ -30,31 +31,6 @@ function appendURLSearchParams(
     param1.append(key, value);
   }
   return param1;
-}
-
-/**
- *
- * @param str
- * @param match
- * @param keys
- */
-function resolveRouteParameters(
-  str: string,
-  match: string[],
-  keys: string[]
-): string {
-  return str.replace(/\$([1-9a-zA-Z]+)/g, (_, param) => {
-    let matchIndex: number = keys.indexOf(param);
-    if (matchIndex === -1) {
-      // It's a number match, not a named capture
-      matchIndex = parseInt(param, 10);
-    } else {
-      // For named captures, add one to the `keys` index to
-      // match up with the RegExp group matches
-      matchIndex++;
-    }
-    return match[matchIndex] || '';
-  });
 }
 
 export class Proxy {
