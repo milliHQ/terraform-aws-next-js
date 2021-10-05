@@ -581,19 +581,6 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@dealmore/sammy@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@dealmore/sammy/-/sammy-2.0.0.tgz#dce836799f6991cd92cd763caaba6a4787bd0750"
-  integrity sha512-rTLCOWKXS74H0jC4RBNQfiqb6vgo4beGwYwus0uxyEAQhMCrZpC9CpuzDecY+Jd1+oKMkI7+1gdupN1wAIwHUw==
-  dependencies:
-    aws-sdk "^2.804.0"
-    change-case "^4.1.2"
-    get-port "^5.1.1"
-    node-fetch "^2.6.1"
-    tmp "^0.2.1"
-    unzipper "^0.10.11"
-    yaml "^1.10.0"
-
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz#fd3db1d59ecf7cf121e80650bb86712f9b55eced"
@@ -778,6 +765,19 @@
     "@types/node" "*"
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
+
+"@millihq/sammy@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@millihq/sammy/-/sammy-2.0.1.tgz#3200fbdb58449fd50d5df394dd9f21741650af77"
+  integrity sha512-6j76MsB5cKWJrlRD4D2bGeI74N1IzeM5PJS4HJWHkZmnhVgkbMxuDOazyS+A0ps8+m8HQ+Wa3n8li5iVGcbjNQ==
+  dependencies:
+    aws-sdk "^2.804.0"
+    change-case "^4.1.2"
+    get-port "^5.1.1"
+    node-fetch "^2.6.1"
+    tmp "^0.2.1"
+    unzipper "^0.10.11"
+    yaml "^1.10.0"
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.0"
@@ -1387,7 +1387,7 @@ at-least-node@^1.0.0:
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
-aws-sdk@*, aws-sdk@^2.804.0:
+aws-sdk@*, aws-sdk@2.804.0, aws-sdk@^2.804.0:
   version "2.804.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.804.0.tgz#ff7e6f91b86b4878ec69e3de895c10eb8203fc4b"
   integrity sha512-a02pZdjL06MunElAZPPEjpghOp/ZA+16f+t4imh1k9FCDpsNVQrT23HRq/PMvRADA5uZZRkYwX8r9o6oH/1RlA==
