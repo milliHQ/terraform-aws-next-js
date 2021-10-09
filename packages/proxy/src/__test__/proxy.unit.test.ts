@@ -137,36 +137,6 @@ test('[proxy-unit] slug group and shared lambda', () => {
   });
 });
 
-test('[proxy-unit] multiple named groups', () => {
-  const routesConfig: Route[] = [
-    {
-      src: '^/(?<teamSlug>[^/]+?)/(?<project>[^/]+?)/(?<id>[^/]+?)(?:/)?$',
-      dest:
-        '/[teamSlug]/[project]/[id]?teamSlug=$teamSlug&project=$project&id=$id',
-      check: true,
-    },
-    {
-      handle: 'filesystem',
-    },
-  ];
-  const result = new Proxy(
-    routesConfig,
-    [],
-    ['/[teamSlug]/[project]/[id]']
-  ).route('/another/invite/hello');
-
-  expect(result).toEqual({
-    found: true,
-    dest: '/[teamSlug]/[project]/[id]',
-    continue: false,
-    status: undefined,
-    headers: {},
-    isDestUrl: false,
-    phase: 'filesystem',
-    target: 'filesystem',
-  });
-});
-
 test('[proxy-unit] Ignore other routes when no continue is set', () => {
   const routesConfig = [
     { src: '/about', dest: '/about.html' },
@@ -488,6 +458,36 @@ test('[proxy-unit] multiple dynamic parts', () => {
     status: undefined,
     headers: {},
     isDestUrl: false,
-    phase: 'filesystem',
+    phase: 'rewrite',
+  });
+});
+
+test('[proxy-unit] Dynamic static route', () => {
+  const routesConfig: Route[] = [
+    {
+      handle: 'rewrite',
+    },
+    {
+      src: '^/users/(?<user_id>[^/]+?)(?:/)?$',
+      dest: '/users/[user_id]?user_id=$user_id',
+      check: true,
+    },
+    {
+      handle: 'hit',
+    },
+  ];
+  const result = new Proxy(routesConfig, [], ['/users/[user_id]']).route(
+    '/users/123'
+  );
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/users/[user_id]',
+    target: 'filesystem',
+    continue: false,
+    status: undefined,
+    headers: {},
+    isDestUrl: false,
+    phase: 'rewrite',
   });
 });
