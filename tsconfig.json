@@ -1,8 +1,0 @@
-{
-  "extends": "@tsconfig/node14/tsconfig.json",
-  "compilerOptions": {
-    "declaration": false,
-    "sourceMap": true
-  },
-  "exclude": ["node_modules", "examples/**/*"]
-}
