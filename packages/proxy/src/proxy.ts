@@ -2,6 +2,7 @@ import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
 
 import isURL from './util/is-url';
+import { resolveRouteParameters } from './util/resolve-route-parameters';
 import { RouteResult, HTTPHeaders } from './types';
 
 // Since we have no replacement for url.parse, thanks Node.js
@@ -32,31 +33,6 @@ function appendURLSearchParams(
   return param1;
 }
 
-/**
- *
- * @param str
- * @param match
- * @param keys
- */
-function resolveRouteParameters(
-  str: string,
-  match: string[],
-  keys: string[]
-): string {
-  return str.replace(/\$([1-9a-zA-Z]+)/g, (_, param) => {
-    let matchIndex: number = keys.indexOf(param);
-    if (matchIndex === -1) {
-      // It's a number match, not a named capture
-      matchIndex = parseInt(param, 10);
-    } else {
-      // For named captures, add one to the `keys` index to
-      // match up with the RegExp group matches
-      matchIndex++;
-    }
-    return match[matchIndex] || '';
-  });
-}
-
 export class Proxy {
   routes: Route[];
   lambdaRoutes: Set<string>;
@@ -71,10 +47,26 @@ export class Proxy {
   /**
    * Checks if the requested path matches a static file from the filesystem
    *
-   * @param requestedFilePath - Path to the potential file
+   * @param requestedFilePath - Path to the potential file. Could include a
+   *    querystring.
    * @returns Absolute path to the file that is matched, otherwise null
    */
-  private _checkFileSystem(requestedFilePath: string): string | null {
+  private _checkFileSystem(
+    requestedFilePathWithPossibleQuerystring: string
+  ): string | null {
+    // Make sure the querystring is removed from the requested file before
+    // doing the lookup
+    const querystringStartPos = requestedFilePathWithPossibleQuerystring.indexOf(
+      '?'
+    );
+    const requestedFilePath =
+      querystringStartPos === -1
+        ? requestedFilePathWithPossibleQuerystring
+        : requestedFilePathWithPossibleQuerystring.substring(
+            0,
+            querystringStartPos
+          );
+
     // 1: Check if the original filePath is present
     if (this.staticRoutes.has(requestedFilePath)) {
       return requestedFilePath;
@@ -112,6 +104,22 @@ export class Proxy {
     let combinedHeaders: HTTPHeaders = {};
     let target: undefined | 'filesystem' | 'lambda';
 
+    /**
+     * Set the route result target as filesystem
+     */
+    function setTargetFilesystem(dest: string) {
+      result = {
+        found: true,
+        target: 'filesystem',
+        dest,
+        headers: combinedHeaders,
+        continue: false,
+        isDestUrl: false,
+        status,
+        phase,
+      };
+    }
+
     for (let routeIndex = 0; routeIndex < this.routes.length; routeIndex++) {
       /**
        * This is how the routing basically works:
@@ -138,16 +146,7 @@ export class Proxy {
 
           // Check if the route matches a route from the filesystem
           if (filePath !== null) {
-            result = {
-              found: true,
-              target: 'filesystem',
-              dest: filePath,
-              headers: combinedHeaders,
-              continue: false,
-              isDestUrl: false,
-              status,
-              phase,
-            };
+            setTargetFilesystem(filePath);
             break;
           }
         }
@@ -231,6 +230,13 @@ export class Proxy {
           if (this.lambdaRoutes.has(destPath)) {
             target = 'lambda';
           } else {
+            // Check if the path matches a route from the filesystem
+            const filePath = this._checkFileSystem(destPath);
+            if (filePath !== null) {
+              setTargetFilesystem(filePath);
+              break;
+            }
+
             // When it is not a lambda route we cut the url_args
             // for the next iteration
             const nextUrl = parseUrl(destPath);

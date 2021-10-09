@@ -822,4 +822,232 @@ describe('[proxy] Handler', () => {
     },
     TIMEOUT
   );
+
+  // Related to issue: https://github.com/milliHQ/terraform-aws-next-js/issues/218
+  test(
+    'Dynamic routes with dynamic part in directory',
+    async () => {
+      const proxyConfig: ProxyConfig = {
+        lambdaRoutes: ['/__NEXT_API_LAMBDA_0', '/__NEXT_PAGE_LAMBDA_0'],
+        prerenders: {},
+        staticRoutes: [
+          '/404',
+          '/500',
+          '/favicon.ico',
+          '/about',
+          '/users/[user_id]',
+        ],
+        routes: [
+          {
+            src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
+            headers: {
+              Location: '/$1',
+            },
+            status: 308,
+            continue: true,
+          },
+          {
+            src: '^\\/blog(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?$',
+            headers: {
+              Location: '/test/$1',
+            },
+            status: 308,
+          },
+          {
+            src: '/404',
+            status: 404,
+            continue: true,
+          },
+          {
+            handle: 'filesystem',
+          },
+          {
+            src: '^/api/robots/?$',
+            dest: '/__NEXT_API_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/api/robots',
+            },
+            check: true,
+          },
+          {
+            src: '^(/|/index|)/?$',
+            dest: '/__NEXT_PAGE_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/index',
+            },
+            check: true,
+          },
+          {
+            src: '^\\/robots\\.txt$',
+            dest: '/api/robots',
+            check: true,
+          },
+          {
+            handle: 'resource',
+          },
+          {
+            src: '/.*',
+            status: 404,
+          },
+          {
+            handle: 'miss',
+          },
+          {
+            handle: 'rewrite',
+          },
+          {
+            src: '^/_next/data/oniBm2oZ9GXevuUEdEG44/index.json$',
+            dest: '/',
+            check: true,
+          },
+          {
+            src: '^/_next/data/oniBm2oZ9GXevuUEdEG44/test/(?<slug>.+?)\\.json$',
+            dest: '/test/[...slug]?slug=$slug',
+            check: true,
+          },
+          {
+            src: '^/test/\\[\\.\\.\\.slug\\]/?$',
+            dest: '/__NEXT_PAGE_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/test/[...slug]',
+            },
+            check: true,
+          },
+          {
+            src: '^/api/robots/?$',
+            dest: '/__NEXT_API_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/api/robots',
+            },
+            check: true,
+          },
+          {
+            src: '^(/|/index|)/?$',
+            dest: '/__NEXT_PAGE_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/index',
+            },
+            check: true,
+          },
+          {
+            src: '^/test/(?<slug>.+?)(?:/)?$',
+            dest: '/test/[...slug]?slug=$slug',
+            check: true,
+          },
+          {
+            src: '^/test/\\[\\.\\.\\.slug\\]/?$',
+            dest: '/__NEXT_PAGE_LAMBDA_0',
+            headers: {
+              'x-nextjs-page': '/test/[...slug]',
+            },
+            check: true,
+          },
+          {
+            src: '^/users/(?<user_id>[^/]+?)(?:/)?$',
+            dest: '/users/[user_id]?user_id=$user_id',
+            check: true,
+          },
+          {
+            handle: 'hit',
+          },
+          {
+            handle: 'error',
+          },
+          {
+            src: '/.*',
+            dest: '/404',
+            status: 404,
+          },
+        ],
+      };
+      const requestPath = '/users/432';
+
+      // Prepare configServer
+      configServer.proxyConfig = proxyConfig;
+
+      // Origin Request
+      // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html#example-origin-request
+      const event: CloudFrontRequestEvent = {
+        Records: [
+          {
+            cf: {
+              config: {
+                distributionDomainName: 'd111111abcdef8.cloudfront.net',
+                distributionId: 'EDFDVBD6EXAMPLE',
+                eventType: 'origin-request',
+                requestId:
+                  '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+              },
+              request: {
+                clientIp: '203.0.113.178',
+                headers: {
+                  'x-forwarded-for': [
+                    {
+                      key: 'X-Forwarded-For',
+                      value: '203.0.113.178',
+                    },
+                  ],
+                  'user-agent': [
+                    {
+                      key: 'User-Agent',
+                      value: 'Amazon CloudFront',
+                    },
+                  ],
+                  via: [
+                    {
+                      key: 'Via',
+                      value:
+                        '2.0 2afae0d44e2540f472c0635ab62c232b.cloudfront.net (CloudFront)',
+                    },
+                  ],
+                  'cache-control': [
+                    {
+                      key: 'Cache-Control',
+                      value: 'no-cache, cf-no-cache',
+                    },
+                  ],
+                },
+                method: 'GET',
+                origin: {
+                  s3: {
+                    customHeaders: {
+                      'x-env-config-endpoint': [
+                        {
+                          key: 'x-env-config-endpoint',
+                          value: configEndpoint,
+                        },
+                      ],
+                      'x-env-api-endpoint': [
+                        {
+                          key: 'x-env-api-endpoint',
+                          value: 'api-gateway.local',
+                        },
+                      ],
+                    },
+                    region: 'us-east-1',
+                    authMethod: 'origin-access-identity',
+                    domainName: 's3.localhost',
+                    path: '',
+                  },
+                },
+                querystring: '',
+                uri: requestPath,
+              },
+            },
+          },
+        ],
+      };
+
+      const result = (await handler(event)) as CloudFrontRequest;
+
+      expect(result.origin?.s3).toEqual(
+        expect.objectContaining({
+          domainName: 's3.localhost',
+          path: '',
+        })
+      );
+      expect(result.uri).toBe('/users/[user_id]');
+    },
+    TIMEOUT
+  );
 });
