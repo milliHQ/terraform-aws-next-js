@@ -8,14 +8,13 @@ A zero-config Terraform module for self-hosting Next.js sites serverless on AWS 
 
 Some features are still under development, here is a list of features that are currently supported and what we plan to bring with the next releases:
 
-- ✅ &nbsp;Next.js `v9.5+` & `v10+` _(older Versions might work but are not actively supported)_
-- ✅ &nbsp;Terraform `v0.13+`
+- ✅ &nbsp;[Next.js](https://nextjs.org/) 11, 10 & 9 support
+- ✅ &nbsp;[Terraform](https://www.terraform.io/) `v0.13+`
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;Automatic expiration of old static assets
 - ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites) & [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
 - ✅ &nbsp;[Image Component & Image Optimization](https://nextjs.org/docs/basic-features/image-optimization) support
 - 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
-- 🚧 &nbsp;[AWS CodeDeploy](https://aws.amazon.com/codedeploy/)
 
 ## Architecture
 
@@ -280,6 +279,11 @@ So issues that exist on Vercel are likely to occur on this project too.
   **Workaround:**
 
   You should be able to run`terraform apply` again and the stack creation would progreed without this error.
+
+## Contributing
+
+Contributions are welcome!  
+If you want to improve this module, please take a look at our [contributing guidelines](https://github.com/milliHQ/terraform-aws-next-js/tree/main/CONTRIBUTING.md) to get started.
 
 ## License
 
