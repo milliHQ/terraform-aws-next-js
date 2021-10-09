@@ -454,3 +454,40 @@ test('[proxy-unit] static index route', () => {
     phase: 'filesystem',
   });
 });
+
+test('[proxy-unit] multiple dynamic parts', () => {
+  const routesConfig: Route[] = [
+    {
+      handle: 'filesystem',
+    },
+    {
+      handle: 'rewrite',
+    },
+    {
+      // Original path of the page: /pages/[teamSlug]/[project]/[id].js
+      src: '^/(?<teamSlug>[^/]+?)/(?<project>[^/]+?)/(?<id>[^/]+?)(?:/)?$',
+      dest:
+        '/[teamSlug]/[project]/[id]?teamSlug=$teamSlug&project=$project&id=$id',
+      check: true,
+    },
+    {
+      handle: 'hit',
+    },
+  ];
+  const result = new Proxy(
+    routesConfig,
+    [],
+    ['/[teamSlug]/[project]/[id]']
+  ).route('/another/invite/hello');
+
+  expect(result).toEqual({
+    found: true,
+    dest: '/[teamSlug]/[project]/[id]',
+    target: 'filesystem',
+    continue: false,
+    status: undefined,
+    headers: {},
+    isDestUrl: false,
+    phase: 'filesystem',
+  });
+});
