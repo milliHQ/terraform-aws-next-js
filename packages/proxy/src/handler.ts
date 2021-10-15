@@ -3,31 +3,22 @@ import {
   CloudFrontHeaders,
   CloudFrontResultResponse,
   CloudFrontRequestEvent,
+  CloudFrontRequest,
 } from 'aws-lambda';
 
-import { ProxyConfig, HTTPHeaders, RouteResult } from './types';
-import { Proxy } from './proxy';
 import { fetchProxyConfig } from './util/fetch-proxy-config';
+import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
+import { ProxyConfig, RouteResult } from './types';
+import { Proxy } from './proxy';
 import {
   createCustomOriginFromApiGateway,
   createCustomOriginFromUrl,
+  serveRequestFromCustomOrigin,
+  serveRequestFromS3Origin,
 } from './util/custom-origin';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
-
-function convertToCloudFrontHeaders(
-  initialHeaders: CloudFrontHeaders,
-  headers: HTTPHeaders
-): CloudFrontHeaders {
-  const cloudFrontHeaders: CloudFrontHeaders = { ...initialHeaders };
-  for (const key in headers) {
-    const lowercaseKey = key.toLowerCase();
-    cloudFrontHeaders[lowercaseKey] = [{ key, value: headers[key] }];
-  }
-
-  return cloudFrontHeaders;
-}
 
 /**
  * Checks if a route result issued a redirect
@@ -43,7 +34,7 @@ function isRedirect(
     if ('Location' in routeResult.headers) {
       let headers: CloudFrontHeaders = {};
 
-      // If the redirect is permanent, add caching it
+      // If the redirect is permanent, cache the result
       if (routeResult.status === 301 || routeResult.status === 308) {
         headers['cache-control'] = [
           {
@@ -56,7 +47,7 @@ function isRedirect(
       return {
         status: routeResult.status.toString(),
         statusDescription: STATUS_CODES[routeResult.status],
-        headers: convertToCloudFrontHeaders(headers, routeResult.headers),
+        headers: generateCloudFrontHeaders(headers, routeResult.headers),
       };
     }
   }
@@ -64,7 +55,22 @@ function isRedirect(
   return false;
 }
 
-export async function handler(event: CloudFrontRequestEvent) {
+/**
+ * Internal handler that is called by the handler.
+ *
+ * @param event - Incoming event from CloudFront
+ *    @see {@link http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html}
+ * @returns CloudFront request or response modified by the proxy.
+ */
+async function main(
+  event: CloudFrontRequestEvent
+): Promise<CloudFrontRequest | CloudFrontResultResponse> {
+  /**
+   * ! Important !
+   * The `request` object should only be modified when the function returns.
+   * Changing properties inside of the function may cause unwanted side-effects
+   * that are difficult to track.
+   */
   const { request } = event.Records[0].cf;
   const configEndpoint = request.origin!.s3!.customHeaders[
     'x-env-config-endpoint'
@@ -84,103 +90,96 @@ export async function handler(event: CloudFrontRequestEvent) {
     }
   } catch (err) {
     console.error('Error while initialization:', err);
-    return request;
+    return serveRequestFromS3Origin(request);
   }
+
+  // Check if we have a prerender route
+  // Bypasses proxy
+  if (request.uri in proxyConfig.prerenders) {
+    const customOrigin = createCustomOriginFromApiGateway(
+      apiEndpoint,
+      `/${proxyConfig.prerenders[request.uri].lambda}`
+    );
+    return serveRequestFromCustomOrigin(request, customOrigin);
+  }
+
+  // Handle request by proxy
 
   // Append query string if we have one
   // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
   const requestPath = `${request.uri}${
     request.querystring !== '' ? `?${request.querystring}` : ''
   }`;
+  const proxyResult = proxy.route(requestPath);
 
-  // Check if we have a prerender route
-  // Bypasses proxy
-  if (request.uri in proxyConfig.prerenders) {
+  // Check for redirect
+  const redirect = isRedirect(proxyResult);
+  if (redirect) {
+    return redirect;
+  }
+
+  // Check if route is served by lambda
+  if (proxyResult.target === 'lambda') {
     // Modify request to be served from Api Gateway
     const customOrigin = createCustomOriginFromApiGateway(
       apiEndpoint,
-      `/${proxyConfig.prerenders[request.uri].lambda}`
+      proxyResult.dest
     );
-    request.origin = {
-      custom: customOrigin,
-    };
 
-    // Modify `Host` header to match the external host
-    headers.host = apiEndpoint;
-  } else {
-    // Handle by proxy
-    const proxyResult = proxy.route(requestPath);
+    // Append querystring if we have any
+    const querystring = proxyResult.uri_args
+      ? proxyResult.uri_args.toString()
+      : '';
 
-    // Check for redirect
-    const redirect = isRedirect(proxyResult);
-    if (redirect) {
-      return redirect;
-    }
-
-    // Check if route is served by lambda
-    if (proxyResult.target === 'lambda') {
-      // Modify request to be served from Api Gateway
-      const customOrigin = createCustomOriginFromApiGateway(
-        apiEndpoint,
-        proxyResult.dest
-      );
-      request.origin = {
-        custom: customOrigin,
-      };
-
-      // Modify `Host` header to match the external host
-      headers.host = apiEndpoint;
-
-      // Append querystring if we have any
-      request.querystring = proxyResult.uri_args
-        ? proxyResult.uri_args.toString()
-        : '';
-    } else if (proxyResult.target === 'url') {
-      // Modify request to be served from external host
-      const [customOrigin, destUrl] = createCustomOriginFromUrl(
-        proxyResult.dest
-      );
-      request.origin = {
-        custom: customOrigin,
-      };
-
-      // Modify `Host` header to match the external host
-      headers.host = customOrigin.domainName;
-
-      // Modify URI to match the path
-      request.uri = destUrl.pathname;
-
-      // Append querystring if we have any
-      request.querystring = proxyResult.uri_args
-        ? proxyResult.uri_args.toString()
-        : '';
-    } else {
-      // Route is served by S3 bucket
-      const notFound =
-        proxyResult.phase === 'error' && proxyResult.status === 404;
-
-      if (!notFound && proxyResult.found) {
-        request.uri = proxyResult.dest;
-      }
-
-      // Replace the last / with /index when requesting the resource from S3
-      request.uri = request.uri.replace(/\/$/, '/index');
-
-      // Send 404 directly to S3 bucket for handling without rewrite
-      if (notFound) {
-        return request;
-      }
-    }
-
-    headers = { ...proxyResult.headers, ...headers };
+    return serveRequestFromCustomOrigin(
+      request,
+      customOrigin,
+      proxyResult.headers,
+      querystring
+    );
   }
 
-  // Modify headers
-  request.headers = convertToCloudFrontHeaders(request.headers, headers);
+  if (proxyResult.target === 'url') {
+    // Modify request to be served from external host
+    const [customOrigin, destUrl] = createCustomOriginFromUrl(proxyResult.dest);
+    // Modify URI to match the path
+    const uri = destUrl.pathname;
 
-  if (!request.uri) {
-    request.uri = '/';
+    // Append querystring if we have any
+    const querystring = proxyResult.uri_args
+      ? proxyResult.uri_args.toString()
+      : '';
+
+    return serveRequestFromCustomOrigin(
+      request,
+      customOrigin,
+      proxyResult.headers,
+      querystring,
+      uri
+    );
   }
 
-  return request;
+  // Route is served by S3 bucket
+  const notFound = proxyResult.phase === 'error' && proxyResult.status === 404;
+  const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
+  return serveRequestFromS3Origin(request, uri);
+}
+
+/**
+ * Handler that is called by Lambda@Edge.
+ *
+ * @param event - Incoming event from CloudFront
+ *    @see {@link http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html}
+ * @returns CloudFront request or response modified by the proxy.
+ */
+export async function handler(
+  event: CloudFrontRequestEvent
+): Promise<CloudFrontRequest | CloudFrontResultResponse> {
+  try {
+    return main(event);
+  } catch (error) {
+    // Something went terribly wrong - Should never be called!
+    console.error('Unexpected error occurred: ', error);
+    return event.Records[0].cf.request;
+  }
 }
