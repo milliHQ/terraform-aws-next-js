@@ -198,7 +198,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 | Name | Version |
 |------|---------|
-| terraform | >= 0.13 |
+| terraform | >= 0.15 |
 | aws | >= 3.43.0 |
 | random | >= 2.3.0 |
 
@@ -220,7 +220,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | cloudfront\_external\_arn | When using an external CloudFront distribution provide its arn. | `string` | `null` | no |
 | cloudfront\_external\_id | When using an external CloudFront distribution provide its id. | `string` | `null` | no |
 | cloudfront\_minimum\_protocol\_version | The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1"` | no |
-| cloudfront\_origin\_headers | Header keys that should be sent to the S3 or Lambda origins. Should not contain any header that is defined via cloudfront\_cache\_key\_headers. | `list(string)` | `[]` | no |
+| cloudfront\_origin\_request\_policy | Id of a custom request policy that overrides the default policy (AllViewer). Can be custom or managed. | `string` | `null` | no |
 | cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
