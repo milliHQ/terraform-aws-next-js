@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.3 (October 09, 2021)
+
+This release fixes the routing behavior for dynamic routes that are statically generated (served from S3).
+
+### Proxy
+
+- Fixes dynamic routing for statically generated routes ([#218](https://github.com/milliHQ/terraform-aws-next-js/issues/218), [#221](https://github.com/milliHQ/terraform-aws-next-js/pull/221))
+
 ## 0.9.2 (September 19, 2021)
 
 ⚠️ Namespace changed ⚠️
