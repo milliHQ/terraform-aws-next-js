@@ -90,7 +90,7 @@ describe('deploy-trigger', () => {
         .getObject({ Bucket: targetBucket.bucketName, Key: staticRouteKey })
         .promise();
 
-      expect(staticRouteObject.ContentType).toBe('text/html');
+      expect(staticRouteObject.ContentType).toBe('text/html; charset=utf-8');
       expect(staticRouteObject.CacheControl).toBe(
         'public,max-age=0,must-revalidate,s-maxage=31536000'
       );
@@ -98,7 +98,9 @@ describe('deploy-trigger', () => {
       const staticAssetObject = await s3
         .getObject({ Bucket: targetBucket.bucketName, Key: staticAssetKey })
         .promise();
-      expect(staticAssetObject.ContentType).toBe('application/javascript');
+      expect(staticAssetObject.ContentType).toBe(
+        'application/javascript; charset=utf-8'
+      );
       expect(staticAssetObject.CacheControl).toBe(
         'public,max-age=31536000,immutable'
       );
