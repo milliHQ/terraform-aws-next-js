@@ -32,7 +32,7 @@ module "tf_next" {
   cloudfront_external_id         = aws_cloudfront_distribution.distribution.id
   cloudfront_external_arn        = aws_cloudfront_distribution.distribution.arn
 
-  deployment_name = "terraform-next-js-existing-cloudfront"
+  deployment_name = "tf-next-existing-cloudfront"
 
   providers = {
     aws.global_region = aws.global_region

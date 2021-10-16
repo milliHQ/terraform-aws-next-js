@@ -25,14 +25,6 @@ locals {
   })
 }
 
-# Generates for each function a unique function name
-resource "random_id" "function_name" {
-  for_each = local.lambdas
-
-  prefix      = "${each.key}-"
-  byte_length = 4
-}
-
 #########
 # Lambdas
 #########
@@ -74,8 +66,8 @@ module "statics_deploy" {
 resource "aws_lambda_function" "this" {
   for_each = local.lambdas
 
-  function_name = random_id.function_name[each.key].hex
-  description   = "Managed by Terraform-next.js"
+  function_name = "${var.deployment_name}_${each.key}"
+  description   = "Managed by Terraform Next.js"
   role          = aws_iam_role.lambda[each.key].arn
   handler       = lookup(each.value, "handler", "")
   runtime       = lookup(each.value, "runtime", var.lambda_runtime)
@@ -111,7 +103,7 @@ resource "aws_lambda_permission" "current_version_triggers" {
 
   statement_id  = "AllowInvokeFromApiGateway"
   action        = "lambda:InvokeFunction"
-  function_name = random_id.function_name[each.key].hex
+  function_name = "${var.deployment_name}_${each.key}"
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
@@ -142,7 +134,7 @@ module "api_gateway" {
   version = "1.1.0"
 
   name          = var.deployment_name
-  description   = "Managed by Terraform-next.js"
+  description   = "Managed by Terraform Next.js"
   protocol_type = "HTTP"
 
   create_api_domain_name = false
@@ -189,7 +181,7 @@ module "next_image" {
   lambda_policy_json               = data.aws_iam_policy_document.access_static_deployment.json
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 
-  deployment_name = var.deployment_name
+  deployment_name = "${var.deployment_name}_tfn-image"
   tags            = var.tags
 }
 
@@ -212,11 +204,6 @@ module "proxy_config" {
 #####################
 # Proxy (Lambda@Edge)
 #####################
-
-resource "random_id" "policy_name" {
-  prefix      = "${var.deployment_name}-"
-  byte_length = 4
-}
 
 module "proxy" {
   source = "./modules/proxy"
@@ -273,7 +260,7 @@ locals {
 data "aws_region" "current" {}
 
 resource "aws_cloudfront_cache_policy" "this" {
-  name    = "${random_id.policy_name.hex}-cache"
+  name    = "${var.deployment_name}_tfn-cache"
   comment = "Managed by Terraform Next.js"
 
   # Default values (Should be provided by origin)

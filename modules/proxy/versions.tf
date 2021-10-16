@@ -7,10 +7,5 @@ terraform {
       version               = ">= 3.0"
       configuration_aliases = [aws.global_region]
     }
-
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 2.3.0"
-    }
   }
 }

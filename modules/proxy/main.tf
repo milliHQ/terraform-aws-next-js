@@ -13,11 +13,6 @@ module "proxy_package" {
 # Lambda@Edge
 #############
 
-resource "random_id" "function_name" {
-  prefix      = "next-tf-proxy-"
-  byte_length = 4
-}
-
 data "aws_iam_policy_document" "dynamo_access" {
   count = var.multiple_deployments ? 1 : 0
   statement {
@@ -32,7 +27,7 @@ module "edge_proxy" {
 
   lambda_at_edge = true
 
-  function_name             = random_id.function_name.hex
+  function_name             = "${var.deployment_name}_tfn-proxy"
   description               = "Managed by Terraform Next.js"
   handler                   = "handler.handler"
   runtime                   = var.lambda_default_runtime
