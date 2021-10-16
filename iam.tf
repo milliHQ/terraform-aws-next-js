@@ -17,7 +17,7 @@ data "aws_iam_policy_document" "assume_role" {
 resource "aws_iam_role" "lambda" {
   for_each = local.lambdas
 
-  name        = random_id.function_name[each.key].hex
+  name        = "${var.deployment_name}_${each.key}"
   description = "Managed by Terraform Next.js"
 
   permissions_boundary = var.lambda_role_permissions_boundary
@@ -34,7 +34,7 @@ resource "aws_iam_role" "lambda" {
 resource "aws_cloudwatch_log_group" "this" {
   for_each = local.lambdas
 
-  name              = "/aws/lambda/${random_id.function_name[each.key].hex}"
+  name              = "/aws/lambda/${var.deployment_name}_${each.key}"
   retention_in_days = 14
 
   tags = var.tags
@@ -59,6 +59,8 @@ resource "aws_iam_policy" "lambda_logging" {
   description = "Managed by Terraform Next.js"
 
   policy = data.aws_iam_policy_document.lambda_logging.json
+
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
@@ -85,6 +87,8 @@ resource "aws_iam_policy" "additional_json" {
 
   description = "Managed by Terraform Next.js"
   policy      = var.lambda_policy_json
+
+  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "additional_json" {

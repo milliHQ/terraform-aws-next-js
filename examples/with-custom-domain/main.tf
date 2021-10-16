@@ -107,7 +107,7 @@ module "tf_next" {
   cloudfront_aliases             = local.aliases
   cloudfront_acm_certificate_arn = module.cloudfront_cert.acm_certificate_arn
 
-  deployment_name = "terraform-next-js-example-custom-domain"
+  deployment_name = "tf-next-example-custom-domain"
   providers = {
     aws.global_region = aws.global_region
   }
