@@ -23,7 +23,7 @@ provider "aws" {
 module "tf_next" {
   source = "milliHQ/next-js/aws"
 
-  deployment_name = "terraform-next-js-example-image"
+  deployment_name = "tf-next-example-image"
 
   providers = {
     aws.global_region = aws.global_region

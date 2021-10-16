@@ -8,7 +8,7 @@ locals {
 ########################
 
 resource "aws_s3_bucket" "static_upload" {
-  bucket_prefix = "next-tf-deploy-source"
+  bucket_prefix = "${var.deployment_name}-tfn-deploy"
   acl           = "private"
   force_destroy = true
   tags          = var.tags
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_notification" "on_create" {
 #########################
 
 resource "aws_s3_bucket" "static_deploy" {
-  bucket_prefix = "next-tf-static-deploy"
+  bucket_prefix = "${var.deployment_name}-tfn-static"
   acl           = "private"
   force_destroy = true
   tags          = var.tags
@@ -168,17 +168,12 @@ module "lambda_content" {
   local_cwd      = var.tf_next_module_root
 }
 
-resource "random_id" "function_name" {
-  prefix      = "next-tf-deploy-"
-  byte_length = 4
-}
-
 module "deploy_trigger" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "2.4.0"
 
-  function_name             = random_id.function_name.hex
-  description               = "Managed by Terraform-next.js"
+  function_name             = "${var.deployment_name}_tfn-deploy"
+  description               = "Managed by Terraform Next.js"
   handler                   = "handler.handler"
   runtime                   = "nodejs14.x"
   memory_size               = 1024
