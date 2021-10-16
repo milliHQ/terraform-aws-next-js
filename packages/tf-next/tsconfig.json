@@ -1,7 +1,0 @@
-{
-  "extends": "@tsconfig/node10/tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist"
-  },
-  "include": ["./src/**/*"]
-}
