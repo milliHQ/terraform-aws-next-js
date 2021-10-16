@@ -223,7 +223,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | cloudfront\_webacl\_id | An optional webacl2 arn or webacl id to associate with the cloudfront distribution | `string` | `null` | no |
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
-| deployment\_name | Identifier for the deployment group (alphanumeric characters, underscores, hyphens, slashes, hash signs and dots are allowed). | `string` | `"tf-next"` | no |
+| deployment\_name | Identifier for the deployment group (only lowercase alphanumeric characters and hyphens are allowed). | `string` | `"tf-next"` | no |
 | domain\_name | This is used to figure out which preview deployment to route to. | `string` | `null` | no |
 | expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
 | image\_optimization\_lambda\_memory\_size | Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `2048` | no |
