@@ -1,6 +1,9 @@
 import { S3 } from 'aws-sdk';
 import unzipper from 'unzipper';
-import { getType } from 'mime';
+import {
+  lookup as mimeLookup,
+  contentType as mimeContentType,
+} from 'mime-types';
 
 import { deploymentConfigurationKey } from './constants';
 import { generateRandomBuildId } from './utils';
@@ -8,16 +11,21 @@ import { FileResult } from './types';
 
 // Metadata Key where the buildId is stored
 const BuildIdMetaDataKey = 'x-amz-meta-tf-next-build-id';
-// Immutable files like css, js, images with hashed file names
+
+/**
+ * Cache control header for immutable files that are stored in _next/static
+ */
 const CacheControlImmutable = 'public,max-age=31536000,immutable';
-// Static pre-rendered HTML routes
-// -
-// Must be refetched by the browser every time (max-age=0)
-// But CloudFront CDN can hold the copy infinite time until a invalidation
-// removes it (s-maxage=31536000)
-// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html#ExpirationDownloadDist
-const CacheControlStaticHtml =
-  'public,max-age=0,must-revalidate,s-maxage=31536000';
+
+/**
+ * Static files that have no hashed filenames
+ *
+ * Must be refetched by the browser every time (max-age=0).
+ * But CloudFront CDN can hold the copy infinite time until a invalidation
+ * removes it (s-maxage=31536000).
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html#ExpirationDownloadDist
+ */
+const CacheControlStatic = 'public,max-age=0,must-revalidate,s-maxage=31536000';
 
 interface Props {
   s3: S3;
@@ -77,17 +85,26 @@ export async function deployTrigger({
       // Get ContentType
       // Static pre-rendered pages have no file extension,
       // files without extension get HTML mime type as fallback
-      const ContentType = getType(fileName) || 'text/html';
+      const mimeType = mimeLookup(fileName);
+      const contentType =
+        typeof mimeType === 'string' ? mimeContentType(mimeType) : false;
+
+      // When the file is static (served from /_next/*) then it has immutable
+      // client - side caching).
+      // Otherwise it is only immutable on the CDN
+      const cacheControl = fileName.startsWith('_next/')
+        ? CacheControlImmutable
+        : CacheControlStatic;
 
       const uploadParams: S3.Types.PutObjectRequest = {
         Bucket: deployBucket,
         Key: fileName,
         Body: entry,
-        ContentType,
-        CacheControl:
-          ContentType === 'text/html'
-            ? CacheControlStaticHtml
-            : CacheControlImmutable,
+        ContentType:
+          typeof contentType === 'string'
+            ? contentType
+            : 'text/html; charset=utf-8',
+        CacheControl: cacheControl,
       };
 
       // Sorry, but you cannot override the manifest
