@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0 (October 16, 2021)
+
+Beginning with this release we streamline the versioning of the Terraform module with its npm-packages.
+So when you use the Terraform module in version [`0.10.0`](https://registry.terraform.io/modules/milliHQ/next-js/aws/) you should also use the [`tf-next@0.10.0`](https://www.npmjs.com/package/tf-next) npm-package for building the Next.js project.
+
+This release also increases the minimum required Terraform version from `0.13` to `0.15`.
+
+- Forward correct `host` header to server-side rendered pages ([#156](https://github.com/milliHQ/terraform-aws-next-js/issues/156), [#161](https://github.com/milliHQ/terraform-aws-next-js/pull/161))
+- Adds charset to `Content-Type` header for static routes and files served by S3 ([#214](https://github.com/milliHQ/terraform-aws-next-js/issues/214), [#226](https://github.com/milliHQ/terraform-aws-next-js/pull/226))
+- Removes empty provider warning when running Terraform commands ([#155](https://github.com/milliHQ/terraform-aws-next-js/issues/155), [#219](https://github.com/milliHQ/terraform-aws-next-js/pull/219))
+- Removes random ids from resource names ([#212](https://github.com/milliHQ/terraform-aws-next-js/issues/212), [#227](https://github.com/milliHQ/terraform-aws-next-js/pull/227))
+
 ## 0.9.3 (October 09, 2021)
 
 This release fixes the routing behavior for dynamic routes that are statically generated (served from S3).
