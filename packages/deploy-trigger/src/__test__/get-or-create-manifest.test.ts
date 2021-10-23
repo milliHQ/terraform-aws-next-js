@@ -20,9 +20,9 @@ describe('deploy-trigger', () => {
   describe('get or create manifest', () => {
     let bucket: BucketHandler;
     const fileNames = [
-      '_nest/static/chunks/b5500a63de92ae71a2560a1f3ee9c7923c1de4ef.1f52a3ec41a5d5095e70.js',
-      '_nest/static/chunks/framework.972e47ad649981044547.js',
-      '_nest/static/chunks/pages/[teamSlug]/[id]-08ca39a64982590c011d.js',
+      '_next/static/chunks/b5500a63de92ae71a2560a1f3ee9c7923c1de4ef.1f52a3ec41a5d5095e70.js',
+      '_next/static/chunks/framework.972e47ad649981044547.js',
+      '_next/static/chunks/pages/[teamSlug]/[id]-08ca39a64982590c011d.js',
       '404',
     ];
 
