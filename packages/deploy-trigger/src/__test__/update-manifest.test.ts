@@ -11,7 +11,7 @@ import {
 } from '../constants';
 import { getOrCreateManifest } from '../get-or-create-manifest';
 import { Manifest } from '../types';
-import { updateManifest } from '../update-manifest';
+import { getInvalidationKeys, updateManifest } from '../update-manifest';
 import { generateRandomBuildId } from '../utils';
 import { addFilesToS3Bucket, generateS3ClientForTesting } from './utils';
 
@@ -264,5 +264,36 @@ describe('deploy-trigger', () => {
     expect(updatedManifest.currentBuild).toBe(buildId);
     // Should only
     expect(invalidate.sort()).toEqual(['/dynamic-route*'].sort());
+  });
+});
+
+describe('[deploy-trigger] getInvalidationKeys', () => {
+  test.each([
+    ['test/[slug]', 'test*'],
+    ['test/[slug]/abc', 'test*'],
+    ['test/[...slug]', 'test*'],
+    ['test/[[...slug]]', 'test*'],
+    ['test/[testId]/index', 'test*'],
+    ['test/[testId]/[otherId]', 'test*'],
+  ])('Generated invalidationKey from %s should be %s', (input, output) => {
+    const invalidationKeys = getInvalidationKeys([input]);
+
+    expect(invalidationKeys).toEqual([output]);
+  });
+
+  test('Root index route', () => {
+    const invalidationKeys = getInvalidationKeys(['index']);
+
+    expect(invalidationKeys).toEqual(['/', '/?*']);
+  });
+
+  test('Skip routes from _next', () => {
+    const invalidationKeys = getInvalidationKeys([
+      '_next/abc',
+      '_next/def',
+      '_next/ghi',
+    ]);
+
+    expect(invalidationKeys).toEqual([]);
   });
 });
