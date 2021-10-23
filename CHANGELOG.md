@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.1 (October 23, 2021)
+
+This release ensures that static generated routes with dynamic parts (e.g. `/test/[...slug]`) are invalidated correctly when running terraform apply.
+We also added a new option to define tags exclusively on S3 buckets created by this module.
+
+- Ensure correct invalidation for slug paths ([#140](https://github.com/milliHQ/terraform-aws-next-js/issues/140), [#229](https://github.com/milliHQ/terraform-aws-next-js/pull/229), [#228](https://github.com/milliHQ/terraform-aws-next-js/issues/228))
+- Adds new input variable `tags_s3_bucket` ([#216](https://github.com/milliHQ/terraform-aws-next-js/issues/216), [#230](https://github.com/milliHQ/terraform-aws-next-js/pull/230))
+
 ## 0.10.0 (October 16, 2021)
 
 Beginning with this release we streamline the versioning of the Terraform module with its npm-packages.
