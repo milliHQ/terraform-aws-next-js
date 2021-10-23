@@ -3,6 +3,11 @@ import { S3 } from 'aws-sdk';
 import { expireTagKey, expireTagValue } from './constants';
 import { ExpireValue, FileResult, Manifest, ManifestFile } from './types';
 
+// Regex mather for paths with dynamic parts
+// e.g. - [id]/index
+//      - test/[...slug]/index
+const dynamicPartMatcher = new RegExp(/\/?\[[^\]]+\].*/);
+
 async function expireFiles(s3: S3, bucketId: string, files: string[]) {
   // Set the expiration tags on the expired files
   for (const file of files) {
@@ -107,6 +112,14 @@ function getInvalidationKeys(files: string[]) {
       continue;
     }
 
+    // Check if the a dynamic part is in the filename
+    // e.g. - [abc]/index       ->  *
+    //      - test/[...slug]    ->  test/*
+    if (file.match(dynamicPartMatcher)) {
+      invalidations.push(file.replace(dynamicPartMatcher, '*'));
+      continue;
+    }
+
     // Default index routes
     // /some/route/index -> /some/route*
     if (file.endsWith('/index')) {
@@ -144,7 +157,7 @@ interface Response {
  *
  * It returns an array of keys that should be expired
  */
-export async function updateManifest({
+async function updateManifest({
   files,
   buildId,
   s3,
@@ -271,3 +284,5 @@ export async function updateManifest({
 
   return { expire, restore, manifest: newManifest, invalidate, deleted };
 }
+
+export { updateManifest, getInvalidationKeys };
