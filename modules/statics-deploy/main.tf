@@ -11,12 +11,13 @@ resource "aws_s3_bucket" "static_upload" {
   bucket_prefix = "${var.deployment_name}-tfn-deploy"
   acl           = "private"
   force_destroy = true
-  tags          = var.tags
 
   # We are using versioning here to ensure that no file gets overridden at upload
   versioning {
     enabled = true
   }
+
+  tags = merge(var.tags, var.tags_s3_bucket)
 }
 
 resource "aws_s3_bucket_notification" "on_create" {
@@ -36,7 +37,6 @@ resource "aws_s3_bucket" "static_deploy" {
   bucket_prefix = "${var.deployment_name}-tfn-static"
   acl           = "private"
   force_destroy = true
-  tags          = var.tags
 
   lifecycle_rule {
     id      = "Expire static assets"
@@ -50,6 +50,8 @@ resource "aws_s3_bucket" "static_deploy" {
       days = var.expire_static_assets > 0 ? var.expire_static_assets : 0
     }
   }
+
+  tags = merge(var.tags, var.tags_s3_bucket)
 }
 
 # CloudFront permissions for the bucket
