@@ -166,6 +166,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "tags_s3_bucket" {
+  description = "Tag metadata to label AWS S3 buckets. Overrides tags with the same name in input variable tags."
+  type        = map(string)
+  default     = {}
+}
+
 ################
 # Debug Settings
 ################

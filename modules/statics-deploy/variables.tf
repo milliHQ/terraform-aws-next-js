@@ -56,6 +56,11 @@ variable "tags" {
   default = {}
 }
 
+variable "tags_s3_bucket" {
+  type    = map(string)
+  default = {}
+}
+
 #######
 # Debug
 #######

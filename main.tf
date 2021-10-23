@@ -43,6 +43,7 @@ module "statics_deploy" {
 
   deployment_name = var.deployment_name
   tags            = var.tags
+  tags_s3_bucket  = var.tags_s3_bucket
 
   debug_use_local_packages = var.debug_use_local_packages
   tf_next_module_root      = path.module
@@ -185,6 +186,7 @@ module "proxy_config" {
 
   deployment_name = var.deployment_name
   tags            = var.tags
+  tags_s3_bucket  = var.tags_s3_bucket
 }
 
 #####################
