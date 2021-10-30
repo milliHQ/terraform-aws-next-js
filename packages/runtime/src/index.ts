@@ -202,7 +202,7 @@ function isServerTargetNext(nextVersion: string): boolean {
     return true;
   }
 
-  return semver.gte(NextServerTargetVersion, nextVersion);
+  return semver.gte(nextVersion, NextServerTargetVersion);
 }
 
 const name = '[@vercel/next]';
