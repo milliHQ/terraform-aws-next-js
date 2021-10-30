@@ -236,6 +236,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | multiple\_deployments | Have multiple deployments and domain aliases. | `bool` | `false` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 | tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
+| tags\_s3\_bucket | Tag metadata to label AWS S3 buckets. Overrides tags with the same name in input variable tags. | `map(string)` | `{}` | no |
 | use\_awscli\_for\_static\_upload | Use AWS CLI when uploading static resources to S3 instead of default Bash script. Some cases may fail with 403 Forbidden when using the Bash script. | `bool` | `false` | no |
 | vpc\_security\_group\_ids | The list of Security Group IDs to be used by the Lambda functions. lambda\_attach\_to\_vpc should be set to true for these to be applied. | `list(string)` | `[]` | no |
 | vpc\_subnet\_ids | The list of VPC subnet IDs to attach the Lambda functions. lambda\_attach\_to\_vpc should be set to true for these to be applied. | `list(string)` | `[]` | no |
