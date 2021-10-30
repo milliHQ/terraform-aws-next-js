@@ -569,6 +569,11 @@ function syncEnvVars(base: EnvConfig, removeEnv: EnvConfig, addEnv: EnvConfig) {
 
 export const ExperimentalTraceVersion = `9.0.4-canary.1`;
 
+/**
+ * Next.js version that uses default target `server` for serverless builds
+ */
+export const NextServerTargetVersion = '10.0.9-canary.4';
+
 export type PseudoLayer = {
   [fileName: string]: PseudoFile | PseudoSymbolicLink;
 };
