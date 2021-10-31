@@ -197,12 +197,13 @@ function isLegacyNext(nextVersion: string) {
 /**
  * Check if the target: `server` can be used to build the app
  */
-function isServerTargetNext(nextVersion: string): boolean {
-  if (nextVersion === 'canary' || nextVersion === 'latest') {
+function isServerTargetNext(nextVersionRange: string): boolean {
+  if (nextVersionRange === 'canary' || nextVersionRange === 'latest') {
     return true;
   }
 
-  return semver.gte(nextVersion, NextServerTargetVersion);
+  // >= NextServerTargetVersion
+  return !semver.gtr(NextServerTargetVersion, nextVersionRange);
 }
 
 const name = '[@vercel/next]';
@@ -268,9 +269,6 @@ export async function build({
   const nodeVersion = await getNodeVersion(entryPath, undefined, config, meta);
   const spawnOpts = getSpawnOptions(meta, nodeVersion);
 
-  const isServerTarget =
-    nextVersionRange && isServerTargetNext(nextVersionRange);
-
   // Add Vercel build environment variables that some dependencies need
   // to determine a Vercel like build environment
   spawnOpts.env = {
@@ -281,15 +279,6 @@ export async function build({
     // can get the CWD from the download directory root
     INIT_CWD: entryPath,
   };
-
-  // Next.js changed the default output folder beginning with
-  // 10.0.8-canary.15 from `.next/serverless` to `.next/server`.
-  // This is an opt-out of this behavior for older versions.
-  // https://github.com/dealmore/terraform-aws-next-js/issues/86
-  // https://github.com/vercel/next.js/pull/22731
-  if (!isServerTarget) {
-    spawnOpts.env['NEXT_PRIVATE_TARGET'] = 'experimental-serverless-trace';
-  }
 
   const nowJsonPath = await findUp(['now.json', 'vercel.json'], {
     cwd: entryPath,
@@ -369,8 +358,9 @@ export async function build({
     console.warn('WARNING: You should not upload the `.next` directory.');
   }
 
-  const isLegacy =
-    !isServerTarget && nextVersionRange && isLegacyNext(nextVersionRange);
+  const isServerTarget =
+    nextVersionRange && isServerTargetNext(nextVersionRange);
+  const isLegacy = nextVersionRange && isLegacyNext(nextVersionRange);
   debug(
     `MODE: ${
       isServerTarget ? 'server(less)' : isLegacy ? 'legacy' : 'serverless'
@@ -470,6 +460,15 @@ export async function build({
   const memoryToConsume = Math.floor(os.totalmem() / 1024 ** 2) - 128;
   const env: typeof process.env = { ...spawnOpts.env };
   env.NODE_OPTIONS = `--max_old_space_size=${memoryToConsume}`;
+
+  // Next.js changed the default output folder beginning with
+  // 10.0.8-canary.15 from `.next/serverless` to `.next/server`.
+  // This is an opt-out of this behavior for older versions.
+  // https://github.com/dealmore/terraform-aws-next-js/issues/86
+  // https://github.com/vercel/next.js/pull/22731
+  if (!isServerTarget) {
+    env.NEXT_PRIVATE_TARGET = 'experimental-serverless-trace';
+  }
 
   if (buildCommand) {
     // Add `node_modules/.bin` to PATH
