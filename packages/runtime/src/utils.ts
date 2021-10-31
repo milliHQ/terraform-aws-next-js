@@ -198,7 +198,7 @@ async function getRoutes(
   // If default pages dir isn't found check for `src/pages`
   if (
     !pagesDir &&
-    fileKeys.some(file =>
+    fileKeys.some((file) =>
       file.startsWith(path.join(entryDirectory, 'src/pages'))
     )
   ) {
@@ -260,7 +260,7 @@ async function getRoutes(
       entryDirectory,
       dynamicPages,
       true
-    ).then(arr =>
+    ).then((arr) =>
       arr.map((route: Source) => {
         // convert to make entire RegExp match as one group
         route.src = route.src
@@ -287,7 +287,7 @@ async function getRoutes(
     };
 
     // Only add the route if a page is not already using it
-    if (!routes.some(r => (r as Source).src === route.src)) {
+    if (!routes.some((r) => (r as Source).src === route.src)) {
       routes.push(route);
     }
   }
@@ -432,7 +432,7 @@ export async function getDynamicRoutes(
               dest: `${!isDev ? path.join('/', entryDirectory, page) : page}${
                 routeKeys
                   ? `?${Object.keys(routeKeys)
-                      .map(key => `${routeKeys[key]}=$${key}`)
+                      .map((key) => `${routeKeys[key]}=$${key}`)
                       .join('&')}`
                   : ''
               }`,
@@ -491,13 +491,13 @@ export async function getDynamicRoutes(
     });
   }
 
-  const pageMatchers = getSortedRoutes(dynamicPages).map(pageName => ({
+  const pageMatchers = getSortedRoutes(dynamicPages).map((pageName) => ({
     pageName,
     matcher: getRouteRegex && getRouteRegex(pageName).re,
   }));
 
   const routes: Source[] = [];
-  pageMatchers.forEach(pageMatcher => {
+  pageMatchers.forEach((pageMatcher) => {
     // in `vercel dev` we don't need to prefix the destination
     const dest = !isDev
       ? path.join('/', entryDirectory, pageMatcher.pageName)
@@ -551,6 +551,38 @@ export async function getImagesManifest(
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const imagesManifest: ImagesManifest = require(pathImagesManifest);
   return imagesManifest;
+}
+
+type ServerFilesManifest = {
+  version: number;
+  appDir: string;
+  files: string[];
+  ignore: string[];
+  config: any;
+};
+
+export async function getServerFilesManifest(
+  entryPath: string,
+  outputDirectory: string
+): Promise<ServerFilesManifest | undefined> {
+  const pathServerFilesManifest = path.join(
+    entryPath,
+    outputDirectory,
+    'required-server-files.json'
+  );
+
+  const hasServerFilesManifest = await fs
+    .access(pathServerFilesManifest)
+    .then(() => true)
+    .catch(() => false);
+
+  if (!hasServerFilesManifest) {
+    return undefined;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const serverFilesManifest: ServerFilesManifest = require(pathServerFilesManifest);
+  return serverFilesManifest;
 }
 
 function syncEnvVars(base: EnvConfig, removeEnv: EnvConfig, addEnv: EnvConfig) {
@@ -924,7 +956,7 @@ export async function getPrerenderManifest(
         notFoundRoutes: [],
       };
 
-      routes.forEach(route => {
+      routes.forEach((route) => {
         const {
           initialRevalidateSeconds,
           dataRoute,
@@ -940,7 +972,7 @@ export async function getPrerenderManifest(
         };
       });
 
-      lazyRoutes.forEach(lazyRoute => {
+      lazyRoutes.forEach((lazyRoute) => {
         const {
           routeRegex,
           fallback,
@@ -983,7 +1015,7 @@ export async function getPrerenderManifest(
         ret.notFoundRoutes.push(...manifest.notFoundRoutes);
       }
 
-      routes.forEach(route => {
+      routes.forEach((route) => {
         const {
           initialRevalidateSeconds,
           dataRoute,
@@ -999,7 +1031,7 @@ export async function getPrerenderManifest(
         };
       });
 
-      lazyRoutes.forEach(lazyRoute => {
+      lazyRoutes.forEach((lazyRoute) => {
         const {
           routeRegex,
           fallback,
@@ -1113,7 +1145,7 @@ export function normalizeLocalePath(
   // first item will be empty string from splitting at first char
   const pathnameParts = pathname.split('/');
 
-  (locales || []).some(locale => {
+  (locales || []).some((locale) => {
     if (pathnameParts[1].toLowerCase() === locale.toLowerCase()) {
       detectedLocale = locale;
       pathnameParts.splice(1, 1);

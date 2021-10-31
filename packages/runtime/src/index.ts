@@ -48,6 +48,7 @@ import {
   getPrerenderManifest,
   getRoutes,
   getRoutesManifest,
+  getServerFilesManifest,
   getSourceFilePathFromPage,
   isDynamicRoute,
   normalizeLocalePath,
@@ -1184,7 +1185,7 @@ export async function build({
       debug(`node-file-trace result for pages: ${fileList}`);
 
       const lstatSema = new Sema(25, {
-        capacity: fileList.length + apiFileList.length,
+        capacity: fileList.size + apiFileList.size,
       });
       const lstatResults: { [key: string]: ReturnType<typeof lstat> } = {};
 
@@ -1192,7 +1193,7 @@ export async function build({
         reasons: NodeFileTraceReasons,
         files: { [filePath: string]: FileFsRef }
       ) => async (file: string) => {
-        const reason = reasons[file];
+        const reason = reasons.get(file);
         if (reason && reason.type === 'initial') {
           // Initial files are manually added to the lambda later
           return;
@@ -1214,10 +1215,12 @@ export async function build({
       };
 
       await Promise.all(
-        fileList.map(collectTracedFiles(nonApiReasons, tracedFiles))
+        Array.from(fileList).map(collectTracedFiles(nonApiReasons, tracedFiles))
       );
       await Promise.all(
-        apiFileList.map(collectTracedFiles(apiReasons, apiTracedFiles))
+        Array.from(apiFileList).map(
+          collectTracedFiles(apiReasons, apiTracedFiles)
+        )
       );
 
       if (hasLambdas) {
@@ -1559,203 +1562,254 @@ export async function build({
     );
 
     if (isSharedLambdas) {
-      const launcherPath = path.join(__dirname, 'templated-launcher-shared.js');
+      const launcherPath = path.join(
+        __dirname,
+        isServerTarget ? 'server-launcher.js' : 'templated-launcher-shared.js'
+      );
       const launcherData = await readFile(launcherPath, 'utf8');
 
-      // we need to include the prerenderManifest.omittedRoutes here
-      // for the page to be able to be matched in the lambda for preview mode
-      const completeDynamicRoutes = await getDynamicRoutes(
-        entryPath,
-        entryDirectory,
-        dynamicPages,
-        false,
-        routesManifest
-      ).then((arr) =>
-        arr.map((route) => {
-          route.src = route.src.replace('^', `^${dynamicPrefix}`);
-          return route;
-        })
-      );
+      let launchers: Array<{ launcher: string; group: LambdaGroup }>;
 
-      await Promise.all(
-        [...apiLambdaGroups, ...pageLambdaGroups].map(
-          async function buildLambdaGroup(group: LambdaGroup) {
+      if (isServerTarget) {
+        const serverFilesManifest = await getServerFilesManifest(
+          entryPath,
+          outputDirectory
+        );
+
+        if (!serverFilesManifest || !serverFilesManifest.config) {
+          throw new NowBuildError({
+            code: 'NEXT_NO_SERVER_FILES_MANIFEST',
+            message:
+              'No required-server-files.json file was found after running `next build`.',
+          });
+        }
+
+        const stringifiedNextConfig = JSON.stringify(
+          serverFilesManifest.config
+        );
+
+        // Inject Next.js config into launcher
+        launchers = [...apiLambdaGroups, ...pageLambdaGroups].map(
+          function buildLambdaGroup(group: LambdaGroup) {
+            const launcher = launcherData.replace(
+              /__LAUNCHER_NEXT_CONFIG__/g,
+              stringifiedNextConfig
+            );
+
+            return {
+              group,
+              launcher,
+            };
+          }
+        );
+      } else {
+        // we need to include the prerenderManifest.omittedRoutes here
+        // for the page to be able to be matched in the lambda for preview mode
+        const completeDynamicRoutes = await getDynamicRoutes(
+          entryPath,
+          entryDirectory,
+          dynamicPages,
+          false,
+          routesManifest
+        ).then((arr) =>
+          arr.map((route) => {
+            route.src = route.src.replace('^', `^${dynamicPrefix}`);
+            return route;
+          })
+        );
+        launchers = [...apiLambdaGroups, ...pageLambdaGroups].map(
+          function buildLambdaGroup(group: LambdaGroup) {
             const groupPageKeys = Object.keys(group.pages);
 
             const launcher = launcherData.replace(
               /\/\/ __LAUNCHER_PAGE_HANDLER__/g,
               `
-              const url = require('url');
+                const url = require('url');
 
-              ${
-                routesManifest?.i18n
-                  ? `
-                  function stripLocalePath(pathname) {
-                  // first item will be empty string from splitting at first char
-                  const pathnameParts = pathname.split('/')
+                ${
+                  routesManifest?.i18n
+                    ? `
+                    function stripLocalePath(pathname) {
+                    // first item will be empty string from splitting at first char
+                    const pathnameParts = pathname.split('/')
 
-                  ;(${JSON.stringify(
-                    routesManifest.i18n.locales
-                  )}).some((locale) => {
-                    if (pathnameParts[1].toLowerCase() === locale.toLowerCase()) {
-                      pathnameParts.splice(1, 1)
-                      pathname = pathnameParts.join('/') || '/index'
-                      return true
-                    }
-                    return false
-                  })
+                    ;(${JSON.stringify(
+                      routesManifest.i18n.locales
+                    )}).some((locale) => {
+                      if (pathnameParts[1].toLowerCase() === locale.toLowerCase()) {
+                        pathnameParts.splice(1, 1)
+                        pathname = pathnameParts.join('/') || '/index'
+                        return true
+                      }
+                      return false
+                    })
 
-                  return pathname
+                    return pathname
+                  }
+                  `
+                    : `function stripLocalePath(pathname) { return pathname }`
                 }
-                `
-                  : `function stripLocalePath(pathname) { return pathname }`
-              }
 
-              page = function(req, res) {
-                try {
-                  const pages = {
-                    ${groupPageKeys
-                      .map(
-                        (page) =>
-                          `'${page}': () => require('./${path.join(
-                            './',
-                            group.pages[page].pageFileName
-                          )}')`
-                      )
-                      .join(',\n')}
-                    ${
-                      '' /*
-                      creates a mapping of the page and the page's module e.g.
-                      '/about': () => require('./.next/serverless/pages/about.js')
-                    */
+                page = function(req, res) {
+                  try {
+                    const pages = {
+                      ${groupPageKeys
+                        .map(
+                          (page) =>
+                            `'${page}': () => require('./${path.join(
+                              './',
+                              group.pages[page].pageFileName
+                            )}')`
+                        )
+                        .join(',\n')}
+                      ${
+                        '' /*
+                        creates a mapping of the page and the page's module e.g.
+                        '/about': () => require('./.next/serverless/pages/about.js')
+                      */
+                      }
                     }
-                  }
-                  let toRender = req.headers['x-nextjs-page']
+                    let toRender = req.headers['x-nextjs-page']
 
-                  if (!toRender) {
-                    try {
-                      const { pathname } = url.parse(req.url)
-                      toRender = stripLocalePath(pathname).replace(/\\/$/, '') || '/index'
-                    } catch (_) {
-                      // handle failing to parse url
-                      res.statusCode = 400
-                      return res.end('Bad Request')
-                    }
-                  }
-
-                  let currentPage = pages[toRender]
-
-                  if (
-                    toRender &&
-                    !currentPage
-                  ) {
-                    if (toRender.includes('/_next/data')) {
-                      toRender = toRender
-                        .replace(new RegExp('/_next/data/${escapedBuildId}/'), '/')
-                        .replace(/\\.json$/, '')
-
-                      toRender = stripLocalePath(toRender) || '/index'
-                      currentPage = pages[toRender]
+                    if (!toRender) {
+                      try {
+                        const { pathname } = url.parse(req.url)
+                        toRender = stripLocalePath(pathname).replace(/\\/$/, '') || '/index'
+                      } catch (_) {
+                        // handle failing to parse url
+                        res.statusCode = 400
+                        return res.end('Bad Request')
+                      }
                     }
 
-                    if (!currentPage) {
-                      // for prerendered dynamic routes (/blog/post-1) we need to
-                      // find the match since it won't match the page directly
-                      const dynamicRoutes = ${JSON.stringify(
-                        completeDynamicRoutes.map((route) => ({
-                          src: route.src,
-                          dest: route.dest,
-                        }))
-                      )}
+                    let currentPage = pages[toRender]
 
-                      for (const route of dynamicRoutes) {
-                        const matcher = new RegExp(route.src)
+                    if (
+                      toRender &&
+                      !currentPage
+                    ) {
+                      if (toRender.includes('/_next/data')) {
+                        toRender = toRender
+                          .replace(new RegExp('/_next/data/${escapedBuildId}/'), '/')
+                          .replace(/\\.json$/, '')
 
-                        if (matcher.test(toRender)) {
-                          toRender = url.parse(route.dest).pathname
-                          currentPage = pages[toRender]
-                          break
+                        toRender = stripLocalePath(toRender) || '/index'
+                        currentPage = pages[toRender]
+                      }
+
+                      if (!currentPage) {
+                        // for prerendered dynamic routes (/blog/post-1) we need to
+                        // find the match since it won't match the page directly
+                        const dynamicRoutes = ${JSON.stringify(
+                          completeDynamicRoutes.map((route) => ({
+                            src: route.src,
+                            dest: route.dest,
+                          }))
+                        )}
+
+                        for (const route of dynamicRoutes) {
+                          const matcher = new RegExp(route.src)
+
+                          if (matcher.test(toRender)) {
+                            toRender = url.parse(route.dest).pathname
+                            currentPage = pages[toRender]
+                            break
+                          }
                         }
                       }
                     }
+
+                    if (!currentPage) {
+                      console.error(
+                        "Failed to find matching page for", {toRender, header: req.headers['x-nextjs-page'], url: req.url }, "in lambda"
+                      )
+                      console.error('pages in lambda', Object.keys(pages))
+                      res.statusCode = 500
+                      return res.end('internal server error')
+                    }
+
+                    const mod = currentPage()
+                    const method = mod.render || mod.default || mod
+
+                    return method(req, res)
+                  } catch (err) {
+                    console.error('Unhandled error during request:', err)
+                    throw err
                   }
-
-                  if (!currentPage) {
-                    console.error(
-                      "Failed to find matching page for", {toRender, header: req.headers['x-nextjs-page'], url: req.url }, "in lambda"
-                    )
-                    console.error('pages in lambda', Object.keys(pages))
-                    res.statusCode = 500
-                    return res.end('internal server error')
-                  }
-
-                  const mod = currentPage()
-                  const method = mod.render || mod.default || mod
-
-                  return method(req, res)
-                } catch (err) {
-                  console.error('Unhandled error during request:', err)
-                  throw err
                 }
-              }
-              `
+                `
             );
-            const launcherFiles: { [name: string]: FileFsRef | FileBlob } = {
-              [path.join(
-                path.relative(baseDir, entryPath),
-                'now__bridge.js'
-              )]: new FileFsRef({
-                fsPath: path.join(__dirname, 'now__bridge.js'),
-              }),
-              [path.join(
-                path.relative(baseDir, entryPath),
-                'now__launcher.js'
-              )]: new FileBlob({ data: launcher }),
-            };
 
-            const pageLayers: PseudoLayer[] = [];
-
-            for (const page of groupPageKeys) {
-              const { pageLayer } = group.pages[page];
-              pageLambdaMap[page] = group.lambdaIdentifier;
-              pageLayers.push(pageLayer);
-            }
-
-            if (requiresTracing) {
-              lambdas[
-                group.lambdaIdentifier
-              ] = await createLambdaFromPseudoLayers({
-                files: {
-                  ...launcherFiles,
-                },
-                layers: [
-                  ...(group.isApiLambda ? apiPseudoLayers : pseudoLayers),
-                  ...pageLayers,
-                ],
-                handler: path.join(
-                  path.relative(baseDir, entryPath),
-                  'now__launcher.launcher'
-                ),
-                runtime: nodeVersion.runtime,
-              });
-            } else {
-              lambdas[
-                group.lambdaIdentifier
-              ] = await createLambdaFromPseudoLayers({
-                files: {
-                  ...launcherFiles,
-                  ...assets,
-                },
-                layers: pageLayers,
-                handler: path.join(
-                  path.relative(baseDir, entryPath),
-                  'now__launcher.launcher'
-                ),
-                runtime: nodeVersion.runtime,
-              });
-            }
+            return { launcher, group };
           }
-        )
+        );
+      }
+
+      await Promise.all(
+        launchers.map(async function buildLambdaGroup({
+          launcher,
+          group,
+        }: {
+          launcher: string;
+          group: LambdaGroup;
+        }) {
+          const groupPageKeys = Object.keys(group.pages);
+
+          const launcherFiles: { [name: string]: FileFsRef | FileBlob } = {
+            [path.join(
+              path.relative(baseDir, entryPath),
+              'now__bridge.js'
+            )]: new FileFsRef({
+              fsPath: path.join(__dirname, 'now__bridge.js'),
+            }),
+            [path.join(
+              path.relative(baseDir, entryPath),
+              'now__launcher.js'
+            )]: new FileBlob({ data: launcher }),
+          };
+
+          const pageLayers: PseudoLayer[] = [];
+
+          for (const page of groupPageKeys) {
+            const { pageLayer } = group.pages[page];
+            pageLambdaMap[page] = group.lambdaIdentifier;
+            pageLayers.push(pageLayer);
+          }
+
+          if (requiresTracing) {
+            lambdas[
+              group.lambdaIdentifier
+            ] = await createLambdaFromPseudoLayers({
+              files: {
+                ...launcherFiles,
+              },
+              layers: [
+                ...(group.isApiLambda ? apiPseudoLayers : pseudoLayers),
+                ...pageLayers,
+              ],
+              handler: path.join(
+                path.relative(baseDir, entryPath),
+                'now__launcher.launcher'
+              ),
+              runtime: nodeVersion.runtime,
+            });
+          } else {
+            lambdas[
+              group.lambdaIdentifier
+            ] = await createLambdaFromPseudoLayers({
+              files: {
+                ...launcherFiles,
+                ...assets,
+              },
+              layers: pageLayers,
+              handler: path.join(
+                path.relative(baseDir, entryPath),
+                'now__launcher.launcher'
+              ),
+              runtime: nodeVersion.runtime,
+            });
+          }
+        })
       );
     }
 
