@@ -308,7 +308,7 @@ locals {
   _cloudfront_origins = {
     static_content = merge(local.cloudfront_origin_static_content, { create = true })
     next_image = merge(
-      var.create_image_optimization ? module.next_image[0].cloudfront_origin_image_optimizer : null, {
+      var.create_image_optimization ? module.next_image[0].cloudfront_origin : null, {
         create = var.create_image_optimization
     })
   }
