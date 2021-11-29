@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2 (November 29, 2021)
+
+Bugfix release that ensures compatibility with the `v12.0.0` version of the [Terraform Next.js Image Optimization module for AWS](https://github.com/milliHQ/terraform-aws-next-js-image-optimization).
+
+- `create_image_optimization` breaks because of breaking change in the newest 12.0.0 release ([#243](https://github.com/milliHQ/terraform-aws-next-js/issues/243), [#244](https://github.com/milliHQ/terraform-aws-next-js/pull/244))
+
 ## 0.10.1 (October 23, 2021)
 
 This release ensures that static generated routes with dynamic parts (e.g. `/test/[...slug]`) are invalidated correctly when running terraform apply.
