@@ -45,6 +45,12 @@ variable "cloudfront_custom_error_response" {
   default = null
 }
 
+variable "cloudfront_webacl_id" {
+  description = "An optional webacl2 arn or webacl id to associate with the cloudfront distribution"
+  type        = string
+  default     = null
+}
+
 ##########
 # Labeling
 ##########
