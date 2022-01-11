@@ -285,6 +285,11 @@ So issues that exist on Vercel are likely to occur on this project too.
 Contributions are welcome!  
 If you want to improve this module, please take a look at our [contributing guidelines](https://github.com/milliHQ/terraform-aws-next-js/tree/main/CONTRIBUTING.md) to get started.
 
+## About
+
+This project is maintained by [milliVolt infrastructure](https://milli.is).  
+We build custom infrastructure solutions for any cloud provider.
+
 ## License
 
 Apache-2.0 - see [LICENSE](./LICENSE) for details.

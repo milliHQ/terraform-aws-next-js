@@ -10,7 +10,8 @@
     "test:prepare": "docker-compose up -d",
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
-    "test:e2e": "jest test/routes.test.ts"
+    "test:e2e": "jest test/routes.test.ts",
+    "release": "release-it --dry-run"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
@@ -25,6 +26,8 @@
     "hjson": "^3.2.2",
     "jest": "^27.2.1",
     "prettier": "^2.0.5",
+    "release-it": "^14.12.1",
+    "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
     "ts-jest": "^27.0.5",
     "typescript": "^4.4.2"
@@ -32,5 +35,10 @@
   "resolutions": {
     "archiver": "^5.3.0",
     "aws-sdk": "2.1001.0"
+  },
+  "release-it": {
+    "plugins": {
+      "release-it-yarn-workspaces": true
+    }
   }
 }
