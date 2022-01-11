@@ -1,12 +1,13 @@
 {
   "name": "@dealmore/terraform-aws-nextjs-ws",
-  "version": "0.0.0",
+  "version": "0.10.2",
   "private": true,
   "license": "Apache-2.0",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "build": "turbo run build",
     "test:prepare": "docker-compose up -d",
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
@@ -30,6 +31,7 @@
     "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
     "ts-jest": "^27.0.5",
+    "turbo": "^1.0.25",
     "typescript": "^4.4.2"
   },
   "resolutions": {
@@ -39,6 +41,20 @@
   "release-it": {
     "plugins": {
       "release-it-yarn-workspaces": true
+    }
+  },
+  "turbo": {
+    "baseBranch": "origin/main",
+    "pipeline": {
+      "build": {
+        "outputs": [
+          "dist/**",
+          "dist.zip"
+        ],
+        "dependsOn": [
+          "^build"
+        ]
+      }
     }
   }
 }

@@ -29,17 +29,8 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile --cache-folder .yarn
 
-      - name: Build runtime
-        run: yarn workspace @millihq/tf-next-runtime build
-
-      - name: Build tf-next
-        run: yarn workspace tf-next build
-
-      - name: Build proxy
-        run: yarn workspace @millihq/terraform-next-proxy build
-
-      - name: Build deploy-trigger
-        run: yarn workspace @millihq/terraform-next-deploy-trigger build
+      - name: Build
+        run: yarn build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
