@@ -42,6 +42,7 @@
   },
   "release-it": {
     "git": {
+      "commitMessage": "v${version}",
       "tagName": "packages-v${version}"
     },
     "npm": false,
