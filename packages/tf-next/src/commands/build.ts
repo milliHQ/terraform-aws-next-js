@@ -119,13 +119,17 @@ function writeOutput(props: OutputProps) {
   }
 
   config.staticRoutes = Object.keys(props.staticWebsiteFiles)
+    .map((fullFilePath) =>
+      // On Windows make sure that the `\` in the filepath is replaced with `/`
+      fullFilePath.split(path.sep).join(path.posix.sep)
+    )
     .filter(
       // Remove paths that are not routed from the proxy
       // - _next/static/ -> Is routed directly by CloudFront
-      (fileName) => !fileName.startsWith('_next/static/')
+      (fullFilePath) => !fullFilePath.startsWith('_next/static/')
     )
     // Add leading / to the route
-    .map((path) => `/${path}`);
+    .map((fullFilePath) => `/${fullFilePath}`);
 
   const staticFilesArchive = writeStaticWebsiteFiles(
     path.join(props.outputDir, config.staticFilesArchive),
