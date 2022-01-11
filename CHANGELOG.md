@@ -14,7 +14,7 @@
 
 - Static routes were falsely generated when running on Windows ([#246](https://github.com/milliHQ/terraform-aws-next-js/issues/246))
 
-## 0.10.2 (November 29, 2021)
+## [0.10.2] (November 29, 2021)
 
 Bugfix release that ensures compatibility with the `v12.0.0` version of the [Terraform Next.js Image Optimization module for AWS](https://github.com/milliHQ/terraform-aws-next-js-image-optimization).
 
