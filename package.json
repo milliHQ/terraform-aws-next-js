@@ -40,6 +40,9 @@
     "aws-sdk": "2.1001.0"
   },
   "release-it": {
+    "git": {
+      "tagName": "v${version}-packages"
+    },
     "plugins": {
       "release-it-yarn-workspaces": true,
       "@release-it/bumper": {
