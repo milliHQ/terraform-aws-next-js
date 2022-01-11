@@ -178,3 +178,37 @@ jobs:
           cat sam-local.log
           printf "\n\nOutput of sam-api.log:\n"
           cat sam-api.log
+
+  publishRelease:
+    name: Potentially publish release
+    runs-on: ubuntu-latest
+    needs: [build, test-integration, test-e2e]
+    if: github.ref == 'refs/heads/main'
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 25
+
+      - name: Fetch git tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: packages
+
+      - name: Publish packages
+        run: ./scripts/publish-release.sh
