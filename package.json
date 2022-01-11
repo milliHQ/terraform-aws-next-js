@@ -17,6 +17,7 @@
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
     "@release-it/bumper": "^3.0.1",
+    "@release-it/keep-a-changelog": "^2.3.0",
     "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
@@ -56,6 +57,9 @@
             "type": "text/plain"
           }
         ]
+      },
+      "@release-it/keep-a-changelog": {
+        "filename": "CHANGELOG.md"
       }
     }
   },
