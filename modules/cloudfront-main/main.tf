@@ -5,6 +5,7 @@ resource "aws_cloudfront_distribution" "distribution" {
   price_class         = var.cloudfront_price_class
   aliases             = var.cloudfront_aliases
   default_root_object = var.cloudfront_default_root_object
+  web_acl_id          = var.cloudfront_webacl_id
 
   # Add CloudFront origins
   dynamic "origin" {
