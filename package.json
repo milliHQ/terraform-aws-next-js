@@ -41,7 +41,19 @@
   },
   "release-it": {
     "plugins": {
-      "release-it-yarn-workspaces": true
+      "release-it-yarn-workspaces": true,
+      "@release-it/bumper": {
+        "out": [
+          {
+            "file": "modules/proxy/variables.tf",
+            "type": "text/plain"
+          },
+          {
+            "file": "modules/statics-deploy/variables.tf",
+            "type": "text/plain"
+          }
+        ]
+      }
     }
   },
   "turbo": {
