@@ -39,7 +39,9 @@ jobs:
           path: |
             packages/runtime/dist/
             packages/tf-next/dist/
+            packages/proxy/dist/
             packages/proxy/dist.zip
+            packages/deploy-trigger/dist/
             packages/deploy-trigger/dist.zip
           if-no-files-found: error
 
