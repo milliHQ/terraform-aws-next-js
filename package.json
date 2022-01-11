@@ -41,7 +41,7 @@
   },
   "release-it": {
     "git": {
-      "tagName": "v${version}-packages"
+      "tagName": "packages-v${version}"
     },
     "plugins": {
       "release-it-yarn-workspaces": true,
