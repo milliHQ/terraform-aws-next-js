@@ -44,6 +44,7 @@
     "git": {
       "tagName": "packages-v${version}"
     },
+    "npm": false,
     "plugins": {
       "release-it-yarn-workspaces": true,
       "@release-it/bumper": {
