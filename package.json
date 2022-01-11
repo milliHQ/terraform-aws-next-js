@@ -12,7 +12,7 @@
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts",
-    "release": "release-it --dry-run"
+    "release": "release-it"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
