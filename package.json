@@ -62,7 +62,8 @@
         ]
       },
       "@release-it/keep-a-changelog": {
-        "filename": "CHANGELOG.md"
+        "filename": "CHANGELOG.md",
+        "addUnreleased": true
       }
     }
   },
