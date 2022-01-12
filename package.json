@@ -1,19 +1,24 @@
 {
   "name": "@dealmore/terraform-aws-nextjs-ws",
-  "version": "0.0.0",
+  "version": "0.10.2",
   "private": true,
   "license": "Apache-2.0",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "build": "turbo run build",
     "test:prepare": "docker-compose up -d",
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
-    "test:e2e": "jest test/routes.test.ts"
+    "test:e2e": "jest test/routes.test.ts",
+    "release": "release-it --no-npm",
+    "release:ci": "release-it --no-increment --ci"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
+    "@release-it/bumper": "^3.0.1",
+    "@release-it/keep-a-changelog": "^2.3.0",
     "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
@@ -25,12 +30,54 @@
     "hjson": "^3.2.2",
     "jest": "^27.2.1",
     "prettier": "^2.0.5",
+    "release-it": "^14.12.1",
+    "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
     "ts-jest": "^27.0.5",
+    "turbo": "^1.0.25",
     "typescript": "^4.4.2"
   },
   "resolutions": {
     "archiver": "^5.3.0",
     "aws-sdk": "2.1001.0"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "v${version}",
+      "tagName": "packages-v${version}"
+    },
+    "npm": false,
+    "plugins": {
+      "release-it-yarn-workspaces": true,
+      "@release-it/bumper": {
+        "out": [
+          {
+            "file": "modules/proxy/variables.tf",
+            "type": "text/plain"
+          },
+          {
+            "file": "modules/statics-deploy/variables.tf",
+            "type": "text/plain"
+          }
+        ]
+      },
+      "@release-it/keep-a-changelog": {
+        "filename": "CHANGELOG.md"
+      }
+    }
+  },
+  "turbo": {
+    "baseBranch": "origin/main",
+    "pipeline": {
+      "build": {
+        "outputs": [
+          "dist/**",
+          "dist.zip"
+        ],
+        "dependsOn": [
+          "^build"
+        ]
+      }
+    }
   }
 }

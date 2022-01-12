@@ -29,17 +29,8 @@ jobs:
       - name: Install dependencies
         run: yarn --frozen-lockfile --cache-folder .yarn
 
-      - name: Build runtime
-        run: yarn workspace @millihq/tf-next-runtime build
-
-      - name: Build tf-next
-        run: yarn workspace tf-next build
-
-      - name: Build proxy
-        run: yarn workspace @millihq/terraform-next-proxy build
-
-      - name: Build deploy-trigger
-        run: yarn workspace @millihq/terraform-next-deploy-trigger build
+      - name: Build
+        run: yarn build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
@@ -48,7 +39,9 @@ jobs:
           path: |
             packages/runtime/dist/
             packages/tf-next/dist/
+            packages/proxy/dist/
             packages/proxy/dist.zip
+            packages/deploy-trigger/dist/
             packages/deploy-trigger/dist.zip
           if-no-files-found: error
 
@@ -185,3 +178,37 @@ jobs:
           cat sam-local.log
           printf "\n\nOutput of sam-api.log:\n"
           cat sam-api.log
+
+  publishRelease:
+    name: Potentially publish release
+    runs-on: ubuntu-latest
+    needs: [build, test-integration, test-e2e]
+    if: github.ref == 'refs/heads/main'
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 25
+
+      - name: Fetch git tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: packages
+
+      - name: Publish packages
+        run: ./scripts/publish-release.sh

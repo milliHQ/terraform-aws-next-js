@@ -1,6 +1,20 @@
 # Changelog
 
-## 0.10.2 (November 29, 2021)
+## [Unreleased]
+
+### Added
+
+- Option for attaching a waf policy to the internal CloudFront distribution ([#250](https://github.com/milliHQ/terraform-aws-next-js/pull/250))
+
+### Changed
+
+- TTL for `Cache-Control` header is set to `0` (no cache) when the header is not sent from origin ([#241](https://github.com/milliHQ/terraform-aws-next-js/pull/241), [#236](https://github.com/milliHQ/terraform-aws-next-js/issues/236), [#254](https://github.com/milliHQ/terraform-aws-next-js/pull/254))
+
+### Fixed
+
+- Static routes were falsely generated when running on Windows ([#246](https://github.com/milliHQ/terraform-aws-next-js/issues/246))
+
+## [0.10.2] (November 29, 2021)
 
 Bugfix release that ensures compatibility with the `v12.0.0` version of the [Terraform Next.js Image Optimization module for AWS](https://github.com/milliHQ/terraform-aws-next-js-image-optimization).
 
