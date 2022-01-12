@@ -927,6 +927,13 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
+"@ofhouse/keep-a-changelog@2.3.0-no-increment-fix":
+  version "2.3.0-no-increment-fix"
+  resolved "https://registry.yarnpkg.com/@ofhouse/keep-a-changelog/-/keep-a-changelog-2.3.0-no-increment-fix.tgz#c89b76b31ae2d1b219e0796d4f05381cb4571241"
+  integrity sha512-K/C3mo+1VWx0q5bdVUS4w5YaT4sTA4eiKNL8mAJqPe+VVdnjuvfvk8O58rg4zSslqa5sHgch5Er/xFD/sqgHxw==
+  dependencies:
+    detect-newline "^3.1.0"
+
 "@release-it/bumper@^3.0.1":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@release-it/bumper/-/bumper-3.0.1.tgz#7def6cb576bab03cb28f543afbf66eeff4419fc2"
@@ -942,13 +949,6 @@
     lodash.set "^4.3.2"
     mock-fs "^4.14.0"
     semver "^7.3.5"
-
-"@release-it/keep-a-changelog@^2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@release-it/keep-a-changelog/-/keep-a-changelog-2.3.0.tgz#dfe888f97604a13c161e78f67509b296fb91ebc5"
-  integrity sha512-W3rzUsfT1BeDx9KDPJvpos7aQ+fModusP9X90VWYxOc/+tl5UUrH3Sjh2bemtG0okCtEFY/qnU3abbR5MK1wbg==
-  dependencies:
-    detect-newline "^3.1.0"
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
