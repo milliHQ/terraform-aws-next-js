@@ -13,7 +13,7 @@
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts",
     "release": "release-it --no-npm",
-    "release:ci": "release-it --no-increment --ci"
+    "release:ci": "release-it --no-increment --no-git.push --ci"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
