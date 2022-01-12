@@ -210,5 +210,9 @@ jobs:
           name: dist
           path: packages
 
+      # git user is required (bot not used) by release-it
+      - name: Set git user to GitHub Actions
+        uses: fregante/setup-git-user@v1.0.1
+
       - name: Publish packages
         run: ./scripts/publish-release.sh
