@@ -20,3 +20,5 @@ node_modules
 .direnv
 .envrc
 
+# Turbo
+.turbo

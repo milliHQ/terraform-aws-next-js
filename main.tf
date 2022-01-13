@@ -249,7 +249,7 @@ resource "aws_cloudfront_cache_policy" "this" {
 
   # Default values (Should be provided by origin)
   min_ttl     = 0
-  default_ttl = 86400
+  default_ttl = 0
   max_ttl     = 31536000
 
   parameters_in_cache_key_and_forwarded_to_origin {
@@ -393,6 +393,7 @@ module "cloudfront_main" {
   cloudfront_aliases                  = var.cloudfront_aliases
   cloudfront_acm_certificate_arn      = var.cloudfront_acm_certificate_arn
   cloudfront_minimum_protocol_version = var.cloudfront_minimum_protocol_version
+  cloudfront_webacl_id                = var.cloudfront_webacl_id
 
   cloudfront_default_root_object     = local.cloudfront_default_root_object
   cloudfront_origins                 = local.cloudfront_origins
