@@ -1,6 +1,6 @@
 {
   "name": "@millihq/terraform-next-deploy-trigger",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "Deploy trigger component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",

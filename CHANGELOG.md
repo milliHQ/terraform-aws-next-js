@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2022-01-13
+
 ### Added
 
 - Option for attaching a waf policy to the internal CloudFront distribution ([#250](https://github.com/milliHQ/terraform-aws-next-js/pull/250))
