@@ -219,10 +219,3 @@ jobs:
 
       - name: Publish packages
         run: ./scripts/publish-release.sh
-        continue-on-error: true
-
-      - name: Save npm logs
-        uses: actions/upload-artifact@v2
-        with:
-          name: npm-logs
-          path: /home/runner/.npm/_logs/
