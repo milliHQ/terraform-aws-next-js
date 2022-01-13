@@ -214,8 +214,8 @@ jobs:
       - name: Set git user to GitHub Actions
         uses: fregante/setup-git-user@v1.0.1
 
-      - name: Verify npm config
-        run: npm config list
+      - name: Set registry for publish
+        run: yarn config set registry https://registry.npmjs.org
 
       - name: Publish packages
         run: ./scripts/publish-release.sh
