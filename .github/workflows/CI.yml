@@ -214,5 +214,15 @@ jobs:
       - name: Set git user to GitHub Actions
         uses: fregante/setup-git-user@v1.0.1
 
+      - name: Verify npm config
+        run: npm config list
+
       - name: Publish packages
         run: ./scripts/publish-release.sh
+        continue-on-error: true
+
+      - name: Save npm logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: npm-logs
+          path: /home/runner/.npm/_logs/
