@@ -1,5 +1,0 @@
-{
-  "files.associations": {
-    "**/test/**/probes.json": "jsonc"
-  }
-}
