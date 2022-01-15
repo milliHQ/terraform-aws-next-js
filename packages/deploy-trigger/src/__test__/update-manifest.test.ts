@@ -269,12 +269,13 @@ describe('deploy-trigger', () => {
 
 describe('[deploy-trigger] getInvalidationKeys', () => {
   test.each([
-    ['test/[slug]', 'test*'],
-    ['test/[slug]/abc', 'test*'],
-    ['test/[...slug]', 'test*'],
-    ['test/[[...slug]]', 'test*'],
-    ['test/[testId]/index', 'test*'],
-    ['test/[testId]/[otherId]', 'test*'],
+    ['test', '/test*'],
+    ['test/[slug]', '/test*'],
+    ['test/[slug]/abc', '/test*'],
+    ['test/[...slug]', '/test*'],
+    ['test/[[...slug]]', '/test*'],
+    ['test/[testId]/index', '/test*'],
+    ['test/[testId]/[otherId]', '/test*'],
   ])('Generated invalidationKey from %s should be %s', (input, output) => {
     const invalidationKeys = getInvalidationKeys([input]);
 
