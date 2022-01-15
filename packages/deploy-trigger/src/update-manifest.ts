@@ -116,7 +116,7 @@ function getInvalidationKeys(files: string[]) {
     // e.g. - [abc]/index       ->  *
     //      - test/[...slug]    ->  test/*
     if (file.match(dynamicPartMatcher)) {
-      invalidations.push(file.replace(dynamicPartMatcher, '*'));
+      invalidations.push(`/${file.replace(dynamicPartMatcher, '*')}`);
       continue;
     }
 
