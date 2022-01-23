@@ -161,7 +161,7 @@ data "aws_iam_policy_document" "access_sqs_queue" {
 
 module "lambda_content" {
   source  = "milliHQ/download/npm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   module_name    = "@millihq/terraform-next-deploy-trigger"
   module_version = var.deploy_trigger_module_version
@@ -185,7 +185,7 @@ module "deploy_trigger" {
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
-  local_existing_package = module.lambda_content.abs_path
+  local_existing_package = module.lambda_content.rel_path
 
   # Prevent running concurrently
   reserved_concurrent_executions = 1

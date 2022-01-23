@@ -128,6 +128,12 @@ variable "cloudfront_origin_request_policy" {
   default     = null
 }
 
+variable "cloudfront_response_headers_policy" {
+  description = "Id of a response headers policy. Can be custom or managed. Default is empty."
+  type        = string
+  default     = null
+}
+
 variable "cloudfront_cache_key_headers" {
   description = "Header keys that should be used to calculate the cache key in CloudFront."
   type        = list(string)

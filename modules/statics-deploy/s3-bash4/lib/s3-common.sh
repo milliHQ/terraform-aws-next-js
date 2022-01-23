@@ -187,7 +187,7 @@ convS3RegionToEndpoint() {
   case "$1" in
     us-east-1) echo "s3.amazonaws.com"
       ;;
-    *) echo s3-${1}.amazonaws.com
+    *) echo s3.${1}.amazonaws.com
       ;;
     esac
 }

@@ -1,6 +1,6 @@
 module "proxy_package" {
   source  = "milliHQ/download/npm"
-  version = "2.0.0"
+  version = "2.1.0"
 
   module_name    = "@millihq/terraform-next-proxy"
   module_version = var.proxy_module_version
@@ -26,7 +26,7 @@ module "edge_proxy" {
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
-  local_existing_package = module.proxy_package.abs_path
+  local_existing_package = module.proxy_package.rel_path
 
   cloudwatch_logs_retention_in_days = 30
 
