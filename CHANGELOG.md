@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- Support for response headers policy (`cloudfront_response_headers_policy`) for the internal CloudFront distribution ([#265](https://github.com/milliHQ/terraform-aws-next-js/pull/265), [#268](https://github.com/milliHQ/terraform-aws-next-js/pull/268))  
+  This also increases the minimum required [Terraform AWS provider](https://github.com/hashicorp/terraform-provider-aws) version from `3.43.0` to `3.64.0`.
+
+### Fixed
+
+- Bash script for uploading assets to S3 now uses the standard endpoint and is now compatible with newer AWS regions ([#263](https://github.com/milliHQ/terraform-aws-next-js/pull/263))
+- Components fetched from npm registry now use relative paths that are stored in the Terraform state, which prevents unnecessary deployments ([#261](https://github.com/milliHQ/terraform-aws-next-js/pull/261))
+
 ## [0.11.1] - 2022-01-15
 
 ### Fixed
