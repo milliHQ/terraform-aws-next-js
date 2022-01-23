@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.2] - 2022-01-23
+
 ### Added
 
 - Support for response headers policy (`cloudfront_response_headers_policy`) for the internal CloudFront distribution ([#265](https://github.com/milliHQ/terraform-aws-next-js/pull/265), [#268](https://github.com/milliHQ/terraform-aws-next-js/pull/268))  
