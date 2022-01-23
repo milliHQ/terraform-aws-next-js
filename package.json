@@ -30,7 +30,7 @@
     "hjson": "^3.2.2",
     "jest": "^27.2.1",
     "prettier": "^2.0.5",
-    "release-it": "^14.12.1",
+    "release-it": "^14.12.3",
     "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
     "ts-jest": "^27.0.5",
