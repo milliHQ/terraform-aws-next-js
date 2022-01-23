@@ -220,6 +220,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | cloudfront\_minimum\_protocol\_version | The minimum version of the SSL protocol that you want CloudFront to use for HTTPS connections. One of SSLv3, TLSv1, TLSv1\_2016, TLSv1.1\_2016, TLSv1.2\_2018 or TLSv1.2\_2019. | `string` | `"TLSv1"` | no |
 | cloudfront\_origin\_request\_policy | Id of a custom request policy that overrides the default policy (AllViewer). Can be custom or managed. | `string` | `null` | no |
 | cloudfront\_price\_class | Price class for the CloudFront distributions (main & proxy config). One of PriceClass\_All, PriceClass\_200, PriceClass\_100. | `string` | `"PriceClass_100"` | no |
+| cloudfront\_response\_headers\_policy | Id of a response headers policy. Can be custom or managed. Default is empty. | `string` | `null` | no |
 | cloudfront\_webacl\_id | An optional webacl2 arn or webacl id to associate with the cloudfront distribution | `string` | `null` | no |
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
