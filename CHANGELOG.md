@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.3] - 2022-01-30
+
 ### Added
 
 - Adds new output for Lambda role ARNs `lambda_execution_role_arns` ([#270](https://github.com/milliHQ/terraform-aws-next-js/pull/270))
