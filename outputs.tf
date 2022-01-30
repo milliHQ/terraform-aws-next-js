@@ -44,3 +44,12 @@ output "cloudfront_custom_error_response" {
   description = "Preconfigured custom error response the CloudFront distribution should use."
   value       = local.cloudfront_custom_error_response
 }
+
+#####################
+# IAM role for Lambda
+#####################
+
+output "lambda_execution_role_arns" {
+  description = "Lambda execution IAM Role ARNs"
+  value       = { for k, v in local.lambdas : k => aws_iam_role.lambda[k].arn }
+}
