@@ -471,6 +471,10 @@ export async function build({
     env.NEXT_PRIVATE_TARGET = 'experimental-serverless-trace';
   }
 
+  /* ---------------------------------------------------------------------------
+   * Build Next.js
+   * -------------------------------------------------------------------------*/
+
   if (buildCommand) {
     // Add `node_modules/.bin` to PATH
     const nodeBinPath = await getNodeBinPath({ cwd: entryPath });
@@ -575,6 +579,10 @@ export async function build({
             .replace(/\/+$/, '');
         }
 
+        /* ---------------------------------------------------------------------
+         * DataRoutes
+         * -------------------------------------------------------------------*/
+
         if (routesManifest.dataRoutes) {
           // Load the /_next/data routes for both dynamic SSG and SSP pages.
           // These must be combined and sorted to prevent conflicts
@@ -673,6 +681,10 @@ export async function build({
     }
   }
 
+  /* ---------------------------------------------------------------------------
+   * Image Config
+   * -------------------------------------------------------------------------*/
+
   if (imagesManifest) {
     switch (imagesManifest.version) {
       case 1: {
@@ -732,6 +744,10 @@ export async function build({
   }
 
   const userExport = await getExportStatus(entryPath);
+
+  /* ---------------------------------------------------------------------------
+   * Build next export (Statically exported Next.js app)
+   * -------------------------------------------------------------------------*/
 
   if (userExport) {
     const exportIntent = await getExportIntent(entryPath);
@@ -889,7 +905,14 @@ export async function build({
   let static404Page: string | undefined;
   let page404Path = '';
 
+  /* ---------------------------------------------------------------------------
+   * Build with SSR
+   * -------------------------------------------------------------------------*/
+
   if (isLegacy) {
+    /* -------------------------------------------------------------------------
+     * Build Legacy
+     * -----------------------------------------------------------------------*/
     const filesAfterBuild = await glob('**', entryPath);
 
     debug('Preparing serverless function files...');
@@ -983,6 +1006,10 @@ export async function build({
       })
     );
   } else {
+    /* -------------------------------------------------------------------------
+     * Build serverless
+     * -----------------------------------------------------------------------*/
+
     debug('Preparing serverless function files...');
     const pagesDir = path.join(
       entryPath,
