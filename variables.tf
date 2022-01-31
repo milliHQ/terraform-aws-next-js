@@ -64,7 +64,7 @@ variable "lambda_policy_json" {
   default     = null
 }
 
-variable "create_lambda_policy" {
+variable "lambda_attach_policy_json" {
   description = "Whether to deploy additional lambda JSON policies. If false, lambda_policy_json will not be attached to the lambda function. (Necessary since policy strings are only known after apply when using Terraforms data.aws_iam_policy_document)"
   type        = bool
   default     = false
