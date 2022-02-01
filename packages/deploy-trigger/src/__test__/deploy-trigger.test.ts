@@ -43,8 +43,14 @@ describe('deploy-trigger', () => {
     test('Extract an uploaded deployment', async () => {
       const packageKey = 'static-website-files.zip';
       const staticRouteKey = '404';
+      const localeStaticRouteKey = 'es';
       const staticAssetKey = '_next/static/some.js';
-      const packageContent = ['index', staticRouteKey, staticAssetKey];
+      const packageContent = [
+        'index',
+        localeStaticRouteKey,
+        staticRouteKey,
+        staticAssetKey,
+      ];
 
       // Create an dummy deployment package
       const bundle = await generateZipBundle(packageContent);
@@ -84,6 +90,21 @@ describe('deploy-trigger', () => {
           ])
         );
       }
+
+      // Check the mime-type and Cache-Control headers
+      const localeStaticRouteObject = await s3
+        .getObject({
+          Bucket: targetBucket.bucketName,
+          Key: localeStaticRouteKey,
+        })
+        .promise();
+
+      expect(localeStaticRouteObject.ContentType).toBe(
+        'text/html; charset=utf-8'
+      );
+      expect(localeStaticRouteObject.CacheControl).toBe(
+        'public,max-age=0,must-revalidate,s-maxage=31536000'
+      );
 
       // Check the mime-type and Cache-Control headers
       const staticRouteObject = await s3
