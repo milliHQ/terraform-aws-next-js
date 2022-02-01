@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.4] - 2022-02-01
+
 ### Fixed
 
 - Determine content-type correctly for localized pre-rendered HTML pages ([#278](https://github.com/milliHQ/terraform-aws-next-js/pull/278), [#277](https://github.com/milliHQ/terraform-aws-next-js/issues/277))
