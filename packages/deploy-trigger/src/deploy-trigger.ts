@@ -1,3 +1,5 @@
+import { extname } from 'path';
+
 import { S3 } from 'aws-sdk';
 import unzipper from 'unzipper';
 import {
@@ -85,7 +87,10 @@ export async function deployTrigger({
       // Get ContentType
       // Static pre-rendered pages have no file extension,
       // files without extension get HTML mime type as fallback
-      const mimeType = mimeLookup(fileName);
+      //
+      // Explicitly use the extname here since mime treats files without
+      // extension e.g. `/es` as extension => `application/ecmascript`
+      const mimeType = mimeLookup(extname(fileName));
       const contentType =
         typeof mimeType === 'string' ? mimeContentType(mimeType) : false;
 
