@@ -282,6 +282,8 @@ So issues that exist on Vercel are likely to occur on this project too.
 
   You should be able to run`terraform apply` again and the stack creation would progreed without this error.
 
+- [Function decreases account's UnreservedConcurrentExecution below its minimum value](https://github.com/milliHQ/terraform-aws-next-js/tree/main/docs/known-issues/0001_reserved-concurrent-executions.md)
+
 ## Contributing
 
 Contributions are welcome!  
