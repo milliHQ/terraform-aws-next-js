@@ -1352,10 +1352,10 @@
   dependencies:
     "@types/node" "*"
 
-"@vercel/build-utils@2.10.1":
-  version "2.10.1"
-  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.10.1.tgz#5b175fc66639a82f8beeb19e85983fe955f27875"
-  integrity sha512-K5xaXoZnysKXxuc5YuR9NZxzBaS9UZYI+TGQCrpx+n1jFJMnVKcXTIlcGtsbNzVI1PR8Fx7YgjtAChSoIyBznQ==
+"@vercel/build-utils@2.12.1":
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.12.1.tgz#479a7eb0111985ff437d77dd395bb9ba6d108c95"
+  integrity sha512-85FUGmNQWL+gWORGIfW2amNeDt3vBgliZ51j3D9s+2qcAv+Li+ghLfzjoP5w5E+DhO8OxHfy53WbqR5aprAWEA==
 
 "@vercel/frameworks@^0.0.15":
   version "0.0.15"
