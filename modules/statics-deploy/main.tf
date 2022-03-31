@@ -9,15 +9,22 @@ locals {
 
 resource "aws_s3_bucket" "static_upload" {
   bucket_prefix = "${var.deployment_name}-tfn-deploy"
-  acl           = "private"
   force_destroy = true
 
-  # We are using versioning here to ensure that no file gets overridden at upload
-  versioning {
-    enabled = true
-  }
-
   tags = merge(var.tags, var.tags_s3_bucket)
+}
+
+resource "aws_s3_bucket_acl" "static_upload" {
+  bucket = aws_s3_bucket.static_upload.id
+  acl    = "private"
+}
+
+# We are using versioning here to ensure that no file gets overridden at upload
+resource "aws_s3_bucket_versioning" "static_upload" {
+  bucket = aws_s3_bucket.static_upload.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_notification" "on_create" {
@@ -35,23 +42,35 @@ resource "aws_s3_bucket_notification" "on_create" {
 
 resource "aws_s3_bucket" "static_deploy" {
   bucket_prefix = "${var.deployment_name}-tfn-static"
-  acl           = "private"
   force_destroy = true
 
-  lifecycle_rule {
-    id      = "Expire static assets"
-    enabled = var.expire_static_assets >= 0 # -1 disables the cleanup
+  tags = merge(var.tags, var.tags_s3_bucket)
+}
 
-    tags = {
-      "tfnextExpire" = "true"
-    }
+resource "aws_s3_bucket_acl" "static_deploy" {
+  bucket = aws_s3_bucket.static_deploy.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "static_deploy" {
+  bucket = aws_s3_bucket.static_deploy.id
+
+  rule {
+    id = "Expire static assets"
 
     expiration {
       days = var.expire_static_assets > 0 ? var.expire_static_assets : 0
     }
-  }
 
-  tags = merge(var.tags, var.tags_s3_bucket)
+    filter {
+      tag {
+        key   = "tfnextExpire"
+        value = "true"
+      }
+    }
+
+    status = var.expire_static_assets >= 0 ? "Enabled" : "Disabled" # -1 disables the cleanup
+  }
 }
 
 # CloudFront permissions for the bucket

@@ -10,9 +10,13 @@ locals {
 
 resource "aws_s3_bucket" "proxy_config_store" {
   bucket_prefix = "${var.deployment_name}-tfn-config"
-  acl           = "private"
   force_destroy = true
   tags          = merge(var.tags, var.tags_s3_bucket)
+}
+
+resource "aws_s3_bucket_acl" "proxy_config_store" {
+  bucket = aws_s3_bucket.proxy_config_store.id
+  acl    = "private"
 }
 
 data "aws_iam_policy_document" "cf_access" {
