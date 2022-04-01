@@ -509,7 +509,8 @@ export async function build({
     switch (routesManifest.version) {
       case 1:
       case 2:
-      case 3: {
+      case 3:
+      case 4: {
         redirects.push(...convertRedirects(routesManifest.redirects));
         rewrites.push(...convertRewrites(routesManifest.rewrites));
 
