@@ -320,7 +320,7 @@ it(
 );
 
 it(
-  'Should not build the serverless-config-async example',
+  'Should build the serverless-config-async example',
   async () => {
     let error = null;
 
@@ -330,13 +330,13 @@ it(
       error = err;
     }
 
-    expect(error).not.toBe(null);
+    expect(error).toBe(null);
   },
   FOUR_MINUTES
 );
 
 it(
-  'Should not build the serverless-config-promise example',
+  'Should build the serverless-config-promise example',
   async () => {
     let error = null;
 
@@ -346,7 +346,7 @@ it(
       error = err;
     }
 
-    expect(error).not.toBe(null);
+    expect(error).toBe(null);
   },
   FOUR_MINUTES
 );

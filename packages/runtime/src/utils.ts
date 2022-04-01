@@ -420,7 +420,8 @@ export async function getDynamicRoutes(
             };
           });
       }
-      case 3: {
+      case 3:
+      case 4: {
         return routesManifest.dynamicRoutes
           .filter(({ page }) =>
             omittedRoutes ? !omittedRoutes.has(page) : true
