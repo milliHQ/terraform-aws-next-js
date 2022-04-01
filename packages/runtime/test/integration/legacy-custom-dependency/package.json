@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "encoding": "latest",
     "isomorphic-unfetch": "latest",
     "next": "7.0.0"
   }
