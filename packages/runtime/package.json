@@ -26,7 +26,7 @@
     "@types/resolve-from": "5.0.1",
     "@types/semver": "6.0.0",
     "@types/yazl": "2.4.1",
-    "@vercel/build-utils": "2.10.1",
+    "@vercel/build-utils": "2.12.1",
     "@vercel/nft": "0.10.0",
     "@vercel/routing-utils": "1.10.1",
     "async-sema": "3.0.1",

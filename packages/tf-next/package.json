@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@millihq/tf-next-runtime": "0.11.4",
-    "@vercel/build-utils": "2.10.1",
+    "@vercel/build-utils": "2.12.1",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.10.1",
     "archiver": "^5.3.0",
