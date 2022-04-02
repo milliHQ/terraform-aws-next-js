@@ -4,7 +4,7 @@ variable "static_files_archive" {
 
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "0.11.4"
+  default = "0.11.5"
 }
 
 variable "expire_static_assets" {

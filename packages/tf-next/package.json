@@ -1,6 +1,6 @@
 {
   "name": "tf-next",
-  "version": "0.11.4",
+  "version": "0.11.5",
   "description": "CLI build tool for AWS Next.js Terraform module.",
   "homepage": "https://registry.terraform.io/modules/milliHQ/next-js/aws",
   "main": "index.js",
@@ -19,7 +19,7 @@
     "postpack": "rm ./LICENSE"
   },
   "dependencies": {
-    "@millihq/tf-next-runtime": "0.11.4",
+    "@millihq/tf-next-runtime": "0.11.5",
     "@vercel/build-utils": "2.12.1",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.10.1",

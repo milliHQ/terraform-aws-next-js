@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.5] - 2022-04-02
+
 - Adds support for route-manifest v4 ([#292](https://github.com/milliHQ/terraform-aws-next-js/pull/292))  
   This ensures the builder works with Next.js versions `>= v12.1.3`.
 - Restrict [image optimizer](https://github.com/milliHQ/terraform-aws-next-js-image-optimization) submodule version to `<= v12.0.10` ([#293](https://github.com/milliHQ/terraform-aws-next-js/pull/293))  
