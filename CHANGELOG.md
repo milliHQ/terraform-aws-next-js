@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Adds support for route-manifest v4 ([#292](https://github.com/milliHQ/terraform-aws-next-js/pull/292))  
+  This ensures the builder works with Next.js versions `>= v12.1.3`.
+- Restrict [image optimizer](https://github.com/milliHQ/terraform-aws-next-js-image-optimization) submodule version to `<= v12.0.10` ([#293](https://github.com/milliHQ/terraform-aws-next-js/pull/293))  
+  Since the `v12.0.10` release is the last version with support for [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/) `v3.x` this update ensures existing setups will not break in the future.
+- Bump @vercel/build-utils from `2.10.1` to `2.12.1` ([#287](https://github.com/milliHQ/terraform-aws-next-js/pull/287))
+
 ## [0.11.4] - 2022-02-01
 
 ### Fixed
