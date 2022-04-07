@@ -10,9 +10,13 @@ locals {
 
 resource "aws_s3_bucket" "proxy_config_store" {
   bucket_prefix = "${var.deployment_name}-tfn-config"
-  acl           = "private"
   force_destroy = true
   tags          = merge(var.tags, var.tags_s3_bucket)
+}
+
+resource "aws_s3_bucket_acl" "proxy_config_store" {
+  bucket = aws_s3_bucket.proxy_config_store.id
+  acl    = "private"
 }
 
 data "aws_iam_policy_document" "cf_access" {
@@ -36,7 +40,7 @@ resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
 # Upload Proxy Config
 #####################
 
-resource "aws_s3_bucket_object" "config_json" {
+resource "aws_s3_object" "config_json" {
   bucket        = aws_s3_bucket.proxy_config_store.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json

@@ -15,7 +15,7 @@ module "proxy_package" {
 
 module "edge_proxy" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "2.4.0"
+  version = "3.1.0"
 
   lambda_at_edge = true
 
