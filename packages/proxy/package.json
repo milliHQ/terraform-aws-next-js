@@ -1,6 +1,6 @@
 {
   "name": "@millihq/terraform-next-proxy",
-  "version": "0.11.5",
+  "version": "0.12.0",
   "description": "Proxy component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",
