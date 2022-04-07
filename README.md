@@ -199,13 +199,13 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Version |
 |------|---------|
 | terraform | >= 0.15 |
-| aws | >= 3.64.0 |
+| aws | >= 4.8 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 3.64.0 |
+| aws | >= 4.8 |
 
 ## Inputs
 
