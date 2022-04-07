@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Ensure compatibility with AWS Provider Version 4 ([#286](https://github.com/milliHQ/terraform-aws-next-js/issues/286), [#291](https://github.com/milliHQ/terraform-aws-next-js/pull/291))
+- Add switch for attaching additional policy documents ([#276](https://github.com/milliHQ/terraform-aws-next-js/pull/276))
+
 ## [0.11.5] - 2022-04-02
 
 - Adds support for route-manifest v4 ([#292](https://github.com/milliHQ/terraform-aws-next-js/pull/292))  
