@@ -83,7 +83,7 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc" {
 ####################################
 
 resource "aws_iam_policy" "additional_json" {
-  count = var.lambda_policy_json != null ? 1 : 0
+  count = var.lambda_attach_policy_json ? 1 : 0
 
   description = "Managed by Terraform Next.js"
   policy      = var.lambda_policy_json
@@ -92,7 +92,7 @@ resource "aws_iam_policy" "additional_json" {
 }
 
 resource "aws_iam_role_policy_attachment" "additional_json" {
-  for_each = var.lambda_policy_json != null ? local.lambdas : {}
+  for_each = var.lambda_attach_policy_json ? local.lambdas : {}
 
   role       = aws_iam_role.lambda[each.key].name
   policy_arn = aws_iam_policy.additional_json[0].arn
