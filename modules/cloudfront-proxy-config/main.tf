@@ -40,7 +40,7 @@ resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
 # Upload Proxy Config
 #####################
 
-resource "aws_s3_bucket_object" "config_json" {
+resource "aws_s3_object" "config_json" {
   bucket        = aws_s3_bucket.proxy_config_store.id
   key           = local.proxy_config_key
   content       = var.proxy_config_json
