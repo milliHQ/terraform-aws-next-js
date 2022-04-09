@@ -4,6 +4,7 @@ export interface ConfigOutput {
   buildId: string;
   routes: Route[];
   staticRoutes: string[];
+  lambdaRoutes: string[];
   staticFilesArchive: string;
   lambdas: Record<
     string,

@@ -1,32 +1,12 @@
 locals {
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
-  config_file          = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas              = lookup(local.config_file, "lambdas", {})
-  static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
-
-  # Build the proxy config JSON
-  config_file_images  = lookup(local.config_file, "images", {})
-  config_file_version = lookup(local.config_file, "version", 0)
-  static_routes_json  = lookup(local.config_file, "staticRoutes", [])
-  routes_json         = lookup(local.config_file, "routes", [])
-  lambda_routes_json = flatten([
-    for integration_key, integration in local.lambdas : [
-      lookup(integration, "route", "/")
-    ]
-  ])
-  prerenders_json = lookup(local.config_file, "prerenders", {})
-  proxy_config_json = jsonencode({
-    routes       = local.routes_json
-    staticRoutes = local.static_routes_json
-    lambdaRoutes = local.lambda_routes_json
-    prerenders   = local.prerenders_json
-  })
+  static_files_archive = "${local.config_dir}/deployment.zip}"
 }
 
-#########
-# Lambdas
-#########
+###################
+# Deployment Lambda
+###################
 
 # Static deployment to S3 website and handles CloudFront invalidations
 module "statics_deploy" {
@@ -47,89 +27,6 @@ module "statics_deploy" {
 
   debug_use_local_packages = var.debug_use_local_packages
   tf_next_module_root      = path.module
-}
-
-# Lambda
-
-resource "aws_lambda_function" "this" {
-  for_each = local.lambdas
-
-  function_name = "${var.deployment_name}_${each.key}"
-  description   = "Managed by Terraform Next.js"
-  role          = aws_iam_role.lambda[each.key].arn
-  handler       = lookup(each.value, "handler", "")
-  runtime       = lookup(each.value, "runtime", var.lambda_runtime)
-  memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
-  timeout       = var.lambda_timeout
-  tags          = var.tags
-
-  filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
-  source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
-
-  dynamic "environment" {
-    for_each = length(var.lambda_environment_variables) > 0 ? [true] : []
-    content {
-      variables = var.lambda_environment_variables
-    }
-  }
-
-  dynamic "vpc_config" {
-    for_each = var.lambda_attach_to_vpc ? [true] : []
-    content {
-      security_group_ids = var.vpc_security_group_ids
-      subnet_ids         = var.vpc_subnet_ids
-    }
-  }
-
-  depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.this]
-}
-
-# Lambda invoke permission
-
-resource "aws_lambda_permission" "current_version_triggers" {
-  for_each = local.lambdas
-
-  statement_id  = "AllowInvokeFromApiGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = "${var.deployment_name}_${each.key}"
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
-}
-
-#############
-# Api-Gateway
-#############
-
-locals {
-  integrations_keys = flatten([
-    for integration_key, integration in local.lambdas : [
-      "ANY ${lookup(integration, "route", "")}/{proxy+}"
-    ]
-  ])
-  integration_values = flatten([
-    for integration_key, integration in local.lambdas : {
-      lambda_arn             = aws_lambda_function.this[integration_key].arn
-      payload_format_version = "2.0"
-      timeout_milliseconds   = var.lambda_timeout * 1000
-    }
-  ])
-  integrations = zipmap(local.integrations_keys, local.integration_values)
-}
-
-module "api_gateway" {
-  source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "1.1.0"
-
-  name          = var.deployment_name
-  description   = "Managed by Terraform Next.js"
-  protocol_type = "HTTP"
-
-  create_api_domain_name = false
-
-  integrations = local.integrations
-
-  tags = var.tags
 }
 
 ############
@@ -158,12 +55,11 @@ module "next_image" {
   # device) sizes to the optimizer and by setting the other
   # (next_image_device_sizes) to an empty array which prevents the optimizer
   # from adding the default device settings
-  next_image_domains                 = lookup(local.config_file_images, "domains", [])
-  next_image_image_sizes             = lookup(local.config_file_images, "sizes", [])
-  next_image_device_sizes            = []
-  next_image_formats                 = lookup(local.config_file_images, "formats", null)
-  next_image_dangerously_allow_SVG   = lookup(local.config_file_images, "dangerouslyAllowSVG", false)
-  next_image_content_security_policy = lookup(local.config_file_images, "contentSecurityPolicy", null)
+
+  # TODO: Find way to pass these dynamically from the deployment
+  next_image_domains      = []
+  next_image_image_sizes  = []
+  next_image_device_sizes = []
 
   source_bucket_id = module.statics_deploy.static_bucket_id
 
