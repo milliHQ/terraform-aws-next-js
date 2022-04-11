@@ -522,6 +522,10 @@ type ImagesManifest = {
     loader: LoaderKey;
     sizes: number[];
     domains: string[];
+    formats?: string[] | undefined;
+    minimumCacheTTL?: number | undefined;
+    dangerouslyAllowSVG?: boolean | undefined;
+    contentSecurityPolicy?: string | undefined;
   };
 };
 

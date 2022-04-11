@@ -223,7 +223,13 @@ export async function build({
   meta = {} as BuildParamsMeta,
 }: BuildParamsType): Promise<{
   routes: Route[];
-  images?: { domains: string[]; sizes: number[] };
+  images?: {
+    domains: string[];
+    sizes: number[];
+    formats?: string[] | undefined;
+    dangerouslyAllowSVG?: boolean | undefined;
+    contentSecurityPolicy?: string | undefined;
+  };
   output: Files;
   wildcard?: Array<{
     domain: string;
@@ -660,9 +666,29 @@ export async function build({
         }
         if (!Array.isArray(images.sizes)) {
           throw new NowBuildError({
-            code: 'NEXT_IMAGES_DOMAINS',
+            code: 'NEXT_IMAGES_SIZES',
             message:
               'image-manifest.json "images.sizes" must be an array. Contact support if this continues to happen.',
+          });
+        }
+        if (
+          typeof images.dangerouslyAllowSVG !== 'undefined' &&
+          typeof images.dangerouslyAllowSVG !== 'boolean'
+        ) {
+          throw new NowBuildError({
+            code: 'NEXT_IMAGES_DANGEROUSLYALLOWSVG',
+            message:
+              'image-manifest.json "images.dangerouslyAllowSVG" must be an boolean. Contact support if this continues to happen.',
+          });
+        }
+        if (
+          typeof images.contentSecurityPolicy !== 'undefined' &&
+          typeof images.contentSecurityPolicy !== 'string'
+        ) {
+          throw new NowBuildError({
+            code: 'NEXT_IMAGES_CONTENTSECURITYPOLICY',
+            message:
+              'image-manifest.json "images.contentSecurityPolicy" must be an string. Contact support if this continues to happen.',
           });
         }
         break;
@@ -2129,6 +2155,9 @@ export async function build({
         ? {
             domains: imagesManifest.images.domains,
             sizes: imagesManifest.images.sizes,
+            formats: imagesManifest.images.formats,
+            dangerouslyAllowSVG: imagesManifest.images.dangerouslyAllowSVG,
+            contentSecurityPolicy: imagesManifest.images.contentSecurityPolicy,
           }
         : undefined,
     /*
