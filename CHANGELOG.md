@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.1] - 2022-04-11
+
 - Pass image settings to the optimization module ([#297](https://github.com/milliHQ/terraform-aws-next-js/issues/297), [#299](https://github.com/milliHQ/terraform-aws-next-js/pull/299))
 
 ## [0.12.0] - 2022-04-07
