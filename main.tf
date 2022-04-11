@@ -158,9 +158,12 @@ module "next_image" {
   # device) sizes to the optimizer and by setting the other
   # (next_image_device_sizes) to an empty array which prevents the optimizer
   # from adding the default device settings
-  next_image_domains      = lookup(local.config_file_images, "domains", [])
-  next_image_image_sizes  = lookup(local.config_file_images, "sizes", [])
-  next_image_device_sizes = []
+  next_image_domains                 = lookup(local.config_file_images, "domains", [])
+  next_image_image_sizes             = lookup(local.config_file_images, "sizes", [])
+  next_image_device_sizes            = []
+  next_image_formats                 = lookup(local.config_file_images, "formats", null)
+  next_image_dangerously_allow_SVG   = lookup(local.config_file_images, "dangerouslyAllowSVG", false)
+  next_image_content_security_policy = lookup(local.config_file_images, "contentSecurityPolicy", null)
 
   source_bucket_id = module.statics_deploy.static_bucket_id
 

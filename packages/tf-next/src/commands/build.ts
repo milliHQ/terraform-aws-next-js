@@ -50,6 +50,9 @@ interface OutputProps {
   images?: {
     domains: string[];
     sizes: number[];
+    formats?: string[] | undefined;
+    dangerouslyAllowSVG?: boolean | undefined;
+    contentSecurityPolicy?: string | undefined;
   };
   routes: Route[];
   lambdas: Lambdas;
