@@ -4,7 +4,7 @@
 
 variable "proxy_module_version" {
   type    = string
-  default = "0.12.0"
+  default = "0.12.1"
 }
 
 variable "lambda_default_runtime" {
