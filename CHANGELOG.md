@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Pass image settings to the optimization module ([#297](https://github.com/milliHQ/terraform-aws-next-js/issues/297), [#299](https://github.com/milliHQ/terraform-aws-next-js/pull/299))
+
 ## [0.12.0] - 2022-04-07
 
 - Ensure compatibility with AWS Provider Version 4 ([#286](https://github.com/milliHQ/terraform-aws-next-js/issues/286), [#291](https://github.com/milliHQ/terraform-aws-next-js/pull/291))
