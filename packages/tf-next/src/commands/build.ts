@@ -16,7 +16,7 @@ import findWorkspaceRoot from 'find-yarn-workspace-root';
 import * as fs from 'fs-extra';
 import tmp from 'tmp';
 
-import { ConfigOutput } from '../types';
+import { CommandDefaultOptions, ConfigOutput } from '../types';
 import { findEntryPoint } from '../utils';
 
 // Config file version (For detecting incompatibility issues in Terraform)
@@ -162,20 +162,18 @@ async function writeOutput(props: OutputProps) {
  * Build Command
  * ---------------------------------------------------------------------------*/
 
-interface BuildProps {
+type BuildCommandProps = CommandDefaultOptions & {
   skipDownload?: boolean;
-  logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
-  cwd: string;
   target?: 'AWS';
-}
+};
 
 async function buildCommand({
   skipDownload = false,
   logLevel,
   deleteBuildCache = true,
   cwd,
-}: BuildProps) {
+}: BuildCommandProps) {
   let buildOutput: OutputProps | null = null;
   const mode = skipDownload ? 'local' : 'download';
 

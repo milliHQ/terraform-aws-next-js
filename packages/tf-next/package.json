@@ -19,6 +19,8 @@
     "postpack": "rm ./LICENSE"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.67.0",
+    "@aws-sdk/credential-provider-ini": "^3.67.0",
     "@millihq/tf-next-runtime": "0.12.2",
     "@vercel/build-utils": "2.12.1",
     "@vercel/frameworks": "^0.0.15",
@@ -27,6 +29,7 @@
     "find-yarn-workspace-root": "^2.0.0",
     "fs-extra": "^9.0.1",
     "glob": "^7.1.6",
+    "ora": "^5.4.1",
     "tmp": "^0.2.1",
     "yargs": "^15.3.1"
   },

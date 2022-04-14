@@ -27,3 +27,14 @@ export interface ConfigOutput {
   };
   version: number;
 }
+
+export type CommandDefaultOptions = {
+  /**
+   * The current working directory where the command is executed from
+   */
+  cwd: string;
+  /**
+   * LogLevel of the command
+   */
+  logLevel?: 'verbose' | 'none';
+};
