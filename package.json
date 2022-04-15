@@ -34,7 +34,7 @@
     "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
     "ts-jest": "^27.0.5",
-    "turbo": "^1.0.25",
+    "turbo": "^1.2.4",
     "typescript": "^4.4.2"
   },
   "resolutions": {
@@ -64,20 +64,6 @@
       "@ofhouse/keep-a-changelog": {
         "filename": "CHANGELOG.md",
         "addUnreleased": true
-      }
-    }
-  },
-  "turbo": {
-    "baseBranch": "origin/main",
-    "pipeline": {
-      "build": {
-        "outputs": [
-          "dist/**",
-          "dist.zip"
-        ],
-        "dependsOn": [
-          "^build"
-        ]
       }
     }
   }
