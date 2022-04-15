@@ -2,7 +2,7 @@ import { createServer, Server } from 'http';
 import { CloudFrontRequestEvent, CloudFrontRequest } from 'aws-lambda';
 import getPort from 'get-port';
 
-import { ProxyConfig } from '../types';
+import { ProxyConfig } from '../src/types';
 
 // Max runtime of the lambda
 const TIMEOUT = 30000;

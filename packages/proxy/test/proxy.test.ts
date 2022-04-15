@@ -1,5 +1,5 @@
-import { Proxy } from '../proxy';
-import { ProxyConfig } from '../types';
+import { Proxy } from '../src/proxy';
+import { ProxyConfig } from '../src/types';
 
 describe('Proxy', () => {
   describe('Proxy::Routing 001', () => {
