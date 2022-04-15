@@ -47,7 +47,7 @@ describe('[proxy] Handler', () => {
     // Since the handler has it's own state we need to isolate it between test runs to prevent
     // using a cached proxyConfig
     jest.isolateModules(() => {
-      handler = require('../handler').handler;
+      handler = require('../src/handler').handler;
     });
 
     configServer = new ConfigServer();
