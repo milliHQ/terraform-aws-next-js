@@ -3,5 +3,5 @@
   "compilerOptions": {
     "typeRoots": ["../../node_modules/@types"]
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "./test/**/*"]
 }

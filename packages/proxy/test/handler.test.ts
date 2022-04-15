@@ -2,7 +2,7 @@ import { createServer, Server } from 'http';
 import { CloudFrontRequestEvent, CloudFrontRequest } from 'aws-lambda';
 import getPort from 'get-port';
 
-import { ProxyConfig } from '../types';
+import { ProxyConfig } from '../src/types';
 
 // Max runtime of the lambda
 const TIMEOUT = 30000;
@@ -47,7 +47,7 @@ describe('[proxy] Handler', () => {
     // Since the handler has it's own state we need to isolate it between test runs to prevent
     // using a cached proxyConfig
     jest.isolateModules(() => {
-      handler = require('../handler').handler;
+      handler = require('../src/handler').handler;
     });
 
     configServer = new ConfigServer();

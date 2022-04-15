@@ -3,16 +3,16 @@ import { S3 } from 'aws-sdk';
 import {
   BucketHandler,
   s3CreateBucket as createBucket,
-} from '../../../../test/utils';
+} from '../../../test/utils';
 import {
   deploymentConfigurationKey,
   expireTagKey,
   expireTagValue,
-} from '../constants';
-import { getOrCreateManifest } from '../get-or-create-manifest';
-import { Manifest } from '../types';
-import { getInvalidationKeys, updateManifest } from '../update-manifest';
-import { generateRandomBuildId } from '../utils';
+} from '../src/constants';
+import { getOrCreateManifest } from '../src/get-or-create-manifest';
+import { Manifest } from '../src/types';
+import { getInvalidationKeys, updateManifest } from '../src/update-manifest';
+import { generateRandomBuildId } from '../src/utils';
 import { addFilesToS3Bucket, generateS3ClientForTesting } from './utils';
 
 describe('deploy-trigger', () => {

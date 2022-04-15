@@ -6,7 +6,7 @@
 import { Route } from '@vercel/routing-utils';
 import { URLSearchParams } from 'url';
 
-import { Proxy } from '../proxy';
+import { Proxy } from '../src/proxy';
 
 test('[proxy-unit] captured groups', () => {
   const routesConfig = [{ src: '/api/(.*)', dest: '/endpoints/$1.js' }];

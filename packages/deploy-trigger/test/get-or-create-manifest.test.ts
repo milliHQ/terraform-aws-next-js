@@ -3,10 +3,10 @@ import { S3 } from 'aws-sdk';
 import {
   BucketHandler,
   s3CreateBucket as createBucket,
-} from '../../../../test/utils';
-import { deploymentConfigurationKey, manifestVersion } from '../constants';
-import { getOrCreateManifest } from '../get-or-create-manifest';
-import { Manifest } from '../types';
+} from '../../../test/utils';
+import { deploymentConfigurationKey, manifestVersion } from '../src/constants';
+import { getOrCreateManifest } from '../src/get-or-create-manifest';
+import { Manifest } from '../src/types';
 import { generateS3ClientForTesting } from './utils';
 
 describe('deploy-trigger', () => {

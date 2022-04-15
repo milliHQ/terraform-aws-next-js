@@ -1,4 +1,4 @@
-import { resolveRouteParameters } from '../util/resolve-route-parameters';
+import { resolveRouteParameters } from '../src/util/resolve-route-parameters';
 
 describe('resolve route parameters', () => {
   test('resolve numbered param', () => {
