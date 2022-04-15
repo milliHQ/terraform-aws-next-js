@@ -34,4 +34,18 @@ describe('resolve route parameters', () => {
 
     expect(result).toBe('/users/[user_id]?user_id=123');
   });
+
+  test('Append existing querystring', () => {
+    const matcher = new RegExp(
+      '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
+      'i'
+    );
+    const match = matcher.exec('/test/');
+
+    expect(match).not.toBeNull();
+    const keys = Object.keys(match!.groups ?? { foo: 'bar' });
+    const result = resolveRouteParameters('/$1', match!, keys);
+
+    expect(result).toBe('/test?foo=bar');
+  });
 });

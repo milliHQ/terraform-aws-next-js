@@ -1,4 +1,5 @@
 import { STATUS_CODES } from 'http';
+
 import {
   CloudFrontHeaders,
   CloudFrontResultResponse,
@@ -6,16 +7,17 @@ import {
   CloudFrontRequest,
 } from 'aws-lambda';
 
+import { appendQuerystring } from './util/append-querystring';
 import { fetchProxyConfig } from './util/fetch-proxy-config';
 import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
-import { ProxyConfig, RouteResult } from './types';
-import { Proxy } from './proxy';
 import {
   createCustomOriginFromApiGateway,
   createCustomOriginFromUrl,
   serveRequestFromCustomOrigin,
   serveRequestFromS3Origin,
 } from './util/custom-origin';
+import { Proxy } from './proxy';
+import { ProxyConfig, RouteResult } from './types';
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -31,23 +33,38 @@ function isRedirect(
     routeResult.status >= 300 &&
     routeResult.status <= 309
   ) {
-    if ('Location' in routeResult.headers) {
-      let headers: CloudFrontHeaders = {};
+    const redirectTarget = routeResult.headers['Location'];
+    if (redirectTarget) {
+      // Append the original querystring to the redirect
+      const redirectTargetWithQuerystring = routeResult.uri_args
+        ? appendQuerystring(redirectTarget, routeResult.uri_args)
+        : redirectTarget;
 
-      // If the redirect is permanent, cache the result
-      if (routeResult.status === 301 || routeResult.status === 308) {
-        headers['cache-control'] = [
+      // Override the Location header value with the appended querystring
+      routeResult.headers['Location'] = redirectTargetWithQuerystring;
+
+      // Redirects are not cached, see discussion for details:
+      // https://github.com/milliHQ/terraform-aws-next-js/issues/296
+      const initialHeaders: CloudFrontHeaders = {
+        'cache-control': [
           {
             key: 'Cache-Control',
-            value: 'public,max-age=31536000,immutable',
+            value: 'public, max-age=0, must-revalidate',
           },
-        ];
-      }
+        ],
+        'content-type': [
+          {
+            key: 'Content-Type',
+            value: 'text/plain',
+          },
+        ],
+      };
 
       return {
         status: routeResult.status.toString(),
         statusDescription: STATUS_CODES[routeResult.status],
-        headers: generateCloudFrontHeaders(headers, routeResult.headers),
+        headers: generateCloudFrontHeaders(initialHeaders, routeResult.headers),
+        body: `Redirecting to ${redirectTargetWithQuerystring} (${routeResult.status})`,
       };
     }
   }
@@ -77,7 +94,6 @@ async function main(
   ][0].value;
   const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
     .value;
-  let headers: Record<string, string> = {};
 
   try {
     if (!proxyConfig) {
@@ -107,9 +123,10 @@ async function main(
 
   // Append query string if we have one
   // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
-  const requestPath = `${request.uri}${
-    request.querystring !== '' ? `?${request.querystring}` : ''
-  }`;
+  const requestPath =
+    request.querystring !== ''
+      ? `${request.uri}?${request.querystring}`
+      : request.uri;
   const proxyResult = proxy.route(requestPath);
 
   // Check for redirect

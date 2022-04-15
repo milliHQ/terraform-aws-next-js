@@ -193,7 +193,7 @@ test('Continue after first route found', () => {
   });
 });
 
-test('Redirect: Remove trailing slash', () => {
+describe('Redirect: Remove trailing slash', () => {
   const routesConfig: Route[] = [
     {
       src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
@@ -207,34 +207,60 @@ test('Redirect: Remove trailing slash', () => {
       handle: 'filesystem',
     },
   ];
-  const proxy = new Proxy(routesConfig, [], ['/test']);
+  let proxy: Proxy;
 
-  const result1 = proxy.route('/test/');
-  expect(result1).toEqual({
-    found: true,
-    dest: '/test',
-    continue: false,
-    status: 308,
-    headers: { Location: '/test' },
-    isDestUrl: false,
-    phase: 'filesystem',
-    target: 'filesystem',
+  beforeAll(() => {
+    proxy = new Proxy(routesConfig, [], ['/test']);
   });
 
-  const result2 = proxy.route('/other-route/');
-  expect(result2).toEqual({
-    found: true,
-    dest: '/other-route/',
-    continue: true,
-    status: 308,
-    headers: { Location: '/other-route' },
-    uri_args: new URLSearchParams(),
-    matched_route: routesConfig[0],
-    matched_route_idx: 0,
-    userDest: false,
-    isDestUrl: false,
-    phase: undefined,
-    target: undefined,
+  test('Matches static route', () => {
+    const result = proxy.route('/test/');
+    expect(result).toEqual({
+      found: true,
+      dest: '/test',
+      continue: false,
+      status: 308,
+      headers: { Location: '/test' },
+      isDestUrl: false,
+      phase: 'filesystem',
+      target: 'filesystem',
+    });
+  });
+
+  test('Matches no route', () => {
+    const result = proxy.route('/other-route/');
+    expect(result).toEqual({
+      found: true,
+      dest: '/other-route/',
+      continue: true,
+      status: 308,
+      headers: { Location: '/other-route' },
+      uri_args: new URLSearchParams(),
+      matched_route: routesConfig[0],
+      matched_route_idx: 0,
+      userDest: false,
+      isDestUrl: false,
+      phase: undefined,
+      target: undefined,
+    });
+  });
+
+  test('Has querystring', () => {
+    const result = proxy.route('/other-route/?foo=bar');
+    expect(result).toEqual({
+      found: true,
+      dest: '/other-route/',
+      continue: true,
+      status: 308,
+      headers: { Location: '/other-route' },
+      uri_args: new URLSearchParams('foo=bar'),
+      matched_route: routesConfig[0],
+      matched_route_idx: 0,
+      userDest: false,
+      isDestUrl: false,
+      phase: undefined,
+      target: undefined,
+    });
   });
 });
 
@@ -299,6 +325,36 @@ test('Redirect partial replace', () => {
     status: 307,
     headers: { Location: '/other-path' },
     uri_args: new URLSearchParams(),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+});
+
+test('Redirect to partial path', () => {
+  const routesConfig = [
+    {
+      src: '^\\/two(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?$',
+      headers: {
+        Location: '/newplacetwo/$1',
+      },
+      status: 308,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route(
+    '/two/some/path?foo=bar'
+  );
+  expect(result).toEqual({
+    found: true,
+    dest: '/two/some/path',
+    continue: false,
+    status: 308,
+    headers: { Location: '/newplacetwo/some/path' },
+    uri_args: new URLSearchParams('foo=bar'),
     matched_route: routesConfig[0],
     matched_route_idx: 0,
     userDest: false,
