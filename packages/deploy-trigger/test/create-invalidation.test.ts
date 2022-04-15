@@ -1,7 +1,7 @@
 import {
   createInvalidationChunk,
   prepareInvalidations,
-} from '../create-invalidation';
+} from '../src/create-invalidation';
 
 describe('prepareInvalidations', () => {
   test('Collapse multiPaths', async () => {
