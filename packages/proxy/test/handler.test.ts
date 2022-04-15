@@ -413,6 +413,7 @@ describe('[proxy] Handler', () => {
     // Prepare configServer
     configServer.proxyConfig = proxyConfig;
     const cloudFrontEvent = generateCloudFrontRequestEvent({
+      apiGatewayEndpoint: 'api-gateway.local',
       configEndpoint,
       uri: requestPath,
     });
