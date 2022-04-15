@@ -1,7 +1,6 @@
 locals {
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
-  static_files_archive = "${local.config_dir}/deployment.zip}"
 }
 
 ###################
@@ -12,7 +11,6 @@ locals {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive = local.static_files_archive
   expire_static_assets = var.expire_static_assets
 
   cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id

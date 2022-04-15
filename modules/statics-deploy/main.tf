@@ -246,43 +246,6 @@ module "deploy_trigger" {
   }
 }
 
-###########################
-# Upload static files to s3
-###########################
-
-resource "null_resource" "static_s3_upload_awscli" {
-  count = var.use_awscli_for_static_upload ? 1 : 0
-  triggers = {
-    static_files_archive = filemd5(var.static_files_archive)
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp --region ${aws_s3_bucket.static_upload.region} ${abspath(var.static_files_archive)} s3://${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
-  }
-
-  # Make sure this only runs when the bucket and the lambda trigger are setup
-  depends_on = [
-    aws_s3_bucket_notification.on_create
-  ]
-}
-
-resource "null_resource" "static_s3_upload" {
-  count = var.use_awscli_for_static_upload ? 0 : 1
-  triggers = {
-    static_files_archive = filemd5(var.static_files_archive)
-  }
-
-  provisioner "local-exec" {
-    command     = "./s3-put -r ${aws_s3_bucket.static_upload.region} -T ${abspath(var.static_files_archive)} /${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
-    working_dir = "${path.module}/s3-bash4/bin"
-  }
-
-  # Make sure this only runs when the bucket and the lambda trigger are setup
-  depends_on = [
-    aws_s3_bucket_notification.on_create
-  ]
-}
-
 ################################
 # SQS Queue
 # (For CloudFront invalidations)

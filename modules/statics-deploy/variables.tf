@@ -1,7 +1,3 @@
-variable "static_files_archive" {
-  type = string
-}
-
 variable "deploy_trigger_module_version" {
   type    = string
   default = "0.12.2"
