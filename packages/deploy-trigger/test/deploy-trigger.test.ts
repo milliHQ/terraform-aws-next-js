@@ -4,8 +4,8 @@ import { S3 } from 'aws-sdk';
 import {
   BucketHandler,
   s3CreateBucket as createBucket,
-} from '../../../../test/utils';
-import { deployTrigger } from '../deploy-trigger';
+} from '../../../test/utils';
+import { deployTrigger } from '../src/deploy-trigger';
 import { generateZipBundle } from './utils';
 
 describe('deploy-trigger', () => {
