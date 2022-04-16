@@ -1,0 +1,9 @@
+{
+  "baseBranch": "origin/main",
+  "pipeline": {
+    "build": {
+      "outputs": ["dist/**", "dist.zip"],
+      "dependsOn": ["^build"]
+    }
+  }
+}
