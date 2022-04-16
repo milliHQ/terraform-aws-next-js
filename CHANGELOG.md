@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.2] - 2022-04-16
+
 - Append querystring to redirects ([#296](https://github.com/milliHQ/terraform-aws-next-js/issues/296), [#304](https://github.com/milliHQ/terraform-aws-next-js/pull/304))
 
 ## [0.12.1] - 2022-04-11
