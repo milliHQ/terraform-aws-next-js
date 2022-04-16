@@ -3,12 +3,13 @@
  * @see: https://github.com/vercel/vercel/blob/master/packages/now-cli/test/dev-router.unit.js
  */
 
-import { Route } from '@vercel/routing-utils';
 import { URLSearchParams } from 'url';
+
+import { Route } from '@vercel/routing-utils';
 
 import { Proxy } from '../src/proxy';
 
-test('[proxy-unit] captured groups', () => {
+test('Captured groups', () => {
   const routesConfig = [{ src: '/api/(.*)', dest: '/endpoints/$1.js' }];
   const result = new Proxy(routesConfig, [], []).route('/api/user');
 
@@ -27,7 +28,7 @@ test('[proxy-unit] captured groups', () => {
   });
 });
 
-test('[proxy-unit] named groups', () => {
+test('Named groups', () => {
   const routesConfig = [{ src: '/user/(?<id>.+)', dest: '/user.js?id=$id' }];
   const result = new Proxy(routesConfig, [], []).route('/user/123');
 
@@ -46,7 +47,7 @@ test('[proxy-unit] named groups', () => {
   });
 });
 
-test('[proxy-unit] optional named groups', () => {
+test('Optional named groups', () => {
   const routesConfig = [
     {
       src: '/api/hello(/(?<name>[^/]+))?',
@@ -70,7 +71,7 @@ test('[proxy-unit] optional named groups', () => {
   });
 });
 
-test('[proxy-unit] shared lambda', () => {
+test('Shared lambda', () => {
   const routesConfig = [
     {
       src: '^/product/\\[\\.\\.\\.slug\\]/?$',
@@ -101,7 +102,7 @@ test('[proxy-unit] shared lambda', () => {
   });
 });
 
-test('[proxy-unit] slug group and shared lambda', () => {
+test('Slug group and shared lambda', () => {
   const routesConfig = [
     {
       src: '^/product/(?<slug>.+?)(?:/)?$',
@@ -137,7 +138,7 @@ test('[proxy-unit] slug group and shared lambda', () => {
   });
 });
 
-test('[proxy-unit] Ignore other routes when no continue is set', () => {
+test('Ignore other routes when no continue is set', () => {
   const routesConfig = [
     { src: '/about', dest: '/about.html' },
     { src: '/about', dest: '/about.php' },
@@ -160,7 +161,7 @@ test('[proxy-unit] Ignore other routes when no continue is set', () => {
   });
 });
 
-test('[proxy-unit] Continue after first route found', () => {
+test('Continue after first route found', () => {
   const routesConfig = [
     {
       src: '/about',
@@ -192,7 +193,7 @@ test('[proxy-unit] Continue after first route found', () => {
   });
 });
 
-test('[proxy-unit] Redirect: Remove trailing slash', () => {
+describe('Redirect: Remove trailing slash', () => {
   const routesConfig: Route[] = [
     {
       src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
@@ -206,38 +207,64 @@ test('[proxy-unit] Redirect: Remove trailing slash', () => {
       handle: 'filesystem',
     },
   ];
-  const proxy = new Proxy(routesConfig, [], ['/test']);
+  let proxy: Proxy;
 
-  const result1 = proxy.route('/test/');
-  expect(result1).toEqual({
-    found: true,
-    dest: '/test',
-    continue: false,
-    status: 308,
-    headers: { Location: '/test' },
-    isDestUrl: false,
-    phase: 'filesystem',
-    target: 'filesystem',
+  beforeAll(() => {
+    proxy = new Proxy(routesConfig, [], ['/test']);
   });
 
-  const result2 = proxy.route('/other-route/');
-  expect(result2).toEqual({
-    found: true,
-    dest: '/other-route/',
-    continue: true,
-    status: 308,
-    headers: { Location: '/other-route' },
-    uri_args: new URLSearchParams(),
-    matched_route: routesConfig[0],
-    matched_route_idx: 0,
-    userDest: false,
-    isDestUrl: false,
-    phase: undefined,
-    target: undefined,
+  test('Matches static route', () => {
+    const result = proxy.route('/test/');
+    expect(result).toEqual({
+      found: true,
+      dest: '/test',
+      continue: false,
+      status: 308,
+      headers: { Location: '/test' },
+      isDestUrl: false,
+      phase: 'filesystem',
+      target: 'filesystem',
+    });
+  });
+
+  test('Matches no route', () => {
+    const result = proxy.route('/other-route/');
+    expect(result).toEqual({
+      found: true,
+      dest: '/other-route/',
+      continue: true,
+      status: 308,
+      headers: { Location: '/other-route' },
+      uri_args: new URLSearchParams(),
+      matched_route: routesConfig[0],
+      matched_route_idx: 0,
+      userDest: false,
+      isDestUrl: false,
+      phase: undefined,
+      target: undefined,
+    });
+  });
+
+  test('Has querystring', () => {
+    const result = proxy.route('/other-route/?foo=bar');
+    expect(result).toEqual({
+      found: true,
+      dest: '/other-route/',
+      continue: true,
+      status: 308,
+      headers: { Location: '/other-route' },
+      uri_args: new URLSearchParams('foo=bar'),
+      matched_route: routesConfig[0],
+      matched_route_idx: 0,
+      userDest: false,
+      isDestUrl: false,
+      phase: undefined,
+      target: undefined,
+    });
   });
 });
 
-test('[proxy-unit] With trailing slash', () => {
+test('With trailing slash', () => {
   const routesConfig: Route[] = [
     {
       handle: 'filesystem',
@@ -270,7 +297,7 @@ test('[proxy-unit] With trailing slash', () => {
   });
 });
 
-test('[proxy-unit] Redirect partial replace', () => {
+test('Redirect partial replace', () => {
   const routesConfig = [
     {
       src: '^\\/redir(?:\\/([^\\/]+?))$',
@@ -307,7 +334,37 @@ test('[proxy-unit] Redirect partial replace', () => {
   });
 });
 
-test('[proxy-unit] External rewrite', () => {
+test('Redirect to partial path', () => {
+  const routesConfig = [
+    {
+      src: '^\\/two(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))?$',
+      headers: {
+        Location: '/newplacetwo/$1',
+      },
+      status: 308,
+    },
+  ] as Route[];
+
+  const result = new Proxy(routesConfig, [], []).route(
+    '/two/some/path?foo=bar'
+  );
+  expect(result).toEqual({
+    found: true,
+    dest: '/two/some/path',
+    continue: false,
+    status: 308,
+    headers: { Location: '/newplacetwo/some/path' },
+    uri_args: new URLSearchParams('foo=bar'),
+    matched_route: routesConfig[0],
+    matched_route_idx: 0,
+    userDest: false,
+    isDestUrl: false,
+    phase: undefined,
+    target: undefined,
+  });
+});
+
+test('External rewrite', () => {
   const routesConfig = [
     {
       src: '^\\/docs(?:\\/([^\\/]+?))$',
@@ -334,7 +391,7 @@ test('[proxy-unit] External rewrite', () => {
   });
 });
 
-test('[proxy-unit] Rewrite with ^ and $', () => {
+test('Rewrite with ^ and $', () => {
   const routesConfig = [
     {
       src: '^/$',
@@ -361,7 +418,7 @@ test('[proxy-unit] Rewrite with ^ and $', () => {
   });
 });
 
-test('[proxy-unit] i18n default locale', () => {
+test('I18n default locale', () => {
   const routesConfig = [
     {
       src: '^/(?!(?:_next/.*|en|fr\\-FR|nl)(?:/.*|$))(.*)$',
@@ -405,7 +462,7 @@ test('[proxy-unit] i18n default locale', () => {
   });
 });
 
-test('[proxy-unit] static index route', () => {
+test('Static index route', () => {
   const routesConfig = [
     {
       handle: 'filesystem' as const,
@@ -425,7 +482,7 @@ test('[proxy-unit] static index route', () => {
   });
 });
 
-test('[proxy-unit] multiple dynamic parts', () => {
+test('Multiple dynamic parts', () => {
   const routesConfig: Route[] = [
     {
       handle: 'filesystem',
@@ -462,7 +519,7 @@ test('[proxy-unit] multiple dynamic parts', () => {
   });
 });
 
-test('[proxy-unit] Dynamic static route', () => {
+test('Dynamic static route', () => {
   const routesConfig: Route[] = [
     {
       handle: 'rewrite',
