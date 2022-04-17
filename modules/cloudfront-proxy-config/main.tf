@@ -36,21 +36,6 @@ resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
   policy = data.aws_iam_policy_document.cf_access.json
 }
 
-#####################
-# Upload Proxy Config
-#####################
-
-resource "aws_s3_object" "config_json" {
-  bucket        = aws_s3_bucket.proxy_config_store.id
-  key           = local.proxy_config_key
-  content       = var.proxy_config_json
-  content_type  = "application/json"
-  cache_control = "max-age=${local.proxy_config_max_age}"
-  tags          = var.tags
-
-  etag = md5(var.proxy_config_json)
-}
-
 ############
 # CloudFront
 ############

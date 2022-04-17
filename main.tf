@@ -72,8 +72,6 @@ module "proxy_config" {
   source = "./modules/cloudfront-proxy-config"
 
   cloudfront_price_class = var.cloudfront_price_class
-  proxy_config_json      = local.proxy_config_json
-  proxy_config_version   = local.config_file_version
 
   deployment_name = var.deployment_name
   tags            = var.tags
@@ -187,10 +185,6 @@ locals {
         name  = "x-env-config-endpoint"
         value = "http://${module.proxy_config.config_endpoint}"
       },
-      {
-        name  = "x-env-api-endpoint"
-        value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
-      }
     ]
   }
 
