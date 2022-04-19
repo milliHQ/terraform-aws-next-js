@@ -9,7 +9,7 @@ import {
 
 import { deploymentConfigurationKey } from './constants';
 import { generateRandomBuildId } from './utils';
-import { FileResult } from './types';
+import { DeploymentConfig, FileResult, LambdaDefinition } from './types';
 
 // Metadata Key where the buildId is stored
 const BuildIdMetaDataKey = 'x-amz-meta-tf-next-build-id';
@@ -39,7 +39,9 @@ interface Props {
 
 interface Response {
   files: FileResult[];
+  lambdas: LambdaDefinition[];
   buildId: string;
+  deploymentConfig: DeploymentConfig;
 }
 
 export async function deployTrigger({
@@ -49,6 +51,7 @@ export async function deployTrigger({
   deployBucket,
   versionId,
 }: Props): Promise<Response> {
+  let deploymentConfig: DeploymentConfig | null = null;
   let buildId = '';
   const params = {
     Key: key,
@@ -62,9 +65,6 @@ export async function deployTrigger({
 
   if (zipHeaders.Metadata && BuildIdMetaDataKey in zipHeaders.Metadata) {
     buildId = zipHeaders.Metadata[BuildIdMetaDataKey];
-  } else if (zipHeaders.ETag) {
-    // Fallback 1: If no metadata is present, use the etag
-    buildId = zipHeaders.ETag;
   } else {
     // Fallback 2: If no metadata or etag is present, create random id
     buildId = generateRandomBuildId();
@@ -76,60 +76,135 @@ export async function deployTrigger({
     .createReadStream()
     .pipe(unzipper.Parse({ forceStream: true }));
 
-  const uploads: Promise<S3.ManagedUpload.SendData>[] = [];
+  const fileUploads: Promise<S3.ManagedUpload.SendData>[] = [];
+  const lambdaUploads: Promise<S3.ManagedUpload.SendData>[] = [];
 
+  /**
+   * Unpacks a deployment zip with the following format:
+   *
+   * deployment.zip
+   * ├── lambdas/
+   * |   ├── lambda1.zip
+   * |   └── lambda2.zip
+   * ├── static/
+   * |   ├── _next/...
+   * |   └── prerendered-site
+   * └── config.json
+   *
+   * And uploads it to the bucket in the following way
+   */
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
 
-    const fileName = entry.path;
-    const type = entry.type;
+    const { path: filePath, type } = entry;
     if (type === 'File') {
-      // Get ContentType
-      // Static pre-rendered pages have no file extension,
-      // files without extension get HTML mime type as fallback
-      //
-      // Explicitly use the extname here since mime treats files without
-      // extension e.g. `/es` as extension => `application/ecmascript`
-      const mimeType = mimeLookup(extname(fileName));
-      const contentType =
-        typeof mimeType === 'string' ? mimeContentType(mimeType) : false;
+      let contentType: string | undefined;
+      let cacheControl: string | undefined;
+      let targetKey: string;
 
-      // When the file is static (served from /_next/*) then it has immutable
-      // client - side caching).
-      // Otherwise it is only immutable on the CDN
-      const cacheControl = fileName.startsWith('_next/')
-        ? CacheControlImmutable
-        : CacheControlStatic;
+      if (filePath === 'config.json') {
+        const content = await entry.buffer();
+        deploymentConfig = JSON.parse(content.toString()) as DeploymentConfig;
 
-      const uploadParams: S3.Types.PutObjectRequest = {
-        Bucket: deployBucket,
-        Key: fileName,
-        Body: entry,
-        ContentType:
-          typeof contentType === 'string'
-            ? contentType
-            : 'text/html; charset=utf-8',
-        CacheControl: cacheControl,
-      };
+        continue;
+      } else if (filePath.startsWith('lambdas')) {
+        contentType = 'application/zip';
+        targetKey = `${buildId}/_tf_next/${filePath}`;
 
-      // Sorry, but you cannot override the manifest
-      if (fileName !== deploymentConfigurationKey) {
-        uploads.push(s3.upload(uploadParams).promise());
+        lambdaUploads.push(
+          s3
+            .upload({
+              Bucket: deployBucket,
+              Key: targetKey,
+              Body: entry,
+              ContentType: contentType,
+            })
+            .promise()
+        );
+      } else {
+        const filePathWithoutPrefix = filePath.substring('static/'.length);
+        targetKey = `${buildId}/${filePathWithoutPrefix}`;
+
+        // Get ContentType
+        // Static pre-rendered pages have no file extension,
+        // files without extension get HTML mime type as fallback
+        //
+        // Explicitly use the extname here since mime treats files without
+        // extension e.g. `/es` as extension => `application/ecmascript`
+        const mimeType = mimeLookup(extname(filePath));
+        const possibleContentType =
+          typeof mimeType === 'string' ? mimeContentType(mimeType) : false;
+        contentType =
+          typeof possibleContentType === 'string'
+            ? possibleContentType
+            : 'text/html; charset=utf-8';
+
+        // When the file is static (served from /_next/*) then it has immutable
+        // client - side caching).
+        // Otherwise it is only immutable on the CDN
+        cacheControl = filePathWithoutPrefix.startsWith('_next/')
+          ? CacheControlImmutable
+          : CacheControlStatic;
+
+        // Sorry, but you cannot override the manifest
+        if (filePath !== deploymentConfigurationKey) {
+          fileUploads.push(
+            s3
+              .upload({
+                Bucket: deployBucket,
+                Key: targetKey,
+                Body: entry,
+                ContentType: contentType,
+                CacheControl: cacheControl,
+              })
+              .promise()
+          );
+        }
       }
     } else {
       entry.autodrain();
     }
   }
 
-  const files = (await Promise.all(uploads)).map((obj) => {
+  const files = (await Promise.all(fileUploads)).map((obj) => {
+    return { key: obj.Key, eTag: obj.ETag };
+  });
+  const lambdaFiles = (await Promise.all(lambdaUploads)).map((obj) => {
     return { key: obj.Key, eTag: obj.ETag };
   });
 
   // Cleanup
   await s3.deleteObject(params).promise();
 
+  if (deploymentConfig === null) {
+    throw new Error(
+      'No deploymentConfig was found inside the uploaded package.'
+    );
+  }
+
+  const lambdas: LambdaDefinition[] = [];
+
+  for (const [key, lambda] of Object.entries(deploymentConfig.lambdas)) {
+    // Find the uploaded Lambda
+    const lambdaFile = lambdaFiles.find((uploadedArchive) => {
+      return uploadedArchive.key.endsWith(lambda.filename);
+    });
+
+    if (lambdaFile) {
+      lambdas.push({
+        route: lambda.route,
+        sourceKey: lambdaFile.key,
+        functionName: key,
+        handler: lambda.handler,
+        runtime: lambda.runtime,
+      });
+    }
+  }
+
   return {
+    deploymentConfig,
     files,
+    lambdas,
     buildId,
   };
 }

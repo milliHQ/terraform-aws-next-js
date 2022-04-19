@@ -128,8 +128,9 @@ async function writeOutput(props: OutputProps) {
 
     // Pack lambdas
     for (const [key, lambda] of Object.entries(props.lambdas)) {
-      const zipFilename = `${lambdaDirPrefix}${key}.zip`;
+      const zipFilename = `${key}.zip`;
       const route = `/${key}`;
+      config.lambdaRoutes.push(route);
 
       config.lambdas[key] = {
         handler: lambda.handler,
@@ -139,7 +140,7 @@ async function writeOutput(props: OutputProps) {
       };
 
       archive.append(lambda.zipBuffer, {
-        name: zipFilename,
+        name: lambdaDirPrefix + zipFilename,
       });
     }
 

@@ -13,6 +13,8 @@ import {
   prepareInvalidations,
 } from './create-invalidation';
 import { generateRandomId } from './utils';
+import { AtomicDeployment } from './cdk/aws-construct';
+import { createCloudFormationStack } from './cdk/create-cloudformation-stack';
 
 interface InvalidationSQSMessage {
   id: string;
@@ -80,7 +82,9 @@ async function createCloudFrontInvalidation(
         InvalidationBatch,
       })
       .promise();
-  } catch (err: any) {
+  } catch (error) {
+    const err = error as any;
+
     console.log(err);
     if (err.code === 'TooManyInvalidationsInProgress') {
       // Send the invalidation back to the queue
@@ -163,12 +167,25 @@ async function s3Handler(Record: S3EventRecord) {
   );
 
   // Unpack the package
-  const { files, buildId } = await deployTrigger({
+  const { files, buildId, lambdas, deploymentConfig } = await deployTrigger({
     s3,
     sourceBucket,
     deployBucket,
     key,
     versionId,
+  });
+
+  // Create the stack
+  const atomicDeployment = new AtomicDeployment({
+    deploymentId: buildId,
+    deploymentBucketId: deployBucket,
+    lambdas: lambdas,
+  });
+
+  await createCloudFormationStack({
+    stack: atomicDeployment,
+    // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
+    stackName: `tfn-${buildId}`,
   });
 
   // Update the manifest

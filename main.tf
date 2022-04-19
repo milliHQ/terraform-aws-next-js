@@ -1,3 +1,40 @@
+##########
+# DynamoDB
+##########
+
+resource "aws_dynamodb_table" "aliases" {
+  name         = "${var.deployment_name}_aliases"
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key  = "alias"
+  range_key = "deploymentId"
+
+  attribute {
+    name = "alias"
+    type = "S"
+  }
+
+  attribute {
+    name = "deploymentId"
+    type = "S"
+  }
+
+  tags = var.tags
+}
+
+resource "aws_dynamodb_table" "deployments" {
+  name         = "${var.deployment_name}_deployments"
+  billing_mode = "PAY_PER_REQUEST"
+  table_class  = "STANDARD_INFREQUENT_ACCESS"
+
+  hash_key = "deploymentId"
+
+  attribute {
+    name = "deploymentId"
+    type = "S"
+  }
+}
+
 ###################
 # Deployment Lambda
 ###################

@@ -13,12 +13,13 @@
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts",
     "release": "release-it --no-npm",
-    "release:ci": "release-it --no-increment --no-git.push --ci"
+    "release:ci": "release-it --no-increment --no-git.push --ci",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
-    "@release-it/bumper": "^3.0.1",
     "@ofhouse/keep-a-changelog": "2.3.0-no-increment-fix",
+    "@release-it/bumper": "^3.0.1",
     "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
@@ -29,7 +30,8 @@
     "fs-extra": "^9.1.0",
     "hjson": "^3.2.2",
     "jest": "^27.2.1",
-    "prettier": "^2.0.5",
+    "postinstall-postinstall": "^2.1.0",
+    "prettier": "^2.6.2",
     "release-it": "^14.12.3",
     "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",

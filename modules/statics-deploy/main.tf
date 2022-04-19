@@ -141,6 +141,37 @@ data "aws_iam_policy_document" "access_static_deploy" {
     ]
     resources = [var.cloudfront_arn]
   }
+
+  # Permissions for CloudFormation to create resources
+  statement {
+    actions = [
+      "apigateway:*",
+      "cloudformation:CreateStack",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:PassRole",
+      "iam:PutRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "lambda:AddPermission",
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:GetFunction",
+      "lambda:RemovePermission",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DeleteRetentionPolicy",
+      "logs:PutRetentionPolicy",
+      "logs:TagLogGroup",
+      "logs:UntagLogGroup",
+    ]
+    resources = ["*"]
+  }
 }
 
 #

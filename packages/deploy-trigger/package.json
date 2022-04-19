@@ -16,6 +16,10 @@
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
+    "@aws-cdk/aws-apigatewayv2-alpha": "^2.20.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.20.0-alpha.0",
+    "aws-cdk-lib": "^2.20.0",
+    "constructs": "^10.0.119",
     "mime-types": "^2.1.33"
   },
   "devDependencies": {
@@ -28,6 +32,7 @@
     "archiver": "^5.3.0",
     "aws-sdk": "*",
     "ncc-zip": "^2.0.0",
+    "patch-package": "^6.4.7",
     "tmp": "^0.2.1",
     "unzipper": "^0.10.11"
   },

@@ -1,0 +1,12 @@
+diff --git a/node_modules/aws-cdk-lib/package.json b/node_modules/aws-cdk-lib/package.json
+index dbb7401..d14232f 100644
+--- a/node_modules/aws-cdk-lib/package.json
++++ b/node_modules/aws-cdk-lib/package.json
+@@ -381,6 +381,7 @@
+     "excludeExperimentalModules": true
+   },
+   "exports": {
++    "./core/lib/private/synthesis": "./core/lib/private/synthesis.js",
+     ".": "./index.js",
+     "./package.json": "./package.json",
+     "./.jsii": "./.jsii",

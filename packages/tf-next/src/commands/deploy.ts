@@ -37,6 +37,10 @@ type DeployCommandOptions = CommandDefaultOptions & {
    */
   awsProfile?: string;
   /**
+   * AWS region where the bucket is located in.
+   */
+  awsRegion?: string;
+  /**
    * Path to the deployment package that should be uploaded.
    */
   deploymentPackagePath?: string;
@@ -48,17 +52,20 @@ type DeployCommandOptions = CommandDefaultOptions & {
 
 async function deployCommand({
   awsProfile,
-  deploymentPackagePath = './deployment.zip',
+  awsRegion = 'eu-central-1',
+  deploymentPackagePath = '.next-tf/deployment.zip',
   s3BucketName,
   cwd,
 }: DeployCommandOptions) {
   const internalDeploymentPackagePath = resolve(cwd, deploymentPackagePath);
 
   const s3Client = new S3Client({
+    region: awsRegion,
     credentials: fromIni({
       profile: awsProfile,
     }),
   });
+
   const uploadCommand = new PutObjectCommand({
     Bucket: s3BucketName,
     Key: `${generateUUID()}.zip`,
