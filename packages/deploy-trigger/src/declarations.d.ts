@@ -4,5 +4,6 @@ declare namespace NodeJS {
     EXPIRE_AFTER_DAYS: string;
     DISTRIBUTION_ID: string;
     SQS_QUEUE_URL: string;
+    DEPLOY_STATUS_SNS_ARN: strin;
   }
 }

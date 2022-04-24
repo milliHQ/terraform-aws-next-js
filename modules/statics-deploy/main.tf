@@ -172,6 +172,15 @@ data "aws_iam_policy_document" "access_static_deploy" {
     ]
     resources = ["*"]
   }
+
+  # Allow CloudFormation to publish status changes to the SNS queue
+  statement {
+    effect = "Allow"
+    actions = [
+      "sns:Publish"
+    ]
+    resources = [var.deploy_status_sns_topic_arn]
+  }
 }
 
 #
@@ -262,11 +271,12 @@ module "deploy_trigger" {
   ]
 
   environment_variables = {
-    NODE_ENV          = "production"
-    TARGET_BUCKET     = aws_s3_bucket.static_deploy.id
-    EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
-    DISTRIBUTION_ID   = var.cloudfront_id
-    SQS_QUEUE_URL     = aws_sqs_queue.this.id
+    NODE_ENV              = "production"
+    TARGET_BUCKET         = aws_s3_bucket.static_deploy.id
+    EXPIRE_AFTER_DAYS     = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
+    DISTRIBUTION_ID       = var.cloudfront_id
+    SQS_QUEUE_URL         = aws_sqs_queue.this.id
+    DEPLOY_STATUS_SNS_ARN = var.deploy_status_sns_topic_arn
   }
 
   event_source_mapping = {

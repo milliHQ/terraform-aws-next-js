@@ -36,6 +36,20 @@ resource "aws_dynamodb_table" "deployments" {
 }
 
 ###################
+# Deploy Controller
+###################
+
+module "deploy_controller" {
+  source = "./modules/deploy-controller"
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+}
+
+###################
 # Deployment Lambda
 ###################
 
@@ -45,8 +59,9 @@ module "statics_deploy" {
 
   expire_static_assets = var.expire_static_assets
 
-  cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
-  cloudfront_arn = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
+  cloudfront_id               = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
+  cloudfront_arn              = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
+  deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 

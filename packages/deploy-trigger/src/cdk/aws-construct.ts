@@ -4,7 +4,7 @@ import {
   PayloadFormatVersion,
 } from '@aws-cdk/aws-apigatewayv2-alpha';
 import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
-import { Stack, RemovalPolicy } from 'aws-cdk-lib';
+import { Stack, RemovalPolicy, CfnOutput } from 'aws-cdk-lib';
 import { Role, ServicePrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -79,7 +79,7 @@ class AtomicDeployment extends Stack {
         apiName: deploymentId,
       });
 
-      for (const lambdaSource of lambdas) {
+      const routes = lambdas.map((lambdaSource) => {
         const functionCode = new lambda.S3Code(
           deploymentBucket,
           lambdaSource.sourceKey
@@ -115,7 +115,16 @@ class AtomicDeployment extends Stack {
           methods: [HttpMethod.ANY],
           integration: lambdaIntegration,
         });
-      }
+
+        return [
+          lambdaSource.route,
+          `${httpApi.apiEndpoint}/${lambdaSource.route}`,
+        ];
+      });
+
+      new CfnOutput(this, 'lambdaRoutes', {
+        value: JSON.stringify(routes),
+      });
     }
   }
 }

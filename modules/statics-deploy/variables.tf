@@ -22,6 +22,15 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
+#####
+# SNS
+#####
+
+variable "deploy_status_sns_topic_arn" {
+  description = "ARN of the SNS topic where CloudFormation status changes should be sent to."
+  type = string
+}
+
 ###########
 # SQS Queue
 ###########

@@ -183,6 +183,7 @@ async function s3Handler(Record: S3EventRecord) {
   });
 
   await createCloudFormationStack({
+    notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
     stack: atomicDeployment,
     // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
     stackName: `tfn-${buildId}`,

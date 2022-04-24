@@ -40,6 +40,8 @@
     "typescript": "^4.4.2"
   },
   "resolutions": {
+    "@types/aws-lambda": "^8.10.95",
+    "@vercel/ncc": "^0.33.4",
     "archiver": "^5.3.0",
     "aws-sdk": "2.1001.0"
   },
