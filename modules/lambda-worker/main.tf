@@ -79,9 +79,9 @@ resource "aws_lambda_permission" "triggers" {
   event_source_token = try(each.value.event_source_token, null)
 }
 
-#####################################
+####################################
 # Additional policies (list of JSON)
-#####################################
+####################################
 
 resource "aws_iam_policy" "additional_jsons" {
   count = var.attach_policy_jsons ? var.number_of_policy_jsons : 0

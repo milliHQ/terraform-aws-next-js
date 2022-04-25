@@ -1,5 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
-import { DeploymentItem } from '../types/deployments';
+
+import { DeploymentItem } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 

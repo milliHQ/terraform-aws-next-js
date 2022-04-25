@@ -1,3 +1,4 @@
+import { createDeployment } from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
 import DynamoDB from 'aws-sdk/clients/dynamodb';
@@ -191,27 +192,12 @@ async function s3Handler(Record: S3EventRecord) {
     lambdas: lambdas,
   });
 
-  const createdDate = new Date();
   const stackName = `tfn-${buildId}`;
-  await dynamoDBClient
-    .putItem({
-      TableName: dynamoDBTableNameDeployments,
-      Item: {
-        // DeploymentId
-        PK: { S: buildId },
-        // CreatedAt
-        SK: {
-          S: createdDate.toISOString(),
-        },
-        ItemVersion: {
-          N: '1',
-        },
-        Status: {
-          S: 'CREATE_IN_PROGRESS',
-        },
-      },
-    })
-    .promise();
+  await createDeployment({
+    dynamoDBClient,
+    deploymentId: buildId,
+    deploymentTableName: dynamoDBTableNameDeployments,
+  });
 
   try {
     await createCloudFormationStack({

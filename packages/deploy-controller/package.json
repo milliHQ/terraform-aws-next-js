@@ -16,6 +16,7 @@
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
+    "@millihq/tfn-dynamodb-actions": "*",
     "aws-sdk": "*"
   },
   "devDependencies": {

@@ -1,8 +1,10 @@
+import {
+  createAlias,
+  updateDeploymentStatus,
+} from '@millihq/tfn-dynamodb-actions';
 import { SNSEvent } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 
-import { createAlias } from './actions/create-alias';
-import { updateDeploymentStatus } from './actions/update-deployment-status';
 import { ensureEnv } from './utils/ensure-env';
 import { parseCloudFormationEvent } from './utils/parse-cloudformation-event';
 
