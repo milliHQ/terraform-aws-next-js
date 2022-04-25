@@ -25,6 +25,23 @@ type CreateAliasOptions = {
    * ID of the deployment where the alias points to.
    */
   deploymentId: string;
+  /**
+   * Stringified JSON object that contains the route config.
+   * This value gets copied over from the associated deployment.
+   */
+  routes: string;
+  /**
+   * Stringified JSON object that contains routes that are served by static
+   * generated HTML files.
+   * This value gets copied over from the associated deployment.
+   */
+  staticRoutes: string;
+  /**
+   * Stringified JSON object that contains routes that are served from
+   * prerendered generated HTML files.
+   * This value gets copied over from the associated deployment.
+   */
+  prerenders: string;
 };
 
 /**
@@ -37,8 +54,15 @@ function createAlias({
   createdDate,
   isDeploymentAlias = false,
   deploymentId,
+  routes,
+  staticRoutes,
+  prerenders,
 }: CreateAliasOptions) {
-  const sortKey = `${deploymentId}#${createdDate.toISOString()}`;
+  const createdDateString = createdDate.toISOString();
+
+  // - Group by deploymentId
+  // - Sort by Date
+  const sortKey = `${deploymentId}#${createdDateString}`;
 
   return dynamoDBClient
     .putItem({
@@ -52,10 +76,22 @@ function createAlias({
           N: '1',
         },
         CreatedDate: {
-          S: createdDate.toISOString(),
+          S: createdDateString,
         },
         DeploymentAlias: {
           BOOL: isDeploymentAlias,
+        },
+        DeploymentId: {
+          S: deploymentId,
+        },
+        Routes: {
+          S: routes,
+        },
+        StaticRoutes: {
+          S: staticRoutes,
+        },
+        Prerenders: {
+          S: prerenders,
         },
       },
     })

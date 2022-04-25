@@ -50,12 +50,14 @@ async function handler(event: SNSEvent) {
       switch (ResourceStatus) {
         case 'CREATE_COMPLETE':
           try {
-            await updateDeploymentStatus({
+            // TODO: Add the Lambdas from the Stack to the Deployment
+            const deployment = await updateDeploymentStatus({
               dynamoDBClient,
               deploymentId,
               deploymentTableName: dynamoDBTableNameDeployments,
               newStatus: 'CREATE_COMPLETE',
             });
+
             await createAlias({
               dynamoDBClient,
               alias: `${deploymentId}.multid.milli.is`,
@@ -63,6 +65,10 @@ async function handler(event: SNSEvent) {
               aliasTableName: dynamoDBTableNameAliases,
               createdDate: new Date(),
               deploymentId,
+              // Copy values over from the deployment
+              routes: deployment.Routes,
+              staticRoutes: deployment.StaticRoutes,
+              prerenders: deployment.Prerenders,
             });
           } catch (error) {
             console.log('ERROR', error);

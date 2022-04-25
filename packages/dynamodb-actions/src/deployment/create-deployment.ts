@@ -17,6 +17,20 @@ type CreateDeploymentOptions = {
    * Date when the deployment was created.
    */
   createdDate?: Date;
+  /**
+   * Stringified JSON object that contains the route config.
+   */
+  routes: string;
+  /**
+   * Stringified JSON object that contains routes that are served by static
+   * generated HTML files.
+   */
+  staticRoutes: string;
+  /**
+   * Stringified JSON object that contains routes that are served from
+   * prerendered generated HTML files.
+   */
+  prerenders: string;
 };
 
 function createDeployment({
@@ -24,6 +38,9 @@ function createDeployment({
   deploymentTableName,
   deploymentId,
   createdDate = new Date(),
+  routes,
+  staticRoutes,
+  prerenders,
 }: CreateDeploymentOptions) {
   const createdDateString = createdDate.toISOString();
 
@@ -42,6 +59,15 @@ function createDeployment({
         },
         Status: {
           S: 'CREATE_IN_PROGRESS',
+        },
+        Routes: {
+          S: routes,
+        },
+        StaticRoutes: {
+          S: staticRoutes,
+        },
+        Prerenders: {
+          S: prerenders,
         },
       },
     })

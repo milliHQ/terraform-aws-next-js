@@ -15,4 +15,17 @@ export type DeploymentItem = {
    * Version of the item
    */
   ItemVersion: number;
+  /**
+   * Stringified object that contains the route config.
+   */
+  Routes: string;
+  /**
+   * Stringified object that contains the static routes that should be saved
+   * from the static file server.
+   */
+  StaticRoutes: string;
+  /**
+   * Stringified object that contains the routes that are prerendered.
+   */
+  Prerenders: string;
 };

@@ -197,6 +197,9 @@ async function s3Handler(Record: S3EventRecord) {
     dynamoDBClient,
     deploymentId: buildId,
     deploymentTableName: dynamoDBTableNameDeployments,
+    routes: JSON.stringify(deploymentConfig.routes),
+    staticRoutes: JSON.stringify(deploymentConfig.staticRoutes),
+    prerenders: JSON.stringify(deploymentConfig.prerenders),
   });
 
   try {
