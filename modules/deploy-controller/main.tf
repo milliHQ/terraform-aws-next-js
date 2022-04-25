@@ -1,6 +1,5 @@
 locals {
   function_name = "${var.deployment_name}_tfn-controller"
-  role_name     = local.function_name
 }
 
 ###########
@@ -13,15 +12,42 @@ resource "aws_sns_topic" "cloudformation_updates" {
   tags = var.tags
 }
 
+# CloudFormation sends events for each status change of each resource in the
+# stack, including the stack itself.
+# Unfortunately the payload of the stack events is always delivered as a single
+# SNS message instead of using messageAttributes, so no filtering for updates
+# that only affect the stack is possible.
+# See: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/635
 resource "aws_sns_topic_subscription" "lambda" {
   topic_arn = aws_sns_topic.cloudformation_updates.arn
   protocol  = "lambda"
   endpoint  = module.worker.lambda_function_arn
 }
 
-########
-# Worker
-########
+#############
+# Permissions
+#############
+
+# Access the dynamodb tables
+data "aws_iam_policy_document" "access_dynamodb_tables" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:Query",
+      "dynamodb:UpdateItem"
+    ]
+    resources = [
+      var.dynamodb_table_deployments_arn,
+      var.dynamodb_table_aliases_arn
+    ]
+  }
+}
+
+###############
+# Worker Lambda
+###############
 
 module "worker" {
   source = "../lambda-worker"
@@ -35,6 +61,19 @@ module "worker" {
   description   = "Managed by Terraform Next.js"
   handler       = "handler.handler"
   memory_size   = 128
+
+  attach_policy_jsons    = true
+  number_of_policy_jsons = 1
+  policy_jsons = [
+    data.aws_iam_policy_document.access_dynamodb_tables.json,
+  ]
+
+  environment_variables = {
+    NODE_ENV               = "production"
+    TABLE_REGION           = var.dynamodb_region
+    TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
+    TABLE_NAME_ALIASES     = var.dynamodb_table_aliases_name
+  }
 
   allowed_triggers = {
     CloudFormationUpdates = {

@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 ##########
 # DynamoDB
 ##########
@@ -6,16 +8,18 @@ resource "aws_dynamodb_table" "aliases" {
   name         = "${var.deployment_name}_aliases"
   billing_mode = "PAY_PER_REQUEST"
 
-  hash_key  = "alias"
-  range_key = "deploymentId"
+  hash_key  = "PK"
+  range_key = "SK"
 
+  # alias
   attribute {
-    name = "alias"
+    name = "PK"
     type = "S"
   }
 
+  # deploymentId
   attribute {
-    name = "deploymentId"
+    name = "SK"
     type = "S"
   }
 
@@ -27,10 +31,18 @@ resource "aws_dynamodb_table" "deployments" {
   billing_mode = "PAY_PER_REQUEST"
   table_class  = "STANDARD_INFREQUENT_ACCESS"
 
-  hash_key = "deploymentId"
+  hash_key  = "PK"
+  range_key = "SK"
 
+  # deploymentId
   attribute {
-    name = "deploymentId"
+    name = "PK"
+    type = "S"
+  }
+
+  # createDate
+  attribute {
+    name = "SK"
     type = "S"
   }
 }
@@ -41,6 +53,12 @@ resource "aws_dynamodb_table" "deployments" {
 
 module "deploy_controller" {
   source = "./modules/deploy-controller"
+
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
 
   deployment_name = var.deployment_name
   tags            = var.tags
@@ -62,6 +80,10 @@ module "statics_deploy" {
   cloudfront_id               = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
   cloudfront_arn              = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
   deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn
+
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 

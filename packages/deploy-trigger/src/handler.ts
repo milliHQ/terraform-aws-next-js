@@ -1,5 +1,6 @@
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 import S3 from 'aws-sdk/clients/s3';
 import SQS from 'aws-sdk/clients/sqs';
 
@@ -12,7 +13,8 @@ import {
   createInvalidation,
   prepareInvalidations,
 } from './create-invalidation';
-import { generateRandomId } from './utils';
+import { ensureEnv } from './utils/ensure-env';
+import { generateRandomId } from './utils/random-id';
 import { AtomicDeployment } from './cdk/aws-construct';
 import { createCloudFormationStack } from './cdk/create-cloudformation-stack';
 
@@ -144,6 +146,13 @@ export const handler = async function (event: S3Event | SQSEvent) {
 };
 
 async function s3Handler(Record: S3EventRecord) {
+  const dynamoDBRegion = ensureEnv('TABLE_REGION');
+  const dynamoDBTableNameDeployments = ensureEnv('TABLE_NAME_DEPLOYMENTS');
+
+  const dynamoDBClient = new DynamoDB({
+    region: dynamoDBRegion,
+  });
+
   let s3: S3;
   // Only for testing purposes when connecting against a local S3 backend
   if (process.env.__DEBUG__USE_LOCAL_BUCKET) {
@@ -182,12 +191,38 @@ async function s3Handler(Record: S3EventRecord) {
     lambdas: lambdas,
   });
 
-  await createCloudFormationStack({
-    notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
-    stack: atomicDeployment,
-    // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
-    stackName: `tfn-${buildId}`,
-  });
+  const createdDate = new Date();
+  const stackName = `tfn-${buildId}`;
+  await dynamoDBClient
+    .putItem({
+      TableName: dynamoDBTableNameDeployments,
+      Item: {
+        // DeploymentId
+        PK: { S: buildId },
+        // CreatedAt
+        SK: {
+          S: createdDate.toISOString(),
+        },
+        ItemVersion: {
+          N: '1',
+        },
+        Status: {
+          S: 'CREATE_IN_PROGRESS',
+        },
+      },
+    })
+    .promise();
+
+  try {
+    await createCloudFormationStack({
+      notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
+      stack: atomicDeployment,
+      // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
+      stackName,
+    });
+  } catch (error) {
+    // TODO: Update the item with failed status
+  }
 
   // Update the manifest
   const { invalidate: invalidationPaths } = await updateManifest({

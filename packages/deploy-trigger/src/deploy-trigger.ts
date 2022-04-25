@@ -8,7 +8,7 @@ import {
 } from 'mime-types';
 
 import { deploymentConfigurationKey } from './constants';
-import { generateRandomBuildId } from './utils';
+import { generateRandomBuildId } from './utils/random-id';
 import { DeploymentConfig, FileResult, LambdaDefinition } from './types';
 
 // Metadata Key where the buildId is stored

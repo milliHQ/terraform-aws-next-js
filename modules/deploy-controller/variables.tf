@@ -7,6 +7,30 @@ variable "deploy_controller_component_version" {
   default = "0.12.2"
 }
 
+#####################
+# Deployment database
+#####################
+
+variable "dynamodb_region" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_arn" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_name" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_arn" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_name" {
+  type = string
+}
+
 ##########
 # Labeling
 ##########

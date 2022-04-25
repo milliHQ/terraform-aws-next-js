@@ -22,13 +22,29 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
+#####################
+# Deployment database
+#####################
+
+variable "dynamodb_region" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_arn" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_name" {
+  type = string
+}
+
 #####
 # SNS
 #####
 
 variable "deploy_status_sns_topic_arn" {
   description = "ARN of the SNS topic where CloudFormation status changes should be sent to."
-  type = string
+  type        = string
 }
 
 ###########

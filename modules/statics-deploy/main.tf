@@ -52,6 +52,7 @@ resource "aws_s3_bucket_acl" "static_deploy" {
   acl    = "private"
 }
 
+# TODO: Delete
 resource "aws_s3_bucket_lifecycle_configuration" "static_deploy" {
   bucket = aws_s3_bucket.static_deploy.id
 
@@ -198,6 +199,18 @@ data "aws_iam_policy_document" "access_static_upload" {
   }
 }
 
+# Access the dynamoDB deployment table
+data "aws_iam_policy_document" "access_dynamodb_table_deployments" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem"
+    ]
+    resources = [var.dynamodb_table_deployments_arn]
+  }
+}
+
 #
 # Lambda permission to access the SQS queue
 #
@@ -263,20 +276,23 @@ module "deploy_trigger" {
   }
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 3
+  number_of_policy_jsons = 4
   policy_jsons = [
     data.aws_iam_policy_document.access_static_deploy.json,
     data.aws_iam_policy_document.access_static_upload.json,
-    data.aws_iam_policy_document.access_sqs_queue.json
+    data.aws_iam_policy_document.access_sqs_queue.json,
+    data.aws_iam_policy_document.access_dynamodb_table_deployments.json
   ]
 
   environment_variables = {
-    NODE_ENV              = "production"
-    TARGET_BUCKET         = aws_s3_bucket.static_deploy.id
-    EXPIRE_AFTER_DAYS     = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
-    DISTRIBUTION_ID       = var.cloudfront_id
-    SQS_QUEUE_URL         = aws_sqs_queue.this.id
-    DEPLOY_STATUS_SNS_ARN = var.deploy_status_sns_topic_arn
+    NODE_ENV               = "production"
+    TARGET_BUCKET          = aws_s3_bucket.static_deploy.id
+    EXPIRE_AFTER_DAYS      = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
+    DISTRIBUTION_ID        = var.cloudfront_id
+    SQS_QUEUE_URL          = aws_sqs_queue.this.id
+    DEPLOY_STATUS_SNS_ARN  = var.deploy_status_sns_topic_arn
+    TABLE_REGION           = var.dynamodb_region
+    TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
   }
 
   event_source_mapping = {

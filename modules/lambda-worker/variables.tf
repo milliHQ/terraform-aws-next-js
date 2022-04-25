@@ -1,3 +1,11 @@
+# This module is based on the terraform-aws-lambda module:
+# https://github.com/terraform-aws-modules/terraform-aws-lambda
+#
+# See the LICENSE file in the directory of this module for more information.
+#
+# It simplifies the available options for configuration to match the needs of
+# this project.
+
 ###############
 # Lambda Source
 ###############
@@ -59,6 +67,18 @@ variable "allowed_triggers" {
   default     = {}
 }
 
+variable "environment_variables" {
+  description = "Map that defines environment variables for the Lambda Function."
+  type        = map(string)
+  default     = {}
+}
+
+variable "timeout" {
+  description = "Amount of time your Lambda Function has to run in seconds."
+  type        = number
+  default     = 3
+}
+
 ###########
 # Log Group
 ###########
@@ -69,13 +89,36 @@ variable "cloudwatch_logs_retention_in_days" {
   default     = 30
 }
 
+##############
+# IAM Policies
+##############
+
+variable "attach_policy_jsons" {
+  description = "Controls whether policy_jsons should be added to IAM role for Lambda Function."
+  type        = bool
+  default     = false
+}
+
+variable "number_of_policy_jsons" {
+  description = "Number of policies JSON to attach to IAM role for Lambda Function."
+  type        = number
+  default     = 0
+}
+
+variable "policy_jsons" {
+  description = "List of additional policy documents as JSON to attach to Lambda Function role."
+  type        = list(string)
+  default     = []
+}
+
 ##########
 # Labeling
 ##########
 
 variable "tags" {
-  type    = map(string)
-  default = {}
+  description = "Map of tags to assign to resources."
+  type        = map(string)
+  default     = {}
 }
 
 #######

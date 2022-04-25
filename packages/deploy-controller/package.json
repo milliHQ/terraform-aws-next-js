@@ -15,7 +15,9 @@
     "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
-  "dependencies": {},
+  "dependencies": {
+    "aws-sdk": "*"
+  },
   "devDependencies": {
     "@types/aws-lambda": "*",
     "@vercel/ncc": "*",

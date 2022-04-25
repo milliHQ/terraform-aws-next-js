@@ -1,3 +1,11 @@
+# This module is based on the terraform-aws-lambda module:
+# https://github.com/terraform-aws-modules/terraform-aws-lambda
+#
+# See the LICENSE file in the directory of this module for more information.
+#
+# It simplifies the available options for configuration to match the needs of
+# this project.
+
 #############
 # Lambda Role
 #############
@@ -34,7 +42,7 @@ data "aws_iam_policy_document" "logs" {
 }
 
 resource "aws_iam_policy" "logs" {
-  name   = "${var.function_name}-logs"
+  name   = "${local.role_name}-logs"
   policy = data.aws_iam_policy_document.logs.json
 
   tags = var.tags

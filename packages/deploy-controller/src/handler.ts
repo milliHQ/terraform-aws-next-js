@@ -1,44 +1,83 @@
 import { SNSEvent } from 'aws-lambda';
+import { DynamoDB } from 'aws-sdk';
 
+import { createAlias } from './actions/create-alias';
+import { updateDeploymentStatus } from './actions/update-deployment-status';
+import { ensureEnv } from './utils/ensure-env';
 import { parseCloudFormationEvent } from './utils/parse-cloudformation-event';
+
+const dynamoDBRegion = ensureEnv('TABLE_REGION');
+
+const dynamoDBClient = new DynamoDB({
+  region: dynamoDBRegion,
+});
 
 /**
  * Entry point for the Lambda handler.
  * Receives CloudFormation status change events from SNS.
  */
 async function handler(event: SNSEvent) {
-  event.Records.forEach((record) => {
-    const message = record.Sns.Message;
-    const parsedEvent = parseCloudFormationEvent(message);
+  const dynamoDBTableNameDeployments = ensureEnv('TABLE_NAME_DEPLOYMENTS');
+  const dynamoDBTableNameAliases = ensureEnv('TABLE_NAME_ALIASES');
 
-    const { ResourceType, ResourceStatus } = parsedEvent;
+  await Promise.all(
+    event.Records.map(async (record) => {
+      const message = record.Sns.Message;
+      const parsedEvent = parseCloudFormationEvent(message);
 
-    // Only handle stack related events
-    if (ResourceType !== 'AWS::CloudFormation::Stack') {
-      return;
-    }
+      const { ResourceType, ResourceStatus, StackName } = parsedEvent;
 
-    if (ResourceStatus === undefined) {
-      console.error(
-        'Error: Could not handle event, no `ResourceStatus` in event.'
-      );
-      return;
-    }
+      // Only handle stack related events
+      if (ResourceType !== 'AWS::CloudFormation::Stack') {
+        return;
+      }
 
-    switch (ResourceStatus) {
-      case 'CREATE_COMPLETE':
-        console.log('Event');
-        console.log(JSON.stringify(parsedEvent, null, 2));
+      if (ResourceStatus === undefined) {
+        console.error('Error: No attribute `ResourceStatus` present in event.');
+        return;
+      }
 
-      case 'DELETE_COMPLETE':
+      if (StackName === undefined) {
+        console.error('Error: No attribute `StackName` present in event.');
+        return;
+      }
 
-      case 'CREATE_FAILED':
-      // TODO: Inform about failed deployment
+      // Remove the `tfn-` prefix from the stack name to get the deploymentID
+      const deploymentId = StackName.slice(4);
 
-      default:
-      // Event is not handled, since it is not relevant
-    }
-  });
+      switch (ResourceStatus) {
+        case 'CREATE_COMPLETE':
+          try {
+            await updateDeploymentStatus({
+              dynamoDBClient,
+              deploymentId,
+              deploymentTableName: dynamoDBTableNameDeployments,
+              newStatus: 'CREATE_COMPLETE',
+            });
+            await createAlias({
+              dynamoDBClient,
+              alias: `${deploymentId}.multid.milli.is`,
+              isDeploymentAlias: true,
+              aliasTableName: dynamoDBTableNameAliases,
+              createdDate: new Date(),
+              deploymentId,
+            });
+          } catch (error) {
+            console.log('ERROR', error);
+          }
+          console.log('Event');
+          console.log(JSON.stringify(parsedEvent, null, 2));
+
+        case 'DELETE_COMPLETE':
+
+        case 'CREATE_FAILED':
+        // TODO: Inform about failed deployment
+
+        default:
+        // Event is not handled, since it is not relevant
+      }
+    })
+  );
 }
 
 export { handler };
