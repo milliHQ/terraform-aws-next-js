@@ -198,16 +198,6 @@ data "aws_cloudfront_origin_request_policy" "managed_all_viewer" {
   name = "Managed-AllViewer"
 }
 
-# Managed origin policy for static assets
-data "aws_cloudfront_origin_request_policy" "managed_cors_s3_origin" {
-  name = "Managed-CORS-S3Origin"
-}
-
-# Managed cache policy
-data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
-  name = "Managed-CachingOptimized"
-}
-
 locals {
   # Default headers on which the cache key should be determined
   #
@@ -317,27 +307,12 @@ locals {
     }
   }
 
-  # Next.js static assets behavior
-  cloudfront_ordered_cache_behavior_static_assets = {
-    path_pattern     = "/_next/static/*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.cloudfront_origin_static_content.origin_id
-
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_cors_s3_origin.id
-    cache_policy_id          = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
-  }
-
   # next/image behavior
   cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? module.next_image[0].cloudfront_cache_behavior : null
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
   _cloudfront_ordered_cache_behaviors = {
-    static_assets = merge(local.cloudfront_ordered_cache_behavior_static_assets, { create = true })
     next_image = merge(local.cloudfront_ordered_cache_behavior_next_image, {
       create = var.create_image_optimization
     })
