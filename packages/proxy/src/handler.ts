@@ -89,24 +89,28 @@ async function main(
    * that are difficult to track.
    */
   const { request } = event.Records[0].cf;
-  const configEndpoint = request.origin!.s3!.customHeaders[
-    'x-env-config-endpoint'
-  ][0].value;
-  const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
-    .value;
+  const configEndpoint =
+    request.origin!.s3!.customHeaders['x-env-config-endpoint'][0].value;
+  const alias = request.headers.host[0].value;
+
+  // TODO: Remove
+  const apiEndpoint = '';
 
   try {
     if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
+      proxyConfig = await fetchProxyConfig(configEndpoint, alias);
       proxy = new Proxy(
         proxyConfig.routes,
-        proxyConfig.lambdaRoutes,
+        // TODO: LambdaRoutes currently not supported
+        [],
         proxyConfig.staticRoutes
       );
     }
   } catch (err) {
     console.error('Error while initialization:', err);
-    return serveRequestFromS3Origin(request);
+
+    // TODO: Serve a response directly from CloudFront here
+    return serveRequestFromS3Origin(request, 'default');
   }
 
   // Check if we have a prerender route
@@ -179,7 +183,7 @@ async function main(
   // Route is served by S3 bucket
   const notFound = proxyResult.phase === 'error' && proxyResult.status === 404;
   const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
-  return serveRequestFromS3Origin(request, uri);
+  return serveRequestFromS3Origin(request, proxyConfig.deploymentId, uri);
 }
 
 /**

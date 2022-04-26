@@ -59,6 +59,7 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [HTTP]', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],
@@ -102,6 +103,7 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [HTTPS]', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],
@@ -144,6 +146,7 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [Custom Port]', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],
@@ -186,6 +189,7 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [Subdomain]', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],
@@ -228,6 +232,7 @@ describe('[proxy] Handler', () => {
 
   test('i18n default locale rewrite', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],
@@ -277,6 +282,7 @@ describe('[proxy] Handler', () => {
 
   test('Correctly request /index object from S3 when requesting /', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       staticRoutes: ['/404', '/500', '/index'],
       lambdaRoutes: [],
       routes: [
@@ -346,6 +352,7 @@ describe('[proxy] Handler', () => {
   test('Add x-forwarded-host header to API-Gateway requests', async () => {
     const hostHeader = 'example.org';
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: ['/__NEXT_API_LAMBDA_0'],
       prerenders: {},
       staticRoutes: [],
@@ -446,6 +453,7 @@ describe('[proxy] Handler', () => {
   // Related to issue: https://github.com/milliHQ/terraform-aws-next-js/issues/218
   test('Dynamic routes with dynamic part in directory', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: ['/__NEXT_API_LAMBDA_0', '/__NEXT_PAGE_LAMBDA_0'],
       prerenders: {},
       staticRoutes: [
@@ -599,6 +607,7 @@ describe('[proxy] Handler', () => {
 
   test('Redirects with querystring', async () => {
     const proxyConfig: ProxyConfig = {
+      deploymentId: 'abc',
       lambdaRoutes: [],
       prerenders: {},
       staticRoutes: [],

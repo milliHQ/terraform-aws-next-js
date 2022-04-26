@@ -11,8 +11,12 @@ const FETCH_TIMEOUT = 29500;
  * @param endpointUrl URL where the config should be fetched from
  * @returns Parsed config object
  */
-export function fetchProxyConfig(endpointUrl: string) {
-  return fetchTimeout(FETCH_TIMEOUT, endpointUrl).then(
+function fetchProxyConfig(endpointUrl: string, alias: string) {
+  const url = `${endpointUrl}/${encodeURI(alias)}`;
+
+  return fetchTimeout(FETCH_TIMEOUT, url).then(
     (res) => res.json() as Promise<ProxyConfig>
   );
 }
+
+export { fetchProxyConfig };

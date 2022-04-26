@@ -57,4 +57,8 @@ export type AliasItem = {
    * Stringified object that contains the routes that are prerendered.
    */
   Prerenders: string;
+  /**
+   * Id of the associated deployment
+   */
+  DeploymentId: string;
 };

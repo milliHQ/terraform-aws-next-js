@@ -7,7 +7,9 @@ async function handler(
 ): Promise<CloudFrontResultResponse> {
   try {
     const { request } = event.Records[0].cf;
-    const alias = decodeURI(request.uri);
+    // Remove leading `/` from the uri
+    const uri = request.uri.substring(1);
+    const alias = decodeURI(uri);
 
     if (!request.origin?.custom?.customHeaders['x-env-dynamodb-region'][0]) {
       throw new Error('DynamoDB Region not set');
@@ -37,6 +39,7 @@ async function handler(
         Routes: true,
         Prerenders: true,
         StaticRoutes: true,
+        DeploymentId: true,
       },
     });
 
@@ -58,6 +61,10 @@ async function handler(
         aliasRecord.Prerenders +
         ',"staticRoutes":' +
         aliasRecord.StaticRoutes +
+        ',"deploymentId":' +
+        '"' +
+        aliasRecord.DeploymentId +
+        '"' +
         '}',
       headers: {
         'cache-control': [
