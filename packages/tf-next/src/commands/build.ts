@@ -233,11 +233,11 @@ async function buildCommand({
     for (const [key, file] of Object.entries(buildResult.output)) {
       switch (file.type) {
         case 'Lambda': {
-          lambdas[key] = (file as unknown) as Lambda;
+          lambdas[key] = file as unknown as Lambda;
           break;
         }
         case 'Prerender': {
-          prerenders[key] = (file as unknown) as Prerender;
+          prerenders[key] = file as unknown as Prerender;
           break;
         }
         case 'FileFsRef': {
