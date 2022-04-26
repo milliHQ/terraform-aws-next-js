@@ -1,39 +1,60 @@
 locals {
-  s3_origin_id         = "S3-Proxy-Config-${aws_s3_bucket.proxy_config_store.id}"
-  proxy_config_key     = "proxy-config.json"
-  proxy_config_max_age = 15 * 60
+  origin_id = "Proxy-Config-Edge"
 }
 
-########
-# Bucket
-########
+#############
+# Lambda@Edge
+#############
 
-resource "aws_s3_bucket" "proxy_config_store" {
-  bucket_prefix = "${var.deployment_name}-tfn-config"
-  force_destroy = true
-  tags          = merge(var.tags, var.tags_s3_bucket)
-}
-
-resource "aws_s3_bucket_acl" "proxy_config_store" {
-  bucket = aws_s3_bucket.proxy_config_store.id
-  acl    = "private"
-}
-
-data "aws_iam_policy_document" "cf_access" {
+# Access the aliases dynamodb table
+data "aws_iam_policy_document" "access_aliases_table" {
   statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.proxy_config_store.arn}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.this.iam_arn]
-    }
+    effect = "Allow"
+    actions = [
+      "dynamodb:Query",
+    ]
+    resources = [
+      var.dynamodb_table_aliases_arn
+    ]
   }
 }
 
-resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
-  bucket = aws_s3_bucket.proxy_config_store.id
-  policy = data.aws_iam_policy_document.cf_access.json
+module "proxy_config_package" {
+  source  = "milliHQ/download/npm"
+  version = "2.1.0"
+
+  module_name    = "@millihq/terraform-next-proxy-config"
+  module_version = var.proxy_config_module_version
+  path_to_file   = "dist.zip"
+  use_local      = var.debug_use_local_packages
+  local_cwd      = var.tf_next_module_root
+}
+
+module "proxy_config" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "3.1.0"
+
+  lambda_at_edge = true
+
+  function_name = "${var.deployment_name}_tfn-proxy-config"
+  description   = "Managed by Terraform Next.js"
+  handler       = "handler.handler"
+  runtime       = var.lambda_runtime
+
+  attach_policy_json        = true
+  policy_json               = data.aws_iam_policy_document.access_aliases_table.json
+  role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  create_package         = false
+  local_existing_package = module.proxy_config_package.rel_path
+
+  cloudwatch_logs_retention_in_days = 30
+
+  tags = var.tags
+
+  providers = {
+    aws = aws.global_region
+  }
 }
 
 ############
@@ -41,17 +62,13 @@ resource "aws_s3_bucket_policy" "proxy_config_store_origin_access" {
 ############
 
 # Managed origin request policy
-data "aws_cloudfront_origin_request_policy" "managed_cors_s3_origin" {
-  name = "Managed-CORS-S3Origin"
+data "aws_cloudfront_origin_request_policy" "managed_cors_custom_origin" {
+  name = "Managed-CORS-CustomOrigin"
 }
 
 # Managed cache policy
 data "aws_cloudfront_cache_policy" "managed_caching_optimized_for_uncompressed_objects" {
   name = "Managed-CachingOptimizedForUncompressedObjects"
-}
-
-resource "aws_cloudfront_origin_access_identity" "this" {
-  comment = "S3 CloudFront access ${aws_s3_bucket.proxy_config_store.id}"
 }
 
 resource "aws_cloudfront_distribution" "distribution" {
@@ -60,25 +77,45 @@ resource "aws_cloudfront_distribution" "distribution" {
   comment         = "${var.deployment_name} - Proxy-Config"
   price_class     = var.cloudfront_price_class
 
+  # Dummy origin, since all requests are served from Lambda@Edge and never
+  # reach the custom origin endpoint.
   origin {
-    domain_name = aws_s3_bucket.proxy_config_store.bucket_regional_domain_name
-    origin_id   = local.s3_origin_id
+    domain_name = "milli.is"
+    origin_id   = local.origin_id
 
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.this.cloudfront_access_identity_path
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"]
+    }
+
+    custom_header {
+      name  = "x-env-dynamodb-region"
+      value = var.dynamodb_region
+    }
+
+    custom_header {
+      name  = "x-env-dynamodb-table-aliases"
+      value = var.dynamodb_table_aliases_name
     }
   }
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.s3_origin_id
+    target_origin_id = local.origin_id
 
     # Allow connections via HTTP to improve speed
     viewer_protocol_policy = "allow-all"
 
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_cors_s3_origin.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_cors_custom_origin.id
     cache_policy_id          = data.aws_cloudfront_cache_policy.managed_caching_optimized_for_uncompressed_objects.id
+    lambda_function_association {
+      event_type   = "origin-request"
+      lambda_arn   = module.proxy_config.lambda_function_qualified_arn
+      include_body = false
+    }
   }
 
   viewer_certificate {

@@ -26,6 +26,9 @@ resource "aws_dynamodb_table" "aliases" {
   tags = var.tags
 }
 
+# Using infrequent access tier here since this table is only used during API
+# operations (creating deployments and aliases), but serves no customer facing
+# purposes.
 resource "aws_dynamodb_table" "deployments" {
   name         = "${var.deployment_name}_deployments"
   billing_mode = "PAY_PER_REQUEST"
@@ -145,11 +148,22 @@ module "next_image" {
 module "proxy_config" {
   source = "./modules/cloudfront-proxy-config"
 
-  cloudfront_price_class = var.cloudfront_price_class
+  cloudfront_price_class           = var.cloudfront_price_class
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  dynamodb_region             = data.aws_region.current.name
+  dynamodb_table_aliases_arn  = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name = aws_dynamodb_table.aliases.id
 
   deployment_name = var.deployment_name
   tags            = var.tags
-  tags_s3_bucket  = var.tags_s3_bucket
+
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+
+  providers = {
+    aws.global_region = aws.global_region
+  }
 }
 
 #####################
