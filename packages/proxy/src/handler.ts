@@ -1,5 +1,3 @@
-import { STATUS_CODES } from 'http';
-
 import {
   CloudFrontHeaders,
   CloudFrontResultResponse,
@@ -16,8 +14,15 @@ import {
   serveRequestFromCustomOrigin,
   serveRequestFromS3Origin,
 } from './util/custom-origin';
+import { TTLCache } from './util/ttl-cache';
 import { Proxy } from './proxy';
 import { ProxyConfig, RouteResult } from './types';
+
+// TTL in ms
+const CACHE_TTL = 60_000;
+
+// Calculating with a
+const cache = new TTLCache(CACHE_TTL);
 
 let proxyConfig: ProxyConfig;
 let proxy: Proxy;
@@ -62,7 +67,6 @@ function isRedirect(
 
       return {
         status: routeResult.status.toString(),
-        statusDescription: STATUS_CODES[routeResult.status],
         headers: generateCloudFrontHeaders(initialHeaders, routeResult.headers),
         body: `Redirecting to ${redirectTargetWithQuerystring} (${routeResult.status})`,
       };
