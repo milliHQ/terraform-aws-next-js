@@ -12,7 +12,7 @@ const FETCH_TIMEOUT = 29500;
  * @returns Parsed config object
  */
 function fetchProxyConfig(endpointUrl: string, alias: string) {
-  const url = `${endpointUrl}/${encodeURI(alias)}`;
+  const url = `http://${endpointUrl}/aliases/${encodeURI(alias)}`;
 
   return fetchTimeout(FETCH_TIMEOUT, url).then(
     (res) => res.json() as Promise<ProxyConfig>

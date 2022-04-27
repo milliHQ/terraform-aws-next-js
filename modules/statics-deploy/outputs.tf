@@ -10,6 +10,10 @@ output "static_bucket_id" {
   value = aws_s3_bucket.static_deploy.id
 }
 
+output "static_bucket_region" {
+  value = aws_s3_bucket.static_deploy.region
+}
+
 output "static_bucket_arn" {
   value = aws_s3_bucket.static_deploy.arn
 }

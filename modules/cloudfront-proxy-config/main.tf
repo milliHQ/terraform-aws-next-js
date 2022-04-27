@@ -6,8 +6,8 @@ locals {
 # Lambda@Edge
 #############
 
-# Access the aliases dynamodb table
-data "aws_iam_policy_document" "access_aliases_table" {
+data "aws_iam_policy_document" "access_resources" {
+  # Access the aliases dynamodb table
   statement {
     effect = "Allow"
     actions = [
@@ -15,6 +15,17 @@ data "aws_iam_policy_document" "access_aliases_table" {
     ]
     resources = [
       var.dynamodb_table_aliases_arn
+    ]
+  }
+
+  # Query the S3 bucket for static files
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = [
+      "${var.static_deploy_bucket_arn}/*"
     ]
   }
 }
@@ -42,7 +53,7 @@ module "proxy_config" {
   runtime       = var.lambda_runtime
 
   attach_policy_json        = true
-  policy_json               = data.aws_iam_policy_document.access_aliases_table.json
+  policy_json               = data.aws_iam_policy_document.access_resources.json
   role_permissions_boundary = var.lambda_role_permissions_boundary
 
   create_package         = false
@@ -98,6 +109,16 @@ resource "aws_cloudfront_distribution" "distribution" {
     custom_header {
       name  = "x-env-dynamodb-table-aliases"
       value = var.dynamodb_table_aliases_name
+    }
+
+    custom_header {
+      name  = "x-env-bucket-region"
+      value = var.static_deploy_bucket_region
+    }
+
+    custom_header {
+      name  = "x-env-bucket-id"
+      value = var.static_deploy_bucket_id
     }
   }
 

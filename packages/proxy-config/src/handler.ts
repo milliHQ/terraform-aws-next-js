@@ -1,6 +1,15 @@
-import { getAliasById } from '@millihq/tfn-dynamodb-actions';
 import { CloudFrontRequestEvent, CloudFrontResultResponse } from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDB, S3 } from 'aws-sdk';
+
+import { deploymentFileExists } from './actions/deployment-file-exists';
+import { getAlias } from './actions/get-alias';
+import { NotFoundError } from './errors/not-found-error';
+import { getEnv } from './utils/get-env';
+
+// Things that can be reused on different runs of the same Lambda, saving
+// performance
+let dynamoDBClient: DynamoDB;
+let s3Client: S3;
 
 async function handler(
   event: CloudFrontRequestEvent
@@ -9,79 +18,51 @@ async function handler(
     const { request } = event.Records[0].cf;
     // Remove leading `/` from the uri
     const uri = request.uri.substring(1);
-    const alias = decodeURI(uri);
 
-    if (!request.origin?.custom?.customHeaders['x-env-dynamodb-region'][0]) {
-      throw new Error('DynamoDB Region not set');
+    const dynamoDBRegion = getEnv(request, 'x-env-dynamodb-region');
+    const dynamoDBTable = getEnv(request, 'x-env-dynamodb-table-aliases');
+    const bucketRegion = getEnv(request, 'x-env-bucket-region');
+    const bucketId = getEnv(request, 'x-env-bucket-id');
+
+    // Initialize clients
+    if (!dynamoDBClient) {
+      dynamoDBClient = new DynamoDB({
+        region: dynamoDBRegion,
+      });
     }
 
-    if (
-      !request.origin?.custom?.customHeaders['x-env-dynamodb-table-aliases'][0]
-    ) {
-      throw new Error('DynamoDB Table not set');
+    if (!s3Client) {
+      s3Client = new S3({
+        region: bucketRegion,
+      });
     }
 
-    const dynamoDBRegion =
-      request.origin.custom.customHeaders['x-env-dynamodb-region'][0].value;
-    const dynamoDBTable =
-      request.origin.custom.customHeaders['x-env-dynamodb-table-aliases'][0]
-        .value;
+    const [action, restUri] = uri.split(/\/(.*)/);
 
-    const dynamoDBClient = new DynamoDB({
-      region: dynamoDBRegion,
-    });
+    switch (action) {
+      case 'aliases':
+        return getAlias({
+          dynamoDBClient,
+          dynamoDBTable,
+          uri: restUri,
+        });
 
-    const aliasRecord = await getAliasById({
-      aliasId: alias,
-      aliasTableName: dynamoDBTable,
-      dynamoDBClient,
-      attributes: {
-        Routes: true,
-        Prerenders: true,
-        StaticRoutes: true,
-        DeploymentId: true,
-      },
-    });
+      case 'deployment-file-exists':
+        return deploymentFileExists({
+          s3Client,
+          s3BucketId: bucketId,
+          uri: restUri,
+        });
 
-    if (!aliasRecord) {
-      return {
-        status: '404',
-        body: `No Alias found for ${alias}`,
-      };
+      default:
+        throw new NotFoundError('Method does not exist.');
     }
-
-    // For performance reasons we build the JSON response here manually, since
-    // the records in the database are already stringified JSON objects.
-    return {
-      status: '200',
-      body:
-        '{"routes":' +
-        aliasRecord.Routes +
-        ',"prerenders":' +
-        aliasRecord.Prerenders +
-        ',"staticRoutes":' +
-        aliasRecord.StaticRoutes +
-        ',"deploymentId":' +
-        '"' +
-        aliasRecord.DeploymentId +
-        '"' +
-        '}',
-      headers: {
-        'cache-control': [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=60',
-          },
-        ],
-        'content-type': [
-          {
-            key: 'Content-Type',
-            value: 'application/json',
-          },
-        ],
-      },
-    };
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return error.toCloudFrontResponse();
+    }
+
+    // Unhandled error
     console.error(error);
 
     return {

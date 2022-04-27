@@ -155,6 +155,10 @@ module "proxy_config" {
   dynamodb_table_aliases_arn  = aws_dynamodb_table.aliases.arn
   dynamodb_table_aliases_name = aws_dynamodb_table.aliases.id
 
+  static_deploy_bucket_region = module.statics_deploy.static_bucket_region
+  static_deploy_bucket_arn    = module.statics_deploy.static_bucket_arn
+  static_deploy_bucket_id     = module.statics_deploy.static_bucket_id
+
   deployment_name = var.deployment_name
   tags            = var.tags
 
@@ -261,7 +265,7 @@ locals {
     custom_header = [
       {
         name  = "x-env-config-endpoint"
-        value = "http://${module.proxy_config.config_endpoint}"
+        value = module.proxy_config.config_endpoint
       },
     ]
   }

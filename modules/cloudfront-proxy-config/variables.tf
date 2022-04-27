@@ -21,6 +21,22 @@ variable "cloudfront_price_class" {
   type = string
 }
 
+###################
+# Deployment Bucket
+###################
+
+variable "static_deploy_bucket_region" {
+  type = string
+}
+
+variable "static_deploy_bucket_arn" {
+  type = string
+}
+
+variable "static_deploy_bucket_id" {
+  type = string
+}
+
 ##########
 # DynamoDB
 ##########
