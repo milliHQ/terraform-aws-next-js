@@ -11,7 +11,7 @@ type RenderErrorOptions = {
   /**
    * How long should this live in the CloudFront cache.
    */
-  ttl: number;
+  ttl?: number;
 };
 
 /**

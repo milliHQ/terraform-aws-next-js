@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "*",
-    "@types/node-fetch": "^2.5.7",
+    "@types/node-fetch": "^2.6.1",
     "@vercel/ncc": "*",
     "ncc-zip": "^1.1.0"
   },

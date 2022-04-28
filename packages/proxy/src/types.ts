@@ -5,6 +5,7 @@ import { Route, HandleValue } from '@vercel/routing-utils';
 export type HTTPHeaders = Record<string, string>;
 
 export interface ProxyConfig {
+  etag: string;
   deploymentId: string;
   routes: Route[];
   lambdaRoutes: string[];
