@@ -10,9 +10,9 @@ import { performance } from 'perf_hooks';
  */
 class TTLCache<T> {
   /**
-   * The time to life (ttl) for the objects in the data map.
+   * The minimum time to life (TTL) for the objects in the data map.
    */
-  ttl: number;
+  minTTL: number;
   /**
    * Holds the data
    */
@@ -29,20 +29,21 @@ class TTLCache<T> {
   /**
    * @param ttl milliseconds until an entry is considered stale.
    */
-  constructor(ttl: number) {
-    this.ttl = ttl;
+  constructor(minTTL: number) {
+    this.minTTL = minTTL;
     this.data = new Map();
     this.expirationMap = new Map();
     this.expirations = Object.create(null);
   }
 
-  set(key: string, value: T) {
+  set(key: string, value: T, ttl: number = 0) {
+    const minTTL = Math.max(this.minTTL, ttl);
     const time = performance.now();
 
     // Purge expired items from cache
     this.purgeStale(time);
 
-    const expiration = Math.ceil(time + this.ttl);
+    const expiration = Math.ceil(time + minTTL);
 
     // Set the data
     this.expirationMap.set(key, expiration);
@@ -102,11 +103,12 @@ class TTLCache<T> {
    * Update the TTL of an existing item in the cache
    * @param key
    */
-  updateTTL(key: string) {
+  updateTTL(key: string, ttl: number = 0) {
+    const minTTL = Math.max(this.minTTL, ttl);
     const oldExpiration = this.expirationMap.get(key);
 
     if (oldExpiration) {
-      const newExpiration = Math.ceil(performance.now() + this.ttl);
+      const newExpiration = Math.ceil(performance.now() + minTTL);
       this.expirationMap.set(key, newExpiration);
       this.expirations[oldExpiration] = this.expirations[oldExpiration].filter(
         (item) => item !== key
