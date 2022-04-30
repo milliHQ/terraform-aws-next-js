@@ -17,18 +17,18 @@ describe('TTL cache', () => {
     expect(cache.get('foo')).toBeNull();
 
     // @ts-ignore
-    performance.now.mockImplementationOnce(() => 0);
+    performance.now.mockReturnValue(0);
     cache.set('foo', 'bar');
 
     // @ts-ignore
-    performance.now.mockImplementationOnce(() => 60);
+    performance.now.mockReturnValue(60);
     expect(cache.get('foo')).toMatchObject({
       expired: false,
       item: 'bar',
     });
 
     // @ts-ignore
-    performance.now.mockImplementationOnce(() => 61);
+    performance.now.mockReturnValue(61);
     expect(cache.get('foo')).toMatchObject({
       expired: true,
       item: 'bar',
@@ -39,15 +39,15 @@ describe('TTL cache', () => {
     const cache = new TTLCache<string>(60);
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 0);
+    performance.now.mockReturnValue(0);
     cache.set('foo', 'bar');
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 10);
+    performance.now.mockReturnValue(10);
     cache.set('hello', 'world');
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 30);
+    performance.now.mockReturnValue(30);
     cache.set('nice', 'try');
 
     cache.purgeStale(71);
@@ -61,26 +61,26 @@ describe('TTL cache', () => {
     const cache = new TTLCache<string>(60);
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 0);
+    performance.now.mockReturnValue(0);
     cache.set('foo', 'bar');
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 61);
+    performance.now.mockReturnValue(61);
     cache.set('hello', 'world');
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 80);
+    performance.now.mockReturnValue(80);
     expect(cache.get('foo')).toBeNull();
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 81);
+    performance.now.mockReturnValue(81);
     expect(cache.get('hello')).toMatchObject({
       expired: false,
       item: 'world',
     });
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 122);
+    performance.now.mockReturnValue(122);
     expect(cache.get('hello')).toMatchObject({
       expired: true,
       item: 'world',
@@ -91,13 +91,13 @@ describe('TTL cache', () => {
     const cache = new TTLCache<string>(60);
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 0);
+    performance.now.mockReturnValue(0);
     cache.set('expire1', 'expire');
     cache.set('foo', 'bar', 80);
     cache.set('expire2', 'expire');
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 61);
+    performance.now.mockReturnValue(61);
     cache.set('hello', 'world');
     expect(cache.get('foo')).toMatchObject({
       expired: false,
@@ -107,7 +107,7 @@ describe('TTL cache', () => {
     expect(cache.get('expire2')).toBeNull();
 
     // @ts-ignore
-    performance.now.mockImplementation(() => 81);
+    performance.now.mockReturnValue(81);
     expect(cache.get('foo')).toMatchObject({
       expired: true,
       item: 'bar',

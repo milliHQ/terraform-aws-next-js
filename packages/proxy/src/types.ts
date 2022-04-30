@@ -39,3 +39,7 @@ export interface RouteResult {
   // the phase that this route is defined in
   phase?: HandleValue | null;
 }
+
+export type FileSystemEntry = {
+  etag: string;
+};

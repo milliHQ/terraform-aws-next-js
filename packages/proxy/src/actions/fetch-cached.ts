@@ -1,6 +1,5 @@
-import { fetchTimeout } from './fetch-timeout';
-import { TTLCache } from './ttl-cache';
-import { ProxyConfig } from '../types';
+import { fetchTimeout } from '../util/fetch-timeout';
+import { TTLCache } from '../util/ttl-cache';
 
 type NodeFetch = typeof import('node-fetch').default;
 
@@ -10,17 +9,21 @@ type NodeFetch = typeof import('node-fetch').default;
 const FETCH_TIMEOUT = 29500;
 
 /**
- * Gets the proxy config from the cache or updates the cache when the item is
+ * Gets items from the cache or updates the cache when the item is
  * stale or not in the cache.
- * @param endpointUrl URL where the config should be fetched from
- * @returns Parsed config object
+ *
+ * @param fetch - Fetch library to use
+ * @param cache - TTL cache to use
+ * @param url - URL for revalidating stale / fetching uncached items
+ * @key key - Key that is used to store the item in cache
+ * @returns Parsed item
  */
-async function fetchProxyConfig(
+async function fetchCached<Data extends { etag: string }>(
   fetch: NodeFetch,
-  cache: TTLCache<ProxyConfig>,
-  endpointUrl: string,
+  cache: TTLCache<Data>,
+  url: string,
   key: string
-): Promise<ProxyConfig | null> {
+): Promise<Data | null> {
   let etag: string | undefined;
 
   // 1. Check cache for existing item
@@ -37,7 +40,6 @@ async function fetchProxyConfig(
   }
 
   // 2. Revalidate cache from proxy config endpoint
-  const url = `http://${endpointUrl}/aliases/${encodeURI(key)}`;
   const response = await fetchTimeout(fetch, FETCH_TIMEOUT, url, etag);
 
   // 2.1 Existing cache is still valid, update TTL, return cached item
@@ -48,10 +50,11 @@ async function fetchProxyConfig(
 
   // 2.2 Parse the result and save it to the cache
   if (response.status === 200) {
-    const parsedItem = (await response.json()) as ProxyConfig;
+    const parsedItem = (await response.json()) as Data;
     // Etag is always present on CloudFront responses
     const responseEtag = response.headers.get('etag')!;
-    cache.set(key, { ...parsedItem, etag: responseEtag });
+    parsedItem.etag = responseEtag;
+    cache.set(key, parsedItem);
     return parsedItem;
   }
 
@@ -64,4 +67,4 @@ async function fetchProxyConfig(
   throw new Error('Failed to fetch from endpoint.');
 }
 
-export { fetchProxyConfig };
+export { fetchCached };
