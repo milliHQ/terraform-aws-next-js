@@ -1,5 +1,9 @@
 import { CloudFrontRequestEvent } from 'aws-lambda';
 
+/* -----------------------------------------------------------------------------
+ * generateCloudFrontRequestEvent
+ * ---------------------------------------------------------------------------*/
+
 type GenerateCloudFrontRequestEventOptions = {
   /**
    * Endpoint of the API Gateway.
@@ -111,4 +115,36 @@ function generateCloudFrontRequestEvent(
   };
 }
 
-export { generateCloudFrontRequestEvent };
+/* -----------------------------------------------------------------------------
+ * generateMockedFetchResponse
+ * ---------------------------------------------------------------------------*/
+
+/**
+ * Generates a fake fetch-like response.
+ *
+ * @param status - HTTP status
+ * @param data - Object that should be returned from the .json() call
+ * @param headers - HTTP response header that should be included in the response
+ * @returns
+ */
+function generateMockedFetchResponse(
+  status: number,
+  data: any,
+  headers: Record<string, string> = {}
+) {
+  // Fake headers get method headers.get('key')
+  const headerMap = new Map<string, string>();
+  for (const [key, value] of Object.entries(headers)) {
+    headerMap.set(key.toLowerCase(), value);
+  }
+
+  return Promise.resolve({
+    status,
+    json: () => Promise.resolve(data),
+    headers: {
+      get: (key: string) => headerMap.get(key.toLowerCase()),
+    },
+  });
+}
+
+export { generateCloudFrontRequestEvent, generateMockedFetchResponse };

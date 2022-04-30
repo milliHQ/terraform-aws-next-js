@@ -40,6 +40,7 @@ async function handler(
     const [action, restUri] = uri.split(/\/(.*)/);
 
     switch (action) {
+      // /aliases/<alias-id>
       case 'aliases':
         return getAlias({
           dynamoDBClient,
@@ -47,7 +48,8 @@ async function handler(
           uri: restUri,
         });
 
-      case 'deployment-file-exists':
+      // /filesystem/<deployment-id>/<file-path>
+      case 'filesystem':
         return deploymentFileExists({
           s3Client,
           s3BucketId: bucketId,

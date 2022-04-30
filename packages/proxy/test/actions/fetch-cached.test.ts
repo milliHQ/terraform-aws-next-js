@@ -2,6 +2,7 @@ import { performance } from 'perf_hooks';
 
 import { fetchCached } from '../../src/actions/fetch-cached';
 import { TTLCache } from '../../src/util/ttl-cache';
+import { generateMockedFetchResponse } from '../test-utils';
 
 type CacheEntry = {
   etag: string;
@@ -11,26 +12,6 @@ type CacheEntry = {
 /* -----------------------------------------------------------------------------
  * Mocks
  * ---------------------------------------------------------------------------*/
-
-function generateMockedFetchResponse(
-  status: number,
-  data: any,
-  headers: Record<string, string> = {}
-) {
-  // Fake headers get method headers.get('key')
-  const headerMap = new Map<string, string>();
-  for (const [key, value] of Object.entries(headers)) {
-    headerMap.set(key.toLowerCase(), value);
-  }
-
-  return Promise.resolve({
-    status,
-    json: () => Promise.resolve(data),
-    headers: {
-      get: (key: string) => headerMap.get(key.toLowerCase()),
-    },
-  });
-}
 
 jest.mock('perf_hooks', () => {
   return {

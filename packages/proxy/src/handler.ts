@@ -6,7 +6,7 @@ import {
 } from 'aws-lambda';
 
 import { appendQuerystring } from './util/append-querystring';
-import { fetchProxyConfig } from './util/fetch-proxy-config';
+import { fetchProxyConfig } from './actions/fetch-proxy-config';
 import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
 import {
   createCustomOriginFromApiGateway,
@@ -32,8 +32,7 @@ const CACHE_TTL = 60_000;
 
 // Calculating with a
 const proxyConfigCache = new TTLCache<ProxyConfig>(CACHE_TTL);
-
-let proxy: Proxy;
+const proxy = new Proxy(fetch);
 
 /**
  * Checks if a route result issued a redirect
@@ -112,7 +111,7 @@ async function handler(
       throw new Error('Alias could not be determined from request');
     }
 
-    let proxyConfig = await fetchProxyConfig(
+    const proxyConfig = await fetchProxyConfig(
       fetch,
       proxyConfigCache,
       configEndpoint,
@@ -122,14 +121,6 @@ async function handler(
     if (!proxyConfig) {
       throw new MissingConfigError();
     }
-
-    // TODO: Convert proxy into a function, that don't need initialization
-    proxy = new Proxy(
-      proxyConfig.routes,
-      // TODO: LambdaRoutes currently not supported
-      [],
-      proxyConfig.staticRoutes
-    );
 
     // Check if we have a prerender route
     // Bypasses proxy
@@ -149,7 +140,13 @@ async function handler(
       request.querystring !== ''
         ? `${request.uri}?${request.querystring}`
         : request.uri;
-    const proxyResult = proxy.route(requestPath);
+    const proxyResult = await proxy.route(
+      proxyConfig.deploymentId,
+      proxyConfig.routes,
+      new Set(),
+      configEndpoint,
+      requestPath
+    );
 
     // Check for redirect
     const redirect = isRedirect(proxyResult);

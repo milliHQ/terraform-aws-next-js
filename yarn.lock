@@ -1911,7 +1911,7 @@
   resolved "https://registry.yarnpkg.com/@types/async-retry/-/async-retry-1.2.1.tgz#fa9ac165907a8ee78f4924f4e393b656c65b5bb4"
   integrity sha512-yMQ6CVgICWtyFNBqJT3zqOc+TnqqEPLo4nKJNPFwcialiylil38Ie6q1ENeFTjvaLOkVim9K5LisHgAKJWidGQ==
 
-"@types/aws-lambda@*", "@types/aws-lambda@^8.10.76":
+"@types/aws-lambda@*", "@types/aws-lambda@^8.10.76", "@types/aws-lambda@^8.10.95":
   version "8.10.95"
   resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.95.tgz#7ba7b22b5967f40ceaf293082bbc3863a06e33f7"
   integrity sha512-wGtzLbd04EmqhFjTZmXgLzvmhDdyVU7AMo/JkiPmA2VUdBFQfUBQFCEzaVVK+f1PP5aWx1ejnb7K/8MXYI/frQ==
@@ -2276,7 +2276,7 @@
   resolved "https://registry.yarnpkg.com/@vercel/frameworks/-/frameworks-0.0.15.tgz#f7366a3d85e78abf2831f2840011018dc4f4f6de"
   integrity sha512-bZ29k2NyP9/s5K4bhx6pJN4g1W5/1WtKEdM+FmCS2/uo4KnbvMbPf9zaPvEEBzh+2DiZ7VgpbUxvm7AvI/LrKA==
 
-"@vercel/ncc@*":
+"@vercel/ncc@*", "@vercel/ncc@^0.33.4":
   version "0.33.4"
   resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.33.4.tgz#e44a87511f583b7ba88e4b9ae90eeb7ba252b872"
   integrity sha512-ln18hs7dMffelP47tpkaR+V5Tj6coykNyxJrlcmCormPqRQjB/Gv4cu2FfBG+PMzIfdZp2CLDsrrB1NPU22Qhg==
@@ -2602,7 +2602,7 @@ aws-cdk-lib@^2.20.0:
     semver "^7.3.5"
     yaml "1.10.2"
 
-aws-sdk@*, aws-sdk@^2.804.0:
+aws-sdk@*, aws-sdk@2.1001.0, aws-sdk@^2.804.0:
   version "2.1001.0"
   resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1001.0.tgz#c4da256aa0058438ba611ae06fa850f4f7d63abc"
   integrity sha512-DpmslPU8myCaaRUwMzB/SqAMtD2zQckxYwq3CguIv8BI+JHxDLeTdPCLfA5jffQ8k6dcvISOuiqdpwCZucU0BA==
