@@ -21,8 +21,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/api/user'
     );
 
@@ -51,8 +51,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/user/123'
     );
 
@@ -86,8 +86,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/api/hello'
     );
 
@@ -125,8 +125,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set(['/__NEXT_PAGE_LAMBDA_0']),
-      'localhost',
+      { '/__NEXT_PAGE_LAMBDA_0': 'localhost' },
+      'http://localhost',
       '/product/[...slug]?slug=hello/world'
     );
 
@@ -170,8 +170,10 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set(['/__NEXT_PAGE_LAMBDA_0']),
-      'localhost',
+      {
+        '/__NEXT_PAGE_LAMBDA_0': 'localhost',
+      },
+      'http://localhost',
       '/product/hello/world'
     );
 
@@ -205,8 +207,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/about'
     );
 
@@ -246,8 +248,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/about'
     );
 
@@ -299,8 +301,8 @@ describe('Proxy unit', () => {
       const result = await proxy.route(
         '123',
         routesConfig,
-        new Set([]),
-        'localhost',
+        {},
+        'http://localhost',
         '/test/'
       );
       expect(result).toEqual({
@@ -323,8 +325,8 @@ describe('Proxy unit', () => {
       const result = await proxy.route(
         '123',
         routesConfig,
-        new Set([]),
-        'localhost',
+        {},
+        'http://localhost',
         '/other-route/'
       );
       expect(result).toEqual({
@@ -347,8 +349,8 @@ describe('Proxy unit', () => {
       const result = await proxy.route(
         '123',
         routesConfig,
-        new Set([]),
-        'localhost',
+        {},
+        'http://localhost',
         '/other-route/?foo=bar'
       );
       expect(result).toEqual({
@@ -392,8 +394,8 @@ describe('Proxy unit', () => {
     const result1 = await proxy.route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/test/'
     );
     expect(result1).toEqual({
@@ -410,8 +412,8 @@ describe('Proxy unit', () => {
     const result2 = await proxy.route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/'
     );
     expect(result2).toEqual({
@@ -453,8 +455,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/redir/other-path'
     );
 
@@ -493,8 +495,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/two/some/path?foo=bar'
     );
     expect(result).toEqual({
@@ -530,8 +532,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/docs/hello-world'
     );
 
@@ -568,8 +570,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/'
     );
 
@@ -623,8 +625,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/'
     );
 
@@ -662,8 +664,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/'
     );
 
@@ -712,8 +714,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/another/invite/hello'
     );
 
@@ -758,8 +760,8 @@ describe('Proxy unit', () => {
     const result = await new Proxy(mockedFetch as any).route(
       '123',
       routesConfig,
-      new Set([]),
-      'localhost',
+      {},
+      'http://localhost',
       '/users/123'
     );
 

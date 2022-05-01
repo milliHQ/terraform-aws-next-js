@@ -6,13 +6,33 @@ import getPort from 'get-port';
 import { ProxyConfig } from '../src/types';
 import { generateCloudFrontRequestEvent } from './test-utils';
 
+/* -----------------------------------------------------------------------------
+ * Proxy config server mock
+ * ---------------------------------------------------------------------------*/
+
 class ConfigServer {
   public proxyConfig?: ProxyConfig;
+  public staticFiles: string[] = [];
   private server?: Server;
 
   async start() {
     const port = await getPort();
-    this.server = createServer((_req, res) => {
+    this.server = createServer((req, res) => {
+      if (req.url && req.url.startsWith('/filesystem')) {
+        const splittedUrl = req.url.split('/');
+        const filePath = decodeURIComponent(
+          splittedUrl[splittedUrl.length - 1]
+        );
+
+        if (this.staticFiles.includes(filePath)) {
+          res.statusCode = 200;
+        } else {
+          res.statusCode = 404;
+        }
+        return res.end();
+      }
+
+      // Respond with config
       res.end(JSON.stringify(this.proxyConfig));
     });
 
@@ -37,6 +57,10 @@ class ConfigServer {
   }
 }
 
+/* -----------------------------------------------------------------------------
+ * Tests
+ * ---------------------------------------------------------------------------*/
+
 describe('[proxy] Handler', () => {
   let handler: any;
   let configServer: ConfigServer;
@@ -59,10 +83,10 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [HTTP]', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^\\/docs(?:\\/([^\\/]+?))$',
@@ -103,10 +127,10 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [HTTPS]', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^\\/docs(?:\\/([^\\/]+?))$',
@@ -146,10 +170,10 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [Custom Port]', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^\\/docs(?:\\/([^\\/]+?))$',
@@ -189,10 +213,10 @@ describe('[proxy] Handler', () => {
 
   test('External redirect [Subdomain]', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^\\/docs(?:\\/([^\\/]+?))$',
@@ -232,10 +256,10 @@ describe('[proxy] Handler', () => {
 
   test('i18n default locale rewrite', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^/(?!(?:_next/.*|en|fr\\-FR|nl)(?:/.*|$))(.*)$',
@@ -282,9 +306,9 @@ describe('[proxy] Handler', () => {
 
   test('Correctly request /index object from S3 when requesting /', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      staticRoutes: ['/404', '/500', '/index'],
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       routes: [
         {
           src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
@@ -333,6 +357,7 @@ describe('[proxy] Handler', () => {
     const requestPath = '/';
 
     // Prepare configServer
+    configServer.staticFiles = ['/404', '/500', '/index'];
     configServer.proxyConfig = proxyConfig;
     const cloudFrontEvent = generateCloudFrontRequestEvent({
       configEndpoint,
@@ -352,10 +377,13 @@ describe('[proxy] Handler', () => {
   test('Add x-forwarded-host header to API-Gateway requests', async () => {
     const hostHeader = 'example.org';
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: ['/__NEXT_API_LAMBDA_0'],
+      lambdaRoutes: {
+        '/__NEXT_API_LAMBDA_0':
+          'https://lambda-endpoint.localhost/__NEXT_API_LAMBDA_0',
+      },
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
@@ -420,7 +448,6 @@ describe('[proxy] Handler', () => {
     // Prepare configServer
     configServer.proxyConfig = proxyConfig;
     const cloudFrontEvent = generateCloudFrontRequestEvent({
-      apiGatewayEndpoint: 'api-gateway.local',
       configEndpoint,
       uri: requestPath,
     });
@@ -428,7 +455,7 @@ describe('[proxy] Handler', () => {
 
     expect(result.origin?.custom).toEqual(
       expect.objectContaining({
-        domainName: 'api-gateway.local',
+        domainName: 'lambda-endpoint.localhost',
         path: '/__NEXT_API_LAMBDA_0',
       })
     );
@@ -453,16 +480,15 @@ describe('[proxy] Handler', () => {
   // Related to issue: https://github.com/milliHQ/terraform-aws-next-js/issues/218
   test('Dynamic routes with dynamic part in directory', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: ['/__NEXT_API_LAMBDA_0', '/__NEXT_PAGE_LAMBDA_0'],
+      lambdaRoutes: {
+        '/__NEXT_API_LAMBDA_0':
+          'https://lambda-endpoint.localhost/__NEXT_API_LAMBDA_0',
+        '/__NEXT_PAGE_LAMBDA_0':
+          'https://lambda-endpoint.localhost/__NEXT_PAGE_LAMBDA_0',
+      },
       prerenders: {},
-      staticRoutes: [
-        '/404',
-        '/500',
-        '/favicon.ico',
-        '/about',
-        '/users/[user_id]',
-      ],
       routes: [
         {
           src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',
@@ -590,6 +616,13 @@ describe('[proxy] Handler', () => {
 
     // Prepare configServer
     configServer.proxyConfig = proxyConfig;
+    configServer.staticFiles = [
+      '/404',
+      '/500',
+      '/favicon.ico',
+      '/about',
+      '/users/[user_id]',
+    ];
     const cloudFrontEvent = generateCloudFrontRequestEvent({
       configEndpoint,
       uri: requestPath,
@@ -607,10 +640,10 @@ describe('[proxy] Handler', () => {
 
   test('Redirects with querystring', async () => {
     const proxyConfig: ProxyConfig = {
+      etag: '123',
       deploymentId: 'abc',
-      lambdaRoutes: [],
+      lambdaRoutes: {},
       prerenders: {},
-      staticRoutes: [],
       routes: [
         {
           src: '^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$',

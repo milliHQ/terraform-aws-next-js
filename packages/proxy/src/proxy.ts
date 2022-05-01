@@ -125,7 +125,7 @@ export class Proxy {
   async route(
     deploymentId: string,
     routes: Route[],
-    lambdaRoutes: Set<string>,
+    lambdaRoutes: Record<string, string>,
     fileSystemEndpointUrl: string,
     reqUrl: string
   ) {
@@ -265,7 +265,7 @@ export class Proxy {
         }
 
         if (routeConfig.check && phase !== 'hit') {
-          if (lambdaRoutes.has(destPath)) {
+          if (destPath in lambdaRoutes) {
             target = 'lambda';
           } else {
             // Check if the path matches a route from the filesystem

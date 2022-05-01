@@ -17,7 +17,7 @@ function fetchProxyConfig(
   endpointUrl: string,
   key: string
 ): Promise<ProxyConfig | null> {
-  const url = `http://${endpointUrl}/aliases/${encodeURI(key)}`;
+  const url = `${endpointUrl}/aliases/${encodeURI(key)}`;
   return fetchCached(fetch, cache, url, key);
 }
 

@@ -6,10 +6,6 @@ import { CloudFrontRequestEvent } from 'aws-lambda';
 
 type GenerateCloudFrontRequestEventOptions = {
   /**
-   * Endpoint of the API Gateway.
-   */
-  apiGatewayEndpoint?: string;
-  /**
    * URL where the proxy config can be fetched from.
    */
   configEndpoint: string;
@@ -30,12 +26,7 @@ type GenerateCloudFrontRequestEventOptions = {
 function generateCloudFrontRequestEvent(
   options: GenerateCloudFrontRequestEventOptions
 ): CloudFrontRequestEvent {
-  const {
-    apiGatewayEndpoint = 'example.localhost',
-    configEndpoint,
-    querystring = '',
-    uri,
-  } = options;
+  const { configEndpoint, querystring = '', uri } = options;
 
   return {
     Records: [
@@ -91,12 +82,6 @@ function generateCloudFrontRequestEvent(
                     {
                       key: 'x-env-config-endpoint',
                       value: configEndpoint,
-                    },
-                  ],
-                  'x-env-api-endpoint': [
-                    {
-                      key: 'x-env-api-endpoint',
-                      value: apiGatewayEndpoint,
                     },
                   ],
                 },

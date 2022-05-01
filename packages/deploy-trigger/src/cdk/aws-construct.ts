@@ -15,6 +15,7 @@ import { LambdaDefinition, SupportedRuntime } from '../types';
 /* -----------------------------------------------------------------------------
  * Utils
  * ---------------------------------------------------------------------------*/
+
 function getRuntime(runtimeIdentifier: SupportedRuntime | string) {
   switch (runtimeIdentifier) {
     case 'nodejs12.x':
@@ -27,6 +28,10 @@ function getRuntime(runtimeIdentifier: SupportedRuntime | string) {
       throw new Error(`Runtime not supported: ${runtimeIdentifier}`);
   }
 }
+
+/* -----------------------------------------------------------------------------
+ * CDK construct
+ * ---------------------------------------------------------------------------*/
 
 type AtomicDeploymentOptions = {
   /**
@@ -116,14 +121,11 @@ class AtomicDeployment extends Stack {
           integration: lambdaIntegration,
         });
 
-        return [
-          lambdaSource.route,
-          `${httpApi.apiEndpoint}/${lambdaSource.route}`,
-        ];
+        return `${lambdaSource.route} ${httpApi.apiEndpoint}${lambdaSource.route}`;
       });
 
       new CfnOutput(this, 'lambdaRoutes', {
-        value: JSON.stringify(routes),
+        value: routes.join(' '),
       });
     }
   }

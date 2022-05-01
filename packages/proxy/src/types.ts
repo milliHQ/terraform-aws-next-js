@@ -8,8 +8,7 @@ export interface ProxyConfig {
   etag: string;
   deploymentId: string;
   routes: Route[];
-  lambdaRoutes: string[];
-  staticRoutes: string[];
+  lambdaRoutes: Record<string, string>;
   prerenders: Record<string, { lambda: string }>;
 }
 

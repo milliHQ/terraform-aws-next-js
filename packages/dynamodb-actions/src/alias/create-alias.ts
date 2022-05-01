@@ -25,17 +25,16 @@ type CreateAliasOptions = {
    * ID of the deployment where the alias points to.
    */
   deploymentId: string;
+
+  /**
+   * Stringified JSON Routing table which paths should be served by Lambdas.
+   */
+  lambdaRoutes: string;
   /**
    * Stringified JSON object that contains the route config.
    * This value gets copied over from the associated deployment.
    */
   routes: string;
-  /**
-   * Stringified JSON object that contains routes that are served by static
-   * generated HTML files.
-   * This value gets copied over from the associated deployment.
-   */
-  staticRoutes: string;
   /**
    * Stringified JSON object that contains routes that are served from
    * prerendered generated HTML files.
@@ -54,8 +53,8 @@ function createAlias({
   createdDate,
   isDeploymentAlias = false,
   deploymentId,
+  lambdaRoutes,
   routes,
-  staticRoutes,
   prerenders,
 }: CreateAliasOptions) {
   const createdDateString = createdDate.toISOString();
@@ -87,8 +86,8 @@ function createAlias({
         Routes: {
           S: routes,
         },
-        StaticRoutes: {
-          S: staticRoutes,
+        LambdaRoutes: {
+          S: lambdaRoutes,
         },
         Prerenders: {
           S: prerenders,

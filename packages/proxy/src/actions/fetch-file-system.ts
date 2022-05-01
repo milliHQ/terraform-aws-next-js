@@ -21,7 +21,7 @@ function fetchFileSystem(
   deploymentId: string,
   filePath: string
 ): Promise<FileSystemEntry | null> {
-  const url = `http://${endpointUrl}/filesystem/${deploymentId}/${encodeURIComponent(
+  const url = `${endpointUrl}/filesystem/${deploymentId}/${encodeURIComponent(
     filePath
   )}`;
   const cacheKey = deploymentId + filePath;

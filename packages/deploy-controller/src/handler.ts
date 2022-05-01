@@ -3,10 +3,11 @@ import {
   updateDeploymentStatus,
 } from '@millihq/tfn-dynamodb-actions';
 import { SNSEvent } from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDB, CloudFormation } from 'aws-sdk';
 
 import { ensureEnv } from './utils/ensure-env';
 import { parseCloudFormationEvent } from './utils/parse-cloudformation-event';
+import { parseLambdaRoutes } from './utils/parse-lambda-routes';
 
 const dynamoDBRegion = ensureEnv('TABLE_REGION');
 
@@ -50,11 +51,45 @@ async function handler(event: SNSEvent) {
       switch (ResourceStatus) {
         case 'CREATE_COMPLETE':
           try {
-            // TODO: Add the Lambdas from the Stack to the Deployment
+            const stackId = parsedEvent.StackId;
+            if (!stackId) {
+              throw new Error('No StackId present');
+            }
+
+            const cloudformationClient = new CloudFormation();
+            // Get the stack that triggered the event
+            const stacksResponse = await cloudformationClient
+              .describeStacks({
+                StackName: stackId,
+              })
+              .promise();
+
+            if (!stacksResponse.Stacks || stacksResponse.Stacks.length !== 1) {
+              throw new Error('Could not retrieve stack with id: ' + stackId);
+            }
+
+            const stack = stacksResponse.Stacks[0];
+            const lambdaRoutesStackOutput = stack.Outputs?.find(
+              ({ OutputKey }) => OutputKey === 'lambdaRoutes'
+            );
+
+            let lambdaRoutes: Record<string, string> = {};
+            if (
+              lambdaRoutesStackOutput &&
+              lambdaRoutesStackOutput.OutputValue
+            ) {
+              lambdaRoutes = parseLambdaRoutes(
+                lambdaRoutesStackOutput.OutputValue
+              );
+            }
+
+            const stringifiedLambdaRoutes = JSON.stringify(lambdaRoutes);
+
             const deployment = await updateDeploymentStatus({
               dynamoDBClient,
               deploymentId,
               deploymentTableName: dynamoDBTableNameDeployments,
+              lambdaRoutes: stringifiedLambdaRoutes,
               newStatus: 'CREATE_COMPLETE',
             });
 
@@ -65,16 +100,14 @@ async function handler(event: SNSEvent) {
               aliasTableName: dynamoDBTableNameAliases,
               createdDate: new Date(),
               deploymentId,
+              lambdaRoutes: stringifiedLambdaRoutes,
               // Copy values over from the deployment
               routes: deployment.Routes,
-              staticRoutes: deployment.StaticRoutes,
               prerenders: deployment.Prerenders,
             });
           } catch (error) {
             console.log('ERROR', error);
           }
-          console.log('Event');
-          console.log(JSON.stringify(parsedEvent, null, 2));
 
         case 'DELETE_COMPLETE':
 

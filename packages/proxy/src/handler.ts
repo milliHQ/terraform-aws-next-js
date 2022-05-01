@@ -143,7 +143,7 @@ async function handler(
     const proxyResult = await proxy.route(
       proxyConfig.deploymentId,
       proxyConfig.routes,
-      new Set(),
+      proxyConfig.lambdaRoutes,
       configEndpoint,
       requestPath
     );

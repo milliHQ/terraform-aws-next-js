@@ -22,11 +22,6 @@ type CreateDeploymentOptions = {
    */
   routes: string;
   /**
-   * Stringified JSON object that contains routes that are served by static
-   * generated HTML files.
-   */
-  staticRoutes: string;
-  /**
    * Stringified JSON object that contains routes that are served from
    * prerendered generated HTML files.
    */
@@ -39,7 +34,6 @@ function createDeployment({
   deploymentId,
   createdDate = new Date(),
   routes,
-  staticRoutes,
   prerenders,
 }: CreateDeploymentOptions) {
   const createdDateString = createdDate.toISOString();
@@ -63,8 +57,11 @@ function createDeployment({
         Routes: {
           S: routes,
         },
-        StaticRoutes: {
-          S: staticRoutes,
+        // Lambda routes are empty at the creation of the stack since they
+        // can only be determined when the stack creation is finished and the
+        // endpoints of API Gateway or function URLs can be resolved.
+        LambdaRoutes: {
+          S: '{}',
         },
         Prerenders: {
           S: prerenders,

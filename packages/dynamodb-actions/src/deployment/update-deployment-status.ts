@@ -17,6 +17,10 @@ type UpdateDeploymentStatusOptions = {
    */
   deploymentId: string;
   /**
+   * Stringified routing table for Lambdas
+   */
+  lambdaRoutes: string;
+  /**
    * The new status that.
    */
   newStatus: string;
@@ -32,6 +36,7 @@ async function updateDeploymentStatus({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
+  lambdaRoutes,
   newStatus,
 }: UpdateDeploymentStatusOptions) {
   const deployment = await getDeploymentById({
@@ -53,6 +58,7 @@ async function updateDeploymentStatus({
     },
     item: {
       Status: newStatus,
+      lambdaRoutes: lambdaRoutes,
     },
   });
 }

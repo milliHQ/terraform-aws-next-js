@@ -264,8 +264,10 @@ locals {
 
     custom_header = [
       {
+        // Intentionally using http here (instead of https) to safe the time
+        // the SSL handshake costs.
         name  = "x-env-config-endpoint"
-        value = module.proxy_config.config_endpoint
+        value = "http://${module.proxy_config.config_endpoint}"
       },
     ]
   }
