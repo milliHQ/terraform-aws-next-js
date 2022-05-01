@@ -35,7 +35,8 @@ async function handler(
         }
 
         const dynamoDBTable = getEnv(request, 'x-env-dynamodb-table-aliases');
-        return getAlias({
+        // Awaited return allows error catch
+        return await getAlias({
           dynamoDBClient,
           dynamoDBTable,
           uri: restUri,
@@ -51,7 +52,8 @@ async function handler(
         }
 
         const bucketId = getEnv(request, 'x-env-bucket-id');
-        return deploymentFileExists({
+        // Awaited return allows error catch
+        return await deploymentFileExists({
           s3Client,
           s3BucketId: bucketId,
           uri: restUri,
