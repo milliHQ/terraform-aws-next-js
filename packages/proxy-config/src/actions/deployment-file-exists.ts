@@ -1,6 +1,8 @@
 import { CloudFrontResultResponse } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
+
 import { NotFoundError } from '../errors/not-found-error';
+import { splitAtCharacter } from '../utils/split-at-character';
 
 type DeploymentFileExistsOptions = {
   s3Client: S3;
@@ -23,7 +25,7 @@ async function deploymentFileExists({
     throw new NotFoundError('Missing deploymentId and FileKey');
   }
 
-  const [deploymentId, key] = uri.split(/\/(.*)/);
+  const [deploymentId, key] = splitAtCharacter(uri, '/');
   if (!deploymentId || !key) {
     throw new NotFoundError('Missing deploymentId or FileKey');
   }
@@ -63,7 +65,8 @@ async function deploymentFileExists({
       },
     };
   } catch (s3Error: any) {
-    if (s3Error.statusCode === 404) {
+    // Files that are not found in S3 return a 403 (Forbidden) status
+    if (s3Error.statusCode === 403) {
       throw new NotFoundError('File does not exist');
     }
 

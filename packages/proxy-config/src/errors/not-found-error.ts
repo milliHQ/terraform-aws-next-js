@@ -1,4 +1,4 @@
-import { CloudFrontHeaders, CloudFrontResultResponse } from 'aws-lambda';
+import { CloudFrontResultResponse } from 'aws-lambda';
 
 class NotFoundError extends Error {
   toCloudFrontResponse(): CloudFrontResultResponse {
