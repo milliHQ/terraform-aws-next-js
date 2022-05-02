@@ -1,5 +1,7 @@
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
-import { S3, CloudFront, SQS } from 'aws-sdk';
+import CloudFront from 'aws-sdk/clients/cloudfront';
+import S3 from 'aws-sdk/clients/s3';
+import SQS from 'aws-sdk/clients/sqs';
 
 import { deployTrigger } from './deploy-trigger';
 import { ExpireValue } from './types';

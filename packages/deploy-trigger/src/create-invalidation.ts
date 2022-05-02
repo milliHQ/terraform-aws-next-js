@@ -1,4 +1,4 @@
-import { CloudFront } from 'aws-sdk';
+import CloudFront from 'aws-sdk/clients/cloudfront';
 
 // Number of paths a single invalidation can hold
 // A invalidation should not have more than 15 paths with wildcards (*) at a time

@@ -1362,10 +1362,10 @@
   resolved "https://registry.yarnpkg.com/@vercel/frameworks/-/frameworks-0.0.15.tgz#f7366a3d85e78abf2831f2840011018dc4f4f6de"
   integrity sha512-bZ29k2NyP9/s5K4bhx6pJN4g1W5/1WtKEdM+FmCS2/uo4KnbvMbPf9zaPvEEBzh+2DiZ7VgpbUxvm7AvI/LrKA==
 
-"@vercel/ncc@^0.27.0":
-  version "0.27.0"
-  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.27.0.tgz#c0cfeebb0bebb56052719efa4a0ecc090a932c76"
-  integrity sha512-DllIJQapnU2YwewIhh/4dYesmMQw3h2cFtabECc/zSJHqUbNa0eJuEkRa6DXbZvh1YPWBtYQoPV17NlDpBw1Vw==
+"@vercel/ncc@^0.33.4":
+  version "0.33.4"
+  resolved "https://registry.yarnpkg.com/@vercel/ncc/-/ncc-0.33.4.tgz#e44a87511f583b7ba88e4b9ae90eeb7ba252b872"
+  integrity sha512-ln18hs7dMffelP47tpkaR+V5Tj6coykNyxJrlcmCormPqRQjB/Gv4cu2FfBG+PMzIfdZp2CLDsrrB1NPU22Qhg==
 
 "@vercel/nft@0.10.0":
   version "0.10.0"
@@ -1580,7 +1580,7 @@ archiver-utils@^2.1.0:
     normalize-path "^3.0.0"
     readable-stream "^2.0.0"
 
-archiver@^5.2.0, archiver@^5.3.0:
+archiver@^5.3.0, archiver@^5.3.1:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/archiver/-/archiver-5.3.0.tgz#dd3e097624481741df626267564f7dd8640a45ba"
   integrity sha512-iUw+oDwK0fgNpvveEsdQ0Ase6IIKztBJU2U0E9MzszMfmVVUyv1QJhS2ITW9ZCqx8dktAxVAjWWkKehuZE8OPg==
@@ -1805,6 +1805,13 @@ brace-expansion@^1.1.7:
   dependencies:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
+
+brace-expansion@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-2.0.1.tgz#1edc459e0f0c548486ecf9fc99f2221364b9a0ae"
+  integrity sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==
+  dependencies:
+    balanced-match "^1.0.0"
 
 braces@^3.0.1:
   version "3.0.2"
@@ -4207,6 +4214,13 @@ minimatch@^3.0.2, minimatch@^3.0.4:
   dependencies:
     brace-expansion "^1.1.7"
 
+minimatch@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-5.0.1.tgz#fb9022f7528125187c92bd9e9b6366be1cf3415b"
+  integrity sha512-nLDxIFRyhDblz3qMuq+SoRZED4+miJ/G+tdDrjkkkRnjAsBexeGpgjLEQ0blJy7rHhR2b93rhQY4SvyWu9v03g==
+  dependencies:
+    brace-expansion "^2.0.1"
+
 minimist@^1.2.0, minimist@^1.2.5:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
@@ -4259,13 +4273,14 @@ natural-compare@^1.4.0:
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha1-Sr6/7tdUHywnrPspvbvRXI1bpPc=
 
-ncc-zip@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/ncc-zip/-/ncc-zip-1.0.0.tgz#9cc5f8dfcd907552735b797846191fd57d0113ce"
-  integrity sha512-YuLObUf0bSgq/RZnJSr+3S7jxMS7lnMk3UiCpKUyyrxZFUMDqZyjTAkTVerZhDbJegqZf7KDthKaW9R5Lak1hQ==
+ncc-zip@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/ncc-zip/-/ncc-zip-2.0.0.tgz#1f524951cdffae04da62f52dfab494abd9ec3ac1"
+  integrity sha512-Ts8mbT2Ts0PeX/aRJ0eWqiEVA7+8ZF3A+D+s9h81d3pdjc/kHrcPoYSPQfvRCNoHObnREZjU27YaQVPv9HehLQ==
   dependencies:
-    archiver "^5.2.0"
+    archiver "^5.3.1"
     arg "^5.0.0"
+    minimatch "^5.0.1"
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 

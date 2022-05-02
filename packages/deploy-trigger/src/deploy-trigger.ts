@@ -1,6 +1,6 @@
 import { extname } from 'path';
 
-import { S3 } from 'aws-sdk';
+import S3 from 'aws-sdk/clients/s3';
 import unzipper from 'unzipper';
 import {
   lookup as mimeLookup,

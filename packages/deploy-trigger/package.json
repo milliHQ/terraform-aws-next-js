@@ -11,7 +11,7 @@
     "directory": "packages/deploy-trigger"
   },
   "scripts": {
-    "build": "ncc-zip build -e aws-sdk -f handler --license third-party-licenses.txt -m src/handler.ts",
+    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
     "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
@@ -24,10 +24,10 @@
     "@types/mime-types": "^2.1.1",
     "@types/tmp": "^0.2.0",
     "@types/unzipper": "^0.10.3",
-    "@vercel/ncc": "^0.27.0",
+    "@vercel/ncc": "^0.33.4",
     "archiver": "^5.3.0",
     "aws-sdk": "*",
-    "ncc-zip": "^1.0.0",
+    "ncc-zip": "^2.0.0",
     "tmp": "^0.2.1",
     "unzipper": "^0.10.11"
   },

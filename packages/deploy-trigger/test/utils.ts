@@ -1,8 +1,9 @@
-import { S3 } from 'aws-sdk';
 import * as crypto from 'crypto';
-import * as tmp from 'tmp';
 import * as fs from 'fs';
+
 import archiver from 'archiver';
+import S3 from 'aws-sdk/clients/s3';
+import * as tmp from 'tmp';
 
 export function generateS3ClientForTesting() {
   return new S3({

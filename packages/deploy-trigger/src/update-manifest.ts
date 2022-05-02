@@ -1,4 +1,4 @@
-import { S3 } from 'aws-sdk';
+import S3 from 'aws-sdk/clients/s3';
 
 import { expireTagKey, expireTagValue } from './constants';
 import { ExpireValue, FileResult, Manifest, ManifestFile } from './types';
