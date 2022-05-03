@@ -11,7 +11,7 @@
     "directory": "packages/deploy-trigger"
   },
   "scripts": {
-    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
+    "build": "ncc-zip build -i '*.zip' -f handler --license third-party-licenses.txt src/handler.ts",
     "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
