@@ -58,7 +58,7 @@ async function updateDeploymentStatus({
     },
     item: {
       Status: newStatus,
-      lambdaRoutes: lambdaRoutes,
+      LambdaRoutes: lambdaRoutes,
     },
   });
 }

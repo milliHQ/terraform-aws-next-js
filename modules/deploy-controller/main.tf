@@ -45,6 +45,19 @@ data "aws_iam_policy_document" "access_dynamodb_tables" {
   }
 }
 
+# Read the output from the created CloudFormation stacks
+data "aws_iam_policy_document" "access_cloudformation_stacks" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:DescribeStacks",
+    ]
+    resources = [
+      "*"
+    ]
+  }
+}
+
 ###############
 # Worker Lambda
 ###############
@@ -63,9 +76,10 @@ module "worker" {
   memory_size   = 128
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 1
+  number_of_policy_jsons = 2
   policy_jsons = [
     data.aws_iam_policy_document.access_dynamodb_tables.json,
+    data.aws_iam_policy_document.access_cloudformation_stacks.json,
   ]
 
   environment_variables = {

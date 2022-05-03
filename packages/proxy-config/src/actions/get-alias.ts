@@ -32,7 +32,7 @@ async function getAlias({
     attributes: {
       Routes: true,
       Prerenders: true,
-      StaticRoutes: true,
+      LambdaRoutes: true,
       DeploymentId: true,
     },
   });
@@ -48,10 +48,10 @@ async function getAlias({
     body:
       '{"routes":' +
       aliasRecord.Routes +
+      ',"lambdaRoutes":' +
+      aliasRecord.LambdaRoutes +
       ',"prerenders":' +
       aliasRecord.Prerenders +
-      ',"staticRoutes":' +
-      aliasRecord.StaticRoutes +
       ',"deploymentId":' +
       '"' +
       aliasRecord.DeploymentId +

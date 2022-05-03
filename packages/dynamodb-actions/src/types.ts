@@ -20,10 +20,10 @@ export type DeploymentItem = {
    */
   Routes: string;
   /**
-   * Stringified object that contains the static routes that should be saved
-   * from the static file server.
+   * Stringified object that contains the routes that should be served from
+   * Lambda functions.
    */
-  StaticRoutes: string;
+  LambdaRoutes: string;
   /**
    * Stringified object that contains the routes that are prerendered.
    */
@@ -49,10 +49,10 @@ export type AliasItem = {
    */
   Routes: string;
   /**
-   * Stringified object that contains the static routes that should be saved
-   * from the static file server.
+   * Stringified object that contains the routes that should be served from
+   * Lambda functions.
    */
-  StaticRoutes: string;
+  LambdaRoutes: string;
   /**
    * Stringified object that contains the routes that are prerendered.
    */

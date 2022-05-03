@@ -4,7 +4,7 @@ import {
   PayloadFormatVersion,
 } from '@aws-cdk/aws-apigatewayv2-alpha';
 import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
-import { Stack, RemovalPolicy, CfnOutput } from 'aws-cdk-lib';
+import { Stack, RemovalPolicy, CfnOutput, Duration } from 'aws-cdk-lib';
 import { Role, ServicePrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
@@ -95,6 +95,8 @@ class AtomicDeployment extends Stack {
           handler: lambdaSource.handler,
           code: functionCode,
           role: lambdaRole,
+          timeout: Duration.seconds(29),
+          memorySize: 1024,
         });
 
         // LogGroup for Lambda

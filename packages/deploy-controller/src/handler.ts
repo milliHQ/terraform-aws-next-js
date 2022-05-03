@@ -3,7 +3,8 @@ import {
   updateDeploymentStatus,
 } from '@millihq/tfn-dynamodb-actions';
 import { SNSEvent } from 'aws-lambda';
-import { DynamoDB, CloudFormation } from 'aws-sdk';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
+import CloudFormation from 'aws-sdk/clients/cloudformation';
 
 import { ensureEnv } from './utils/ensure-env';
 import { parseCloudFormationEvent } from './utils/parse-cloudformation-event';
@@ -72,6 +73,8 @@ async function handler(event: SNSEvent) {
             const lambdaRoutesStackOutput = stack.Outputs?.find(
               ({ OutputKey }) => OutputKey === 'lambdaRoutes'
             );
+
+            console.log({ stack: JSON.stringify(stack, null, 2) });
 
             let lambdaRoutes: Record<string, string> = {};
             if (

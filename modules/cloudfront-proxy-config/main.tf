@@ -51,6 +51,8 @@ module "proxy_config" {
   description   = "Managed by Terraform Next.js"
   handler       = "handler.handler"
   runtime       = var.lambda_runtime
+  memory_size   = 1024
+  timeout       = 30
 
   attach_policy_json        = true
   policy_json               = data.aws_iam_policy_document.access_resources.json
