@@ -160,6 +160,8 @@ data "aws_iam_policy_document" "access_static_deploy" {
       "lambda:AddPermission",
       "lambda:CreateFunction",
       "lambda:DeleteFunction",
+      "lambda:CreateFunctionUrlConfig",
+      "lambda:GetFunctionUrlConfig",
       "lambda:GetFunction",
       "lambda:RemovePermission",
       "lambda:TagResource",

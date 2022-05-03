@@ -16,7 +16,8 @@ import {
 } from './create-invalidation';
 import { ensureEnv } from './utils/ensure-env';
 import { generateRandomId } from './utils/random-id';
-import { AtomicDeployment } from './cdk/aws-construct';
+import { AtomicDeploymentAPIGateway } from './cdk/aws-construct';
+import { AtomicDeploymentFunctionUrls } from './cdk/aws-construct-function-urls';
 import { createCloudFormationStack } from './cdk/create-cloudformation-stack';
 
 interface InvalidationSQSMessage {
@@ -186,11 +187,18 @@ async function s3Handler(Record: S3EventRecord) {
   });
 
   // Create the stack
-  const atomicDeployment = new AtomicDeployment({
-    deploymentId: buildId,
-    deploymentBucketId: deployBucket,
-    lambdas: lambdas,
-  });
+  const atomicDeployment =
+    deploymentConfig.type === 'APIGateway'
+      ? new AtomicDeploymentAPIGateway({
+          deploymentId: buildId,
+          deploymentBucketId: deployBucket,
+          lambdas: lambdas,
+        })
+      : new AtomicDeploymentFunctionUrls({
+          deploymentId: buildId,
+          deploymentBucketId: deployBucket,
+          lambdas: lambdas,
+        });
 
   const stackName = `tfn-${buildId}`;
   await createDeployment({

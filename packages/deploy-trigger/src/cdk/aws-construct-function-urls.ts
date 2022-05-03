@@ -1,9 +1,3 @@
-import {
-  HttpApi,
-  HttpMethod,
-  PayloadFormatVersion,
-} from '@aws-cdk/aws-apigatewayv2-alpha';
-import { HttpLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
 import { Stack, RemovalPolicy, CfnOutput, Duration } from 'aws-cdk-lib';
 import { Role, ServicePrincipal, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -32,7 +26,7 @@ type AtomicDeploymentOptions = {
   lambdas: LambdaDefinition[];
 };
 
-class AtomicDeploymentAPIGateway extends Stack {
+class AtomicDeploymentFunctionUrls extends Stack {
   constructor({
     deploymentBucketId,
     deploymentId,
@@ -63,11 +57,6 @@ class AtomicDeploymentAPIGateway extends Stack {
         })
       );
 
-      // API Gateway
-      const httpApi = new HttpApi(this, 'ApiGateway', {
-        apiName: deploymentId,
-      });
-
       const routes = lambdas.map((lambdaSource) => {
         const functionCode = new lambda.S3Code(
           deploymentBucket,
@@ -84,6 +73,10 @@ class AtomicDeploymentAPIGateway extends Stack {
           memorySize: 1024,
         });
 
+        const functionUrl = lambdaFn.addFunctionUrl({
+          authType: lambda.FunctionUrlAuthType.NONE,
+        });
+
         // LogGroup for Lambda
         // We create the logGroup manually here, because setting the retention on
         // the function does not work
@@ -94,21 +87,7 @@ class AtomicDeploymentAPIGateway extends Stack {
           removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        const lambdaIntegration = new HttpLambdaIntegration(
-          `lambdaIntegration${lambdaSource.functionName}`,
-          lambdaFn,
-          {
-            payloadFormatVersion: PayloadFormatVersion.VERSION_2_0,
-          }
-        );
-
-        httpApi.addRoutes({
-          path: `${lambdaSource.route}/{proxy+}`,
-          methods: [HttpMethod.ANY],
-          integration: lambdaIntegration,
-        });
-
-        return `${lambdaSource.route} ${httpApi.apiEndpoint}${lambdaSource.route}`;
+        return `${lambdaSource.route} ${functionUrl.url}`;
       });
 
       new CfnOutput(this, 'lambdaRoutes', {
@@ -118,4 +97,4 @@ class AtomicDeploymentAPIGateway extends Stack {
   }
 }
 
-export { AtomicDeploymentAPIGateway };
+export { AtomicDeploymentFunctionUrls };

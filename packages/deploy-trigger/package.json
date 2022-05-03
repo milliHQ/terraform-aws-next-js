@@ -16,11 +16,11 @@
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigatewayv2-alpha": "^2.20.0-alpha.0",
-    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.20.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-alpha": "^2.22.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.22.0-alpha.0",
     "@millihq/tfn-dynamodb-actions": "*",
-    "aws-cdk-lib": "^2.20.0",
-    "constructs": "^10.0.119",
+    "aws-cdk-lib": "^2.22.0",
+    "constructs": "^10.0.130",
     "mime-types": "^2.1.33"
   },
   "devDependencies": {

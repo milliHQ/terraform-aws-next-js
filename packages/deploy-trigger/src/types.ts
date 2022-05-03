@@ -29,6 +29,7 @@ export type LambdaDefinition = {
 };
 
 export type DeploymentConfig = {
+  type?: 'FunctionURL' | 'APIGateway';
   routes: Route[];
   lambdas: Record<
     string,

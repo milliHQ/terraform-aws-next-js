@@ -1,8 +1,8 @@
 diff --git a/node_modules/aws-cdk-lib/package.json b/node_modules/aws-cdk-lib/package.json
-index dbb7401..d14232f 100644
+index e50fa82..82a993c 100644
 --- a/node_modules/aws-cdk-lib/package.json
 +++ b/node_modules/aws-cdk-lib/package.json
-@@ -381,6 +381,7 @@
+@@ -383,6 +383,7 @@
      "excludeExperimentalModules": true
    },
    "exports": {
