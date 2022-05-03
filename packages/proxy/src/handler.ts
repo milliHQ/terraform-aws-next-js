@@ -126,8 +126,8 @@ async function handler(
     // Bypasses proxy
     if (request.uri in proxyConfig.prerenders) {
       const customOrigin = createCustomOriginFromApiGateway(
-        apiEndpoint,
-        `/${proxyConfig.prerenders[request.uri].lambda}`
+        `/${proxyConfig.prerenders[request.uri].lambda}`,
+        proxyConfig.lambdaRoutes
       );
       return serveRequestFromCustomOrigin(request, customOrigin);
     }
@@ -158,8 +158,8 @@ async function handler(
     if (proxyResult.target === 'lambda') {
       // Modify request to be served from Api Gateway
       const customOrigin = createCustomOriginFromApiGateway(
-        apiEndpoint,
-        proxyResult.dest
+        proxyResult.dest,
+        proxyConfig.lambdaRoutes
       );
 
       // Append querystring if we have any

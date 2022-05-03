@@ -48,11 +48,19 @@ export function createCustomOriginFromUrl(
  * @returns
  */
 export function createCustomOriginFromApiGateway(
-  apiEndpoint: string,
-  path: string
+  path: string,
+  lambdaMapping: Record<string, string>
 ): CloudFrontCustomOrigin {
+  const _url = lambdaMapping[path];
+
+  if (!_url) {
+    throw new Error('Lambda does not exist');
+  }
+
+  const url = new URL(_url);
+
   return {
-    domainName: apiEndpoint,
+    domainName: url.hostname,
     path,
     customHeaders: {},
     keepaliveTimeout: 5,

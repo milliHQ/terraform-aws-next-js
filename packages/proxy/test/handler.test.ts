@@ -29,7 +29,7 @@ class ConfigServer {
         } else {
           res.statusCode = 404;
         }
-        return res.end();
+        return res.end(JSON.stringify({}));
       }
 
       // Respond with config
@@ -301,7 +301,8 @@ describe('[proxy] Handler', () => {
         path: '',
       })
     );
-    expect(result.uri).toBe('/en');
+    // deploymentId + path
+    expect(result.uri).toBe('/abc/en');
   });
 
   test('Correctly request /index object from S3 when requesting /', async () => {
@@ -357,7 +358,7 @@ describe('[proxy] Handler', () => {
     const requestPath = '/';
 
     // Prepare configServer
-    configServer.staticFiles = ['/404', '/500', '/index'];
+    configServer.staticFiles = ['404', '500', 'index'];
     configServer.proxyConfig = proxyConfig;
     const cloudFrontEvent = generateCloudFrontRequestEvent({
       configEndpoint,
@@ -371,7 +372,7 @@ describe('[proxy] Handler', () => {
         path: '',
       })
     );
-    expect(result.uri).toBe('/index');
+    expect(result.uri).toBe('/abc/index');
   });
 
   test('Add x-forwarded-host header to API-Gateway requests', async () => {
@@ -617,11 +618,11 @@ describe('[proxy] Handler', () => {
     // Prepare configServer
     configServer.proxyConfig = proxyConfig;
     configServer.staticFiles = [
-      '/404',
-      '/500',
-      '/favicon.ico',
-      '/about',
-      '/users/[user_id]',
+      '404',
+      '500',
+      'favicon.ico',
+      'about',
+      'users/[user_id]',
     ];
     const cloudFrontEvent = generateCloudFrontRequestEvent({
       configEndpoint,
@@ -635,7 +636,7 @@ describe('[proxy] Handler', () => {
         path: '',
       })
     );
-    expect(result.uri).toBe('/users/[user_id]');
+    expect(result.uri).toBe('/abc/users/[user_id]');
   });
 
   test('Redirects with querystring', async () => {
