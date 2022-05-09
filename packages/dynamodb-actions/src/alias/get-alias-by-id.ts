@@ -4,7 +4,7 @@ import { AliasItem } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 
-type GetDeploymentByIdOptions = {
+type GetAliasByIdOptions = {
   /**
    * DynamoDB client
    */
@@ -20,7 +20,7 @@ type GetDeploymentByIdOptions = {
   /**
    * Only return the attributes defined
    */
-  attributes?: Record<string, boolean>;
+  attributes?: Partial<Record<keyof AliasItem, boolean>>;
 };
 
 async function getAliasById({
@@ -28,7 +28,7 @@ async function getAliasById({
   aliasTableName,
   aliasId,
   attributes = {},
-}: GetDeploymentByIdOptions): Promise<AliasItem | null> {
+}: GetAliasByIdOptions): Promise<AliasItem | null> {
   const queryParams: DynamoDB.QueryInput = {
     TableName: aliasTableName,
     ExpressionAttributeValues: {

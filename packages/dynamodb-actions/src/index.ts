@@ -1,4 +1,5 @@
 export { createAlias } from './alias/create-alias';
+export { deleteAliasById } from './alias/delete-alias-by-id';
 export { getAliasById } from './alias/get-alias-by-id';
 
 export { createDeployment } from './deployment/create-deployment';

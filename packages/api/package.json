@@ -1,0 +1,21 @@
+{
+  "name": "@millihq/terraform-next-api",
+  "version": "0.12.2",
+  "scripts": {},
+  "dependencies": {
+    "@millihq/tfn-dynamodb-actions": "*",
+    "aws-sdk": "*",
+    "class-validator": "^0.13.2",
+    "lambda-api": "^0.11.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "*",
+    "@vercel/ncc": "*",
+    "ncc-zip": "^2.0.0",
+    "typescript": "*"
+  },
+  "files": [
+    "dist.zip",
+    "third-party-licenses.txt"
+  ]
+}

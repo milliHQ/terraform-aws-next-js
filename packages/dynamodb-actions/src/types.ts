@@ -61,4 +61,8 @@ export type AliasItem = {
    * Id of the associated deployment
    */
   DeploymentId: string;
+  /**
+   * Wether or not the alias is associated (fixed) with a deployment.
+   */
+  DeploymentAlias: boolean;
 };
