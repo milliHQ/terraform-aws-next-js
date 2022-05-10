@@ -11,7 +11,7 @@
     "directory": "packages/proxy-config"
   },
   "scripts": {
-    "build": "ncc-zip build -e aws-sdk -f handler --license third-party-licenses.txt -m src/handler.ts",
+    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
     "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
@@ -23,7 +23,7 @@
     "@types/aws-lambda": "*",
     "@types/node-fetch": "^2.6.1",
     "@vercel/ncc": "*",
-    "ncc-zip": "^1.1.0"
+    "ncc-zip": "^2.0.0"
   },
   "files": [
     "dist.zip",

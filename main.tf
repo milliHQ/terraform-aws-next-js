@@ -98,6 +98,26 @@ module "statics_deploy" {
   tf_next_module_root      = path.module
 }
 
+#####
+# API
+#####
+
+module "api" {
+  source = "./modules/api"
+
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+}
+
 ############
 # Next/Image
 ############

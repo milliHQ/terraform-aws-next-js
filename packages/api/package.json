@@ -1,7 +1,11 @@
 {
   "name": "@millihq/terraform-next-api",
   "version": "0.12.2",
-  "scripts": {},
+  "scripts": {
+    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
+    "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
+    "postpack": "rm ./LICENSE ./third-party-licenses.txt"
+  },
   "dependencies": {
     "@millihq/tfn-dynamodb-actions": "*",
     "aws-sdk": "*",
