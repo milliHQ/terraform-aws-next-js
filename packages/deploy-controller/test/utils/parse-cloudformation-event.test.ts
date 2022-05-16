@@ -23,7 +23,7 @@ ClientRequestToken='null'
     Timestamp: '2022-04-24T15:00:11.646Z',
     EventId: 'lambdaRoleC844FDB1-CREATE_COMPLETE-2022-04-24T15:00:11.646Z',
     LogicalResourceId: 'lambdaRoleC844FDB1',
-    Namespace: '439653418481',
+    Namespace: '238476290347',
     PhysicalResourceId:
       'tfn-d35de1a94815e0562689b89b622-lambdaRoleC844FDB1-3O50QZY56BMU',
     ResourceProperties:
