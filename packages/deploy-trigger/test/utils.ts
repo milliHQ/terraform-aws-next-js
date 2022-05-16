@@ -5,6 +5,8 @@ import archiver from 'archiver';
 import S3 from 'aws-sdk/clients/s3';
 import * as tmp from 'tmp';
 
+import { DeploymentConfig } from '../src/types';
+
 export function generateS3ClientForTesting() {
   return new S3({
     endpoint: process.env.S3_ENDPOINT,
@@ -20,7 +22,10 @@ export function generateS3ClientForTesting() {
 /**
  * Creates a zip archive with dummy files
  */
-export async function generateZipBundle(filesNames: string[]) {
+export async function generateZipBundle(
+  deploymentConfig: DeploymentConfig,
+  filesNames: string[]
+) {
   return new Promise<string>((resolve) => {
     const tmpFile = tmp.fileSync();
     const output = fs.createWriteStream(tmpFile.name);
@@ -31,8 +36,10 @@ export async function generateZipBundle(filesNames: string[]) {
     });
     archive.pipe(output);
 
+    archive.append(JSON.stringify(deploymentConfig), { name: 'config.json' });
+
     for (const file of filesNames) {
-      archive.append('', { name: file });
+      archive.append('', { name: file, prefix: 'static/' });
     }
 
     archive.finalize();

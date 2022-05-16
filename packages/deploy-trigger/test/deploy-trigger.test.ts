@@ -54,7 +54,17 @@ describe('deploy-trigger', () => {
       ];
 
       // Create an dummy deployment package
-      const bundle = await generateZipBundle(packageContent);
+      const bundle = await generateZipBundle(
+        {
+          routes: [],
+          lambdas: {},
+          lambdaRoutes: [],
+          prerenders: {},
+          staticRoutes: [],
+          version: 1,
+        },
+        packageContent
+      );
 
       await s3
         .upload({
@@ -86,7 +96,7 @@ describe('deploy-trigger', () => {
         expect(Contents).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              Key: fileKey,
+              Key: `${buildId}/${fileKey}`,
             }),
           ])
         );
@@ -96,7 +106,7 @@ describe('deploy-trigger', () => {
       const localeStaticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: localeStaticRouteKey,
+          Key: `${buildId}/${localeStaticRouteKey}`,
         })
         .promise();
 
@@ -109,7 +119,10 @@ describe('deploy-trigger', () => {
 
       // Check the mime-type and Cache-Control headers
       const staticRouteObject = await s3
-        .getObject({ Bucket: targetBucket.bucketName, Key: staticRouteKey })
+        .getObject({
+          Bucket: targetBucket.bucketName,
+          Key: `${buildId}/${staticRouteKey}`,
+        })
         .promise();
 
       expect(staticRouteObject.ContentType).toBe('text/html; charset=utf-8');
@@ -118,7 +131,10 @@ describe('deploy-trigger', () => {
       );
 
       const staticAssetObject = await s3
-        .getObject({ Bucket: targetBucket.bucketName, Key: staticAssetKey })
+        .getObject({
+          Bucket: targetBucket.bucketName,
+          Key: `${buildId}/${staticAssetKey}`,
+        })
         .promise();
       expect(staticAssetObject.ContentType).toBe(
         'application/javascript; charset=utf-8'
