@@ -19,14 +19,6 @@ resource "aws_s3_bucket_acl" "static_upload" {
   acl    = "private"
 }
 
-# We are using versioning here to ensure that no file gets overridden at upload
-resource "aws_s3_bucket_versioning" "static_upload" {
-  bucket = aws_s3_bucket.static_upload.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_notification" "on_create" {
   bucket = aws_s3_bucket.static_upload.id
 

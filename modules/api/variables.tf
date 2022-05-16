@@ -31,6 +31,22 @@ variable "dynamodb_table_deployments_name" {
   type = string
 }
 
+###############
+# Upload Bucket
+###############
+
+variable "upload_bucket_id" {
+  type = string
+}
+
+variable "upload_bucket_region" {
+  type = string
+}
+
+variable "upload_bucket_arn" {
+  type = string
+}
+
 ##########
 # Labeling
 ##########

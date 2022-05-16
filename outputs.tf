@@ -1,5 +1,10 @@
-output "static_upload_bucket_id" {
-  value = module.statics_deploy.static_upload_bucket_id
+output "upload_bucket_id" {
+  value = module.statics_deploy.upload_bucket_id
+}
+
+output "api_endpoint" {
+  description = "API endpoint that is used by the CLI."
+  value       = module.api.api_endpoint
 }
 
 ##################################

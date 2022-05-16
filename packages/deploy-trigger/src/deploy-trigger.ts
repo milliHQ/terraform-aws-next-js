@@ -8,11 +8,10 @@ import {
 } from 'mime-types';
 
 import { deploymentConfigurationKey } from './constants';
-import { generateRandomBuildId } from './utils/random-id';
 import { DeploymentConfig, FileResult, LambdaDefinition } from './types';
 
 // Metadata Key where the buildId is stored
-const BuildIdMetaDataKey = 'x-amz-meta-tf-next-build-id';
+const DEPLOYMENT_ID_META_KEY = 'x-amz-meta-tf-next-deployment-id';
 
 /**
  * Cache control header for immutable files that are stored in _next/static
@@ -44,7 +43,7 @@ interface Response {
   deploymentConfig: DeploymentConfig;
 }
 
-export async function deployTrigger({
+async function deployTrigger({
   s3,
   key,
   sourceBucket,
@@ -52,7 +51,7 @@ export async function deployTrigger({
   versionId,
 }: Props): Promise<Response> {
   let deploymentConfig: DeploymentConfig | null = null;
-  let buildId = '';
+  let buildId: string | undefined;
   const params = {
     Key: key,
     Bucket: sourceBucket,
@@ -63,11 +62,12 @@ export async function deployTrigger({
   // If none is present, create a random id
   const zipHeaders = await s3.headObject(params).promise();
 
-  if (zipHeaders.Metadata && BuildIdMetaDataKey in zipHeaders.Metadata) {
-    buildId = zipHeaders.Metadata[BuildIdMetaDataKey];
-  } else {
-    // Fallback 2: If no metadata or etag is present, create random id
-    buildId = generateRandomBuildId();
+  if (zipHeaders.Metadata && DEPLOYMENT_ID_META_KEY in zipHeaders.Metadata) {
+    buildId = zipHeaders.Metadata[DEPLOYMENT_ID_META_KEY];
+  }
+
+  if (!buildId) {
+    throw new Error('Could not get the deployment ID from the uploaded file.');
   }
 
   // Get the object that triggered the event
@@ -208,3 +208,5 @@ export async function deployTrigger({
     buildId,
   };
 }
+
+export { DEPLOYMENT_ID_META_KEY, deployTrigger };

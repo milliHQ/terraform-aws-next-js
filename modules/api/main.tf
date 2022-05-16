@@ -2,6 +2,7 @@
 # Lambda
 ########
 
+# For changing records in deployment & alias tables
 data "aws_iam_policy_document" "access_dynamodb_tables" {
   statement {
     effect = "Allow"
@@ -15,6 +16,19 @@ data "aws_iam_policy_document" "access_dynamodb_tables" {
     resources = [
       var.dynamodb_table_deployments_arn,
       var.dynamodb_table_aliases_arn
+    ]
+  }
+}
+
+# For creating the presigned upload URL in S3
+data "aws_iam_policy_document" "access_upload_bucket" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = [
+      "${var.upload_bucket_arn}/*"
     ]
   }
 }
@@ -33,9 +47,10 @@ module "lambda" {
   memory_size   = 128
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 1
+  number_of_policy_jsons = 2
   policy_jsons = [
     data.aws_iam_policy_document.access_dynamodb_tables.json,
+    data.aws_iam_policy_document.access_upload_bucket.json,
   ]
 
   environment_variables = {
@@ -43,6 +58,8 @@ module "lambda" {
     TABLE_REGION           = var.dynamodb_region
     TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
     TABLE_NAME_ALIASES     = var.dynamodb_table_aliases_name
+    UPLOAD_BUCKET_ID       = var.upload_bucket_id
+    UPLOAD_BUCKET_REGION   = var.upload_bucket_region
   }
 
   allowed_triggers = {

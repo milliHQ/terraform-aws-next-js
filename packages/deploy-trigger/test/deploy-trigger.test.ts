@@ -6,8 +6,9 @@ import {
   BucketHandler,
   s3CreateBucket as createBucket,
 } from '../../../test/utils';
-import { deployTrigger } from '../src/deploy-trigger';
+import { DEPLOYMENT_ID_META_KEY, deployTrigger } from '../src/deploy-trigger';
 import { generateZipBundle } from './utils';
+import { generateRandomBuildId } from '../src/utils/random-id';
 
 describe('deploy-trigger', () => {
   let s3: S3;
@@ -66,11 +67,16 @@ describe('deploy-trigger', () => {
         packageContent
       );
 
+      const deploymentId = generateRandomBuildId();
+
       await s3
         .upload({
-          Key: 'static-website-files.zip',
+          Key: `${deploymentId}.zip`,
           Body: fs.createReadStream(bundle),
           Bucket: sourceBucket.bucketName,
+          Metadata: {
+            [DEPLOYMENT_ID_META_KEY]: deploymentId,
+          },
         })
         .promise();
 

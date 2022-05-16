@@ -18,6 +18,18 @@ output "static_bucket_arn" {
   value = aws_s3_bucket.static_deploy.arn
 }
 
-output "static_upload_bucket_id" {
+###############
+# Upload Bucket
+###############
+
+output "upload_bucket_id" {
   value = aws_s3_bucket.static_upload.id
+}
+
+output "upload_bucket_region" {
+  value = aws_s3_bucket.static_upload.region
+}
+
+output "upload_bucket_arn" {
+  value = aws_s3_bucket.static_upload.arn
 }

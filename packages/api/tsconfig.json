@@ -5,5 +5,5 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false
   },
-  "include": ["./src/**/*", "./test/**/*"]
+  "include": ["schema.ts", "./src/**/*", "./test/**/*"]
 }

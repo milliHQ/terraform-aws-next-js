@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 type CreateDeploymentOptions = {
   /**
@@ -17,24 +17,16 @@ type CreateDeploymentOptions = {
    * Date when the deployment was created.
    */
   createdDate?: Date;
-  /**
-   * Stringified JSON object that contains the route config.
-   */
-  routes: string;
-  /**
-   * Stringified JSON object that contains routes that are served from
-   * prerendered generated HTML files.
-   */
-  prerenders: string;
 };
 
+/**
+ * Creates and initializes a new deployment.
+ */
 function createDeployment({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
   createdDate = new Date(),
-  routes,
-  prerenders,
 }: CreateDeploymentOptions) {
   const createdDateString = createdDate.toISOString();
 
@@ -52,19 +44,7 @@ function createDeployment({
           N: '1',
         },
         Status: {
-          S: 'CREATE_IN_PROGRESS',
-        },
-        Routes: {
-          S: routes,
-        },
-        // Lambda routes are empty at the creation of the stack since they
-        // can only be determined when the stack creation is finished and the
-        // endpoints of API Gateway or function URLs can be resolved.
-        LambdaRoutes: {
-          S: '{}',
-        },
-        Prerenders: {
-          S: prerenders,
+          S: 'INITIALIZED',
         },
       },
     })

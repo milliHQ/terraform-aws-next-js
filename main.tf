@@ -110,6 +110,9 @@ module "api" {
   dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
   dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
   dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
+  upload_bucket_id                = module.statics_deploy.upload_bucket_id
+  upload_bucket_region            = module.statics_deploy.upload_bucket_region
+  upload_bucket_arn               = module.statics_deploy.upload_bucket_arn
 
   deployment_name = var.deployment_name
   tags            = var.tags

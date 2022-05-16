@@ -8,6 +8,10 @@ globalYargs
     type: 'boolean',
     description: 'Run with verbose logging',
   })
+  .option('profile', {
+    type: 'string',
+    description: 'The AWS profile to use to make API calls',
+  })
 
   /* ---------------------------------------------------------------------------
    * Command: Build
@@ -38,26 +42,25 @@ globalYargs
    * -------------------------------------------------------------------------*/
 
   .command(
-    'deploy <bucket>',
+    'deploy',
     'Deploy the build output to Terraform Next.js',
     (yargs) => {
-      yargs.positional('bucket', {
-        describe:
-          'The S3 bucket where the deployment package should be uploaded to.',
+      yargs.option('endpoint', {
         type: 'string',
+        description: 'API endpoint to use.',
       });
     },
-    async ({ bucket, verbose }) => {
+    async ({ endpoint, verbose, profile }) => {
       const cwd = process.cwd();
 
-      if (typeof bucket !== 'string') {
-        console.error('Upload bucket was not provided.');
+      if (typeof endpoint !== 'string') {
+        console.error('Endpoint URL not provided.');
         return;
       }
 
       const deployCommand = (await import('./commands/deploy')).default;
       await deployCommand({
-        s3BucketName: bucket,
+        apiEndpoint: endpoint,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,
       });
