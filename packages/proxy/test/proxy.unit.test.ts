@@ -293,7 +293,7 @@ describe('Proxy unit', () => {
         }
 
         return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
-      }).mock;
+      });
       proxy = new Proxy(mockedFetch as any);
     });
 

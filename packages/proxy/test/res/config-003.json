@@ -7,7 +7,7 @@
       "route": "/__NEXT_PAGE_LAMBDA_0"
     }
   },
-  "staticRoutes": ["/404", "/hello"],
+  "lambdaRoutes": {},
   "routes": [
     {
       "src": "^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$",
