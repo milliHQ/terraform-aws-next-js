@@ -6,6 +6,12 @@
 export interface paths {
   '/deployments/{deploymentId}': {
     get: {
+      parameters: {
+        path: {
+          /** The id of the deployment to get. */
+          deploymentId: string;
+        };
+      };
       responses: {
         /** Successful response. */
         200: {
@@ -13,6 +19,7 @@ export interface paths {
             'application/json': components['schemas']['Deployment'];
           };
         };
+        404: components['responses']['NotFound'];
       };
     };
   };
@@ -32,16 +39,36 @@ export interface paths {
 
 export interface components {
   schemas: {
+    Error: {
+      status: number;
+      code: string;
+      message?: string;
+    };
     /** @enum {string} */
-    DeploymentStatus: 'INITIALIZED' | 'CREATE_COMPLETE' | 'CREATE_FAILED';
+    DeploymentStatus:
+      | 'INITIALIZED'
+      | 'CREATE_IN_PROGRESS'
+      | 'CREATE_COMPLETE'
+      | 'CREATE_FAILED'
+      | 'FINISHED';
     DeploymentInitialized: {
       id: string;
       status: components['schemas']['DeploymentStatus'];
       uploadUrl: string;
+      uploadAttributes: { [key: string]: unknown };
     };
     Deployment: {
       id: string;
       status: components['schemas']['DeploymentStatus'];
+      deploymentAlias?: string;
+    };
+  };
+  responses: {
+    /** The specified resource was not found. */
+    NotFound: {
+      content: {
+        'application/json': components['schemas']['Error'];
+      };
     };
   };
 }

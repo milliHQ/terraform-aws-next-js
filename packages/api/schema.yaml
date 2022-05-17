@@ -15,12 +15,27 @@ components:
       'x-amazon-apigateway-authtype': 'awsSigv4'
 
   schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: number
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+        - code
+
     DeploymentStatus:
       type: string
       enum:
         - INITIALIZED
+        - CREATE_IN_PROGRESS
         - CREATE_COMPLETE
         - CREATE_FAILED
+        - FINISHED
 
     DeploymentInitialized:
       type: object
@@ -31,10 +46,13 @@ components:
           $ref: '#/components/schemas/DeploymentStatus'
         uploadUrl:
           type: string
+        uploadAttributes:
+          type: object
       required:
         - id
         - status
         - uploadUrl
+        - uploadAttributes
 
     Deployment:
       type: object
@@ -43,9 +61,19 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/DeploymentStatus'
+        deploymentAlias:
+          type: string
       required:
         - id
         - status
+
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
 security:
   - sigv4: []
@@ -54,6 +82,13 @@ paths:
   /deployments/{deploymentId}:
     get:
       summary: Request a deployment by its Id.
+      parameters:
+        - in: path
+          name: deploymentId
+          schema:
+            type: string
+          required: true
+          description: The id of the deployment to get.
       responses:
         '200':
           description: Successful response.
@@ -61,6 +96,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Deployment'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /deployments:
     post:

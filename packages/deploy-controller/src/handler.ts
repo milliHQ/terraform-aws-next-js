@@ -1,6 +1,7 @@
 import {
   createAlias,
   updateDeploymentStatus,
+  updateDeploymentStatusFinished,
 } from '@millihq/tfn-dynamodb-actions';
 import { SNSEvent } from 'aws-lambda';
 import DynamoDB from 'aws-sdk/clients/dynamodb';
@@ -96,9 +97,12 @@ async function handler(event: SNSEvent) {
               newStatus: 'CREATE_COMPLETE',
             });
 
+            // TODO: Handle case when multi deployments is not enabled
+            const deploymentAlias =
+              deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN;
             await createAlias({
               dynamoDBClient,
-              alias: `${deploymentId}.multid.milli.is`,
+              alias: deploymentAlias,
               isDeploymentAlias: true,
               aliasTableName: dynamoDBTableNameAliases,
               createdDate: new Date(),
@@ -107,6 +111,13 @@ async function handler(event: SNSEvent) {
               // Copy values over from the deployment
               routes: deployment.Routes,
               prerenders: deployment.Prerenders,
+            });
+
+            await updateDeploymentStatusFinished({
+              dynamoDBClient,
+              deploymentId,
+              deploymentTableName: dynamoDBTableNameDeployments,
+              deploymentAlias,
             });
           } catch (error) {
             console.log('ERROR', error);

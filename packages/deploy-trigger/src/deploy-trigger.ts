@@ -11,7 +11,7 @@ import { deploymentConfigurationKey } from './constants';
 import { DeploymentConfig, FileResult, LambdaDefinition } from './types';
 
 // Metadata Key where the buildId is stored
-const DEPLOYMENT_ID_META_KEY = 'x-amz-meta-tf-next-deployment-id';
+const DEPLOYMENT_ID_META_KEY = 'tf-next-deployment-id';
 
 /**
  * Cache control header for immutable files that are stored in _next/static
@@ -33,7 +33,6 @@ interface Props {
   sourceBucket: string;
   deployBucket: string;
   key: string;
-  versionId?: string;
 }
 
 interface Response {
@@ -48,14 +47,12 @@ async function deployTrigger({
   key,
   sourceBucket,
   deployBucket,
-  versionId,
 }: Props): Promise<Response> {
   let deploymentConfig: DeploymentConfig | null = null;
   let buildId: string | undefined;
   const params = {
     Key: key,
     Bucket: sourceBucket,
-    VersionId: versionId,
   };
 
   // Get the buildId from the metadata of the package
@@ -70,6 +67,8 @@ async function deployTrigger({
     throw new Error('Could not get the deployment ID from the uploaded file.');
   }
 
+  console.log('Build-id', buildId);
+
   // Get the object that triggered the event
   const zip = s3
     .getObject(params)
@@ -78,6 +77,8 @@ async function deployTrigger({
 
   const fileUploads: Promise<S3.ManagedUpload.SendData>[] = [];
   const lambdaUploads: Promise<S3.ManagedUpload.SendData>[] = [];
+
+  console.log('EXtract files');
 
   /**
    * Unpacks a deployment zip with the following format:
@@ -174,7 +175,9 @@ async function deployTrigger({
   });
 
   // Cleanup
+  console.log('Cleanup');
   await s3.deleteObject(params).promise();
+  console.log('Cleanup complete');
 
   if (deploymentConfig === null) {
     throw new Error(

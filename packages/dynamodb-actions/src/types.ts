@@ -10,7 +10,12 @@ export type DeploymentItem = {
   /**
    * Status of the deployment
    */
-  Status: 'CREATE_IN_PROGRESS' | 'CREATE_COMPLETE' | 'CREATE_FAILED';
+  Status:
+    | 'INITIALIZED'
+    | 'CREATE_IN_PROGRESS'
+    | 'CREATE_COMPLETE'
+    | 'CREATE_FAILED'
+    | 'FINISHED';
   /**
    * Version of the item
    */
@@ -28,6 +33,11 @@ export type DeploymentItem = {
    * Stringified object that contains the routes that are prerendered.
    */
   Prerenders: string;
+  /**
+   * The (fixed) deployment alias that was assigned on creation.
+   * Only present if multi-deployment feature is enabled.
+   */
+  DeploymentAlias?: string;
 };
 
 export type AliasItem = {

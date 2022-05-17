@@ -87,6 +87,8 @@ module "worker" {
     TABLE_REGION           = var.dynamodb_region
     TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
     TABLE_NAME_ALIASES     = var.dynamodb_table_aliases_name
+    # Remove the * from the base domain (e.g. *.example.com -> .example.com)
+    MULTI_DEPLOYMENTS_BASE_DOMAIN = var.enable_multiple_deployments ? replace(var.multiple_deployments_base_domain, "/^\\*/", "") : null
   }
 
   allowed_triggers = {

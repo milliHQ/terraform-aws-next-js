@@ -3,12 +3,12 @@ import { pseudoRandomBytes } from 'crypto';
 import { createDeployment as dynamoDBCreateDeployment } from '@millihq/tfn-dynamodb-actions';
 import { Request, Response } from 'lambda-api';
 
-import { components } from '../../../schema';
+import { paths } from '../../../schema';
 import { S3ServiceType } from '../../services/s3';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 
-type CerateDeploymentSuccessResponse =
-  components['schemas']['DeploymentInitialized'];
+type SuccessResponse =
+  paths['/deployments']['post']['responses']['200']['content']['application/json'];
 
 const UPLOAD_LINK_EXPIRES_SECONDS = 60 * 5;
 // S3 Metadata Key where the deployment is stored
@@ -21,7 +21,7 @@ export function generateRandomDeploymentId() {
 async function createDeployment(
   req: Request,
   _res: Response
-): Promise<CerateDeploymentSuccessResponse> {
+): Promise<SuccessResponse> {
   const s3Service = req.namespace.s3 as S3ServiceType;
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
 
@@ -35,19 +35,21 @@ async function createDeployment(
     createdDate: new Date(),
   });
 
-  const presignedUploadLink = s3Client.createPresignedPost({
+  const { url, fields } = s3Client.createPresignedPost({
     Bucket: s3Service.getUploadBucketName(),
     Fields: {
       key: `${deploymentId}.zip`,
       'Content-Type': 'application/zip',
       [DEPLOYMENT_ID_META_KEY]: deploymentId,
     },
+
     Expires: UPLOAD_LINK_EXPIRES_SECONDS,
   });
 
   return {
     id: deploymentId,
-    uploadUrl: presignedUploadLink.url,
+    uploadUrl: url,
+    uploadAttributes: fields,
     status: 'INITIALIZED',
   };
 }

@@ -31,6 +31,19 @@ variable "dynamodb_table_deployments_name" {
   type = string
 }
 
+######################
+# Multiple deployments
+######################
+
+variable "enable_multiple_deployments" {
+  type = bool
+}
+
+variable "multiple_deployments_base_domain" {
+  type    = string
+  default = null
+}
+
 ##########
 # Labeling
 ##########

@@ -198,6 +198,7 @@ data "aws_iam_policy_document" "access_dynamodb_table_deployments" {
   statement {
     effect = "Allow"
     actions = [
+      "dynamodb:Query",
       "dynamodb:PutItem",
       "dynamodb:UpdateItem"
     ]

@@ -42,7 +42,18 @@ async function getDeploymentById({
 
   const projectionAttributes = Object.keys(attributes);
   if (projectionAttributes.length > 0) {
-    queryParams.ProjectionExpression = projectionAttributes.join(', ');
+    // Ensure that the attribute names does not conflict with reserved DynamoDB
+    // names, we convert them into attributeNames first
+    queryParams.ExpressionAttributeNames = projectionAttributes.reduce(
+      (accumulator, k, index) => ({
+        ...accumulator,
+        [`#field${index}`]: k,
+      }),
+      {}
+    );
+    queryParams.ProjectionExpression = projectionAttributes
+      .map((_, index) => `#field${index}`)
+      .join(', ');
   }
 
   const { Count, Items } = await dynamoDBClient.query(queryParams).promise();

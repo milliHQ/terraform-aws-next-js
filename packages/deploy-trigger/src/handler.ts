@@ -168,7 +168,7 @@ async function s3Handler(Record: S3EventRecord) {
 
   // Get needed information of the event
   const { object } = Record.s3;
-  const { versionId, key } = object;
+  const { key } = object;
   const sourceBucket = Record.s3.bucket.name;
 
   const manifest = await getOrCreateManifest(
@@ -178,13 +178,15 @@ async function s3Handler(Record: S3EventRecord) {
   );
 
   // Unpack the package
+  console.log('HERE');
   const { files, buildId, lambdas, deploymentConfig } = await deployTrigger({
     s3,
     sourceBucket,
     deployBucket,
     key,
-    versionId,
   });
+
+  console.log('BuildID:', buildId);
 
   // Create the stack
   const atomicDeployment =

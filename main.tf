@@ -63,6 +63,9 @@ module "deploy_controller" {
   dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
   dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
 
+  enable_multiple_deployments      = var.enable_multiple_deployments
+  multiple_deployments_base_domain = var.multiple_deployments_base_domain
+
   deployment_name = var.deployment_name
   tags            = var.tags
 
