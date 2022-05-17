@@ -118,71 +118,10 @@ jobs:
           path: test/fixtures/**/.next-tf/**/*
           if-no-files-found: error
 
-  test-e2e:
-    needs: [build, test-e2e-prepare]
-    runs-on: ubuntu-latest
-    services:
-      s3:
-        image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
-        env:
-          MINIO_ACCESS_KEY: test
-          MINIO_SECRET_KEY: testtest
-        ports:
-          - 9000:9000
-    env:
-      SAM_CLI_TELEMETRY: 0
-      # Don't worry these are fake AWS credentials for AWS SAM
-      AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
-      AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
-      MINIO_ACCESS_KEY: test
-      MINIO_SECRET_KEY: testtest
-
-    steps:
-      - name: Setup AWS SAM
-        run: |
-          brew tap aws/tap
-          brew install aws-sam-cli
-          sam --version
-
-      - uses: actions/checkout@v2
-
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            .yarn
-            **/node_modules
-          key: ${{ runner.os }}-e2e-${{ hashFiles('yarn.lock') }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: packages
-
-      - name: Download prebuilt e2e fixtures
-        uses: actions/download-artifact@v2
-        with:
-          name: e2e-fixtures
-          path: test/fixtures
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --cache-folder .yarn
-
-      - name: Run e2e-test
-        run: yarn test:e2e --runInBand
-
-      - name: Output SAM logs
-        run: |
-          printf "\n\nOutput of sam-local.log:\n"
-          cat sam-local.log
-          printf "\n\nOutput of sam-api.log:\n"
-          cat sam-api.log
-
   publishRelease:
     name: Potentially publish release
     runs-on: ubuntu-latest
-    needs: [build, test-integration, test-e2e]
+    needs: [build, test-integration]
     if: github.ref == 'refs/heads/main'
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
