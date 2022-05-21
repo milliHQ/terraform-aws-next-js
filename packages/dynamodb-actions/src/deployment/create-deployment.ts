@@ -28,17 +28,22 @@ function createDeployment({
   deploymentId,
   createdDate = new Date(),
 }: CreateDeploymentOptions) {
-  const createdDateString = createdDate.toISOString();
+  const createDateString = createdDate.toISOString();
 
   return dynamoDBClient
     .putItem({
       TableName: deploymentTableName,
       Item: {
-        // DeploymentId
-        PK: { S: deploymentId },
-        // CreatedAt
+        PK: {
+          // DeploymentId
+          S: `${deploymentId}`,
+        },
         SK: {
-          S: createdDateString,
+          // Sort key is createDate
+          S: createDateString,
+        },
+        CreateDate: {
+          S: createDateString,
         },
         ItemVersion: {
           N: '1',

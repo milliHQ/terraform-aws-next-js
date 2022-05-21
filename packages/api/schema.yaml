@@ -15,6 +15,7 @@ components:
       'x-amazon-apigateway-authtype': 'awsSigv4'
 
   schemas:
+    # Utilities
     Error:
       type: object
       properties:
@@ -27,6 +28,17 @@ components:
       required:
         - status
         - code
+
+    Pagination:
+      type: object
+      properties:
+        next:
+          type: string
+          nullable: true
+      required:
+        - next
+
+    # Entities
 
     DeploymentStatus:
       type: string
@@ -61,11 +73,15 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/DeploymentStatus'
+        createDate:
+          type: string
+          format: date-time
         deploymentAlias:
           type: string
       required:
         - id
         - status
+        - createDate
 
   responses:
     NotFound:
@@ -79,6 +95,45 @@ security:
   - sigv4: []
 
 paths:
+  /deployments:
+    get:
+      summary: List all deployments.
+      parameters:
+        - in: query
+          name: startIndex
+          schema:
+            type: string
+          description: Beginning index from where to get the deployments.
+
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    $ref: '#/components/schemas/Pagination'
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Deployment'
+
+                required:
+                  - metadata
+                  - items
+
+    post:
+      summary: Initializes a new deployment and creates a upload link where the deployment package can be uploaded to.
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentInitialized'
+
   /deployments/{deploymentId}:
     get:
       summary: Request a deployment by its Id.
@@ -98,14 +153,3 @@ paths:
                 $ref: '#/components/schemas/Deployment'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /deployments:
-    post:
-      summary: Initializes a new deployment and creates a upload link where the deployment package can be uploaded to.
-      responses:
-        '200':
-          description: Successful response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeploymentInitialized'

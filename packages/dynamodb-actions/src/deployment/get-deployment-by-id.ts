@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 import { DeploymentItem } from '../types';
 
@@ -20,7 +20,7 @@ type GetDeploymentByIdOptions = {
   /**
    * Only return the attributes defined
    */
-  attributes?: Record<string, boolean>;
+  attributes?: Partial<Record<keyof DeploymentItem, boolean>>;
 };
 
 async function getDeploymentById({

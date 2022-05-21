@@ -28,6 +28,7 @@ async function getDeploymentById(
       PK: true,
       Status: true,
       DeploymentAlias: true,
+      CreateDate: true,
     },
   });
 
@@ -41,8 +42,11 @@ async function getDeploymentById(
   }
 
   return {
+    // Required attributes
     id: result.PK,
+    createDate: result.CreateDate,
     status: result.Status,
+    // Optional attributes
     deploymentAlias: result.DeploymentAlias,
   };
 }

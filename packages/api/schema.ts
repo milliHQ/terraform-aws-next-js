@@ -4,6 +4,37 @@
  */
 
 export interface paths {
+  '/deployments': {
+    get: {
+      parameters: {
+        query: {
+          /** Beginning index from where to get the deployments. */
+          startIndex?: string;
+        };
+      };
+      responses: {
+        /** Successful response. */
+        200: {
+          content: {
+            'application/json': {
+              metadata: components['schemas']['Pagination'];
+              items: components['schemas']['Deployment'][];
+            };
+          };
+        };
+      };
+    };
+    post: {
+      responses: {
+        /** Successful response. */
+        200: {
+          content: {
+            'application/json': components['schemas']['DeploymentInitialized'];
+          };
+        };
+      };
+    };
+  };
   '/deployments/{deploymentId}': {
     get: {
       parameters: {
@@ -23,18 +54,6 @@ export interface paths {
       };
     };
   };
-  '/deployments': {
-    post: {
-      responses: {
-        /** Successful response. */
-        200: {
-          content: {
-            'application/json': components['schemas']['DeploymentInitialized'];
-          };
-        };
-      };
-    };
-  };
 }
 
 export interface components {
@@ -43,6 +62,9 @@ export interface components {
       status: number;
       code: string;
       message?: string;
+    };
+    Pagination: {
+      next: string | null;
     };
     /** @enum {string} */
     DeploymentStatus:
@@ -60,6 +82,8 @@ export interface components {
     Deployment: {
       id: string;
       status: components['schemas']['DeploymentStatus'];
+      /** Format: date-time */
+      createDate: string;
       deploymentAlias?: string;
     };
   };

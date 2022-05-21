@@ -1,12 +1,16 @@
 export type DeploymentItem = {
   /**
-   * DeploymentId (Partition Key)
+   * Partition Key: DeploymentId
    */
   PK: string;
   /**
-   * CreateDate (Sort Key)
+   * Sort Key: CreateDate
    */
   SK: string;
+  /**
+   * Timestamp when the deployment was created. Format is ISO 8601.
+   */
+  CreateDate: string;
   /**
    * Status of the deployment
    */
@@ -75,4 +79,13 @@ export type AliasItem = {
    * Wether or not the alias is associated (fixed) with a deployment.
    */
   DeploymentAlias: boolean;
+};
+
+export type PaginatedQuery<Item> = {
+  /**
+   * The next key that should be used when
+   */
+  nextKey: string | null;
+  hasNext: boolean;
+  items: Item[];
 };
