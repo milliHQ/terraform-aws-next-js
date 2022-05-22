@@ -67,8 +67,6 @@ async function deployTrigger({
     throw new Error('Could not get the deployment ID from the uploaded file.');
   }
 
-  console.log('Build-id', buildId);
-
   // Get the object that triggered the event
   const zip = s3
     .getObject(params)
@@ -77,8 +75,6 @@ async function deployTrigger({
 
   const fileUploads: Promise<S3.ManagedUpload.SendData>[] = [];
   const lambdaUploads: Promise<S3.ManagedUpload.SendData>[] = [];
-
-  console.log('EXtract files');
 
   /**
    * Unpacks a deployment zip with the following format:
@@ -175,9 +171,7 @@ async function deployTrigger({
   });
 
   // Cleanup
-  console.log('Cleanup');
   await s3.deleteObject(params).promise();
-  console.log('Cleanup complete');
 
   if (deploymentConfig === null) {
     throw new Error(

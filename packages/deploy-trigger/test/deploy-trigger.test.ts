@@ -43,7 +43,6 @@ describe('deploy-trigger', () => {
     });
 
     test('Extract an uploaded deployment', async () => {
-      const packageKey = 'static-website-files.zip';
       const staticRouteKey = '404';
       const localeStaticRouteKey = 'es';
       const staticAssetKey = '_next/static/some.js';
@@ -68,10 +67,11 @@ describe('deploy-trigger', () => {
       );
 
       const deploymentId = generateRandomBuildId();
+      const packageKey = `${deploymentId}.zip`;
 
       await s3
         .upload({
-          Key: `${deploymentId}.zip`,
+          Key: packageKey,
           Body: fs.createReadStream(bundle),
           Bucket: sourceBucket.bucketName,
           Metadata: {
