@@ -34,7 +34,7 @@ describe('ListDeployments', () => {
         dynamoDBClient,
         deploymentTableName,
         deploymentId,
-        createdDate: new Date(2022, 0, index),
+        createDate: new Date(2022, 0, index),
       });
     }
 

@@ -26,13 +26,13 @@ describe('CreateDeployment', () => {
   });
 
   test('Put item into the database', async () => {
-    const createdDate = new Date();
+    const createDate = new Date();
 
     const result = await createDeployment({
       deploymentId: 'abc',
       deploymentTableName,
       dynamoDBClient,
-      createdDate,
+      createDate,
     });
 
     expect(result.$response.error).toBeNull();
