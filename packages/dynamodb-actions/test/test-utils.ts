@@ -17,7 +17,7 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
   const tableName = pseudoRandomBytes(16).toString('hex');
 
   // Uses the same definition as in main.tf (in the project root)
-  await dynamoDBClient
+  const response = await dynamoDBClient
     .createTable({
       BillingMode: 'PAY_PER_REQUEST',
       TableName: tableName,
@@ -74,6 +74,10 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
     })
     .promise();
 
+  if (response.$response.error) {
+    throw response.$response.error;
+  }
+
   return tableName;
 }
 
@@ -81,7 +85,7 @@ async function createDeploymentTestTable(dynamoDBClient: DynamoDB) {
   const tableName = pseudoRandomBytes(16).toString('hex');
 
   // Uses the same definition as in main.tf (in the project root)
-  await dynamoDBClient
+  const response = await dynamoDBClient
     .createTable({
       BillingMode: 'PAY_PER_REQUEST',
       TableName: tableName,
@@ -140,6 +144,10 @@ async function createDeploymentTestTable(dynamoDBClient: DynamoDB) {
       ],
     })
     .promise();
+
+  if (response.$response.error) {
+    throw response.$response.error;
+  }
 
   return tableName;
 }
