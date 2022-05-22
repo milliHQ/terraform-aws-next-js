@@ -8,6 +8,7 @@ export { listAliasesForDeployment } from './alias/list-aliases-for-deployment';
 export { createDeployment } from './deployment/create-deployment';
 export { listDeployments } from './deployment/list-deployments';
 export { getDeploymentById } from './deployment/get-deployment-by-id';
+export { deleteDeploymentById } from './deployment/delete-deployment-by-id';
 export { updateDeploymentStatus } from './deployment/update-deployment-status';
 export { updateDeploymentStatusInProgress } from './deployment/update-deployment-status-in-progress';
 export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
