@@ -56,7 +56,7 @@ async function listDeployments(
     },
     items: items.map((item) => {
       return {
-        id: item.PK,
+        id: item.DeploymentId,
         createDate: item.CreateDate,
         status: item.Status,
       };

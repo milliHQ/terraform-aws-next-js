@@ -1,12 +1,25 @@
 export type DeploymentItem = {
+  /* ------------------------------- Keys ----------------------------------- */
+
   /**
-   * Partition Key: DeploymentId
+   * Partition Key: DEPLOYMENTS
    */
-  PK: string;
+  PK: 'DEPLOYMENTS';
   /**
-   * Sort Key: CreateDate
+   * Sort Key: D#<deployment-id>
    */
   SK: string;
+  /**
+   * Secondary sort key for the CreateDateIndex
+   */
+  GSI1SK: string;
+
+  /* ---------------------------- Attributes -------------------------------- */
+
+  /**
+   * Id of the deployment
+   */
+  DeploymentId: string;
   /**
    * Timestamp when the deployment was created. Format is ISO 8601.
    */
@@ -43,6 +56,11 @@ export type DeploymentItem = {
    */
   DeploymentAlias?: string;
 };
+
+export type DeploymentItemCreateDateIndex = Pick<
+  DeploymentItem,
+  'DeploymentId' | 'CreateDate' | 'Status' | 'DeploymentAlias'
+>;
 
 export type AliasItem = {
   /**

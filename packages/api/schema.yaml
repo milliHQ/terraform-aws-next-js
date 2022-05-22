@@ -3,7 +3,7 @@
 openapi: 3.1.0
 
 info:
-  title: Terraform Next.js API
+  title: MilliVolt deployment API
   version: 1.0.0
 
 components:
@@ -39,6 +39,11 @@ components:
         - next
 
     # Entities
+    Alias:
+      type: object
+      properties:
+        id:
+          type: string
 
     DeploymentStatus:
       type: string
@@ -95,16 +100,45 @@ security:
   - sigv4: []
 
 paths:
+  /aliases:
+    get:
+      summary: List all aliases associated with a given deployment, sorted by its creation date DESC.
+      parameters:
+        - in: query
+          name: deploymentId
+          schema:
+            type: string
+          required: true
+          description: Only list aliases that are associated with the specified deployment.
+        - in: query
+          name: startIndex
+          schema:
+            type: string
+          description: Beginning index from where to get the aliases.
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    $ref: '#/components/schemas/Pagination'
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Deployment'
+
   /deployments:
     get:
-      summary: List all deployments.
+      summary: List all deployments sorted by its creation date DESC.
       parameters:
         - in: query
           name: startIndex
           schema:
             type: string
           description: Beginning index from where to get the deployments.
-
       responses:
         '200':
           description: Successful response.

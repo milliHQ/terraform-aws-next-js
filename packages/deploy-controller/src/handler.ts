@@ -105,7 +105,7 @@ async function handler(event: SNSEvent) {
               alias: deploymentAlias,
               isDeploymentAlias: true,
               aliasTableName: dynamoDBTableNameAliases,
-              createdDate: new Date(),
+              createDate: new Date(),
               deploymentId,
               lambdaRoutes: stringifiedLambdaRoutes,
               // Copy values over from the deployment

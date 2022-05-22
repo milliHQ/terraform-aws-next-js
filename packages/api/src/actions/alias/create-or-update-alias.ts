@@ -103,7 +103,7 @@ async function createOrUpdateAlias(req: Request, res: Response) {
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
     alias: aliasNameToCreate,
-    createdDate: new Date(),
+    createDate: new Date(),
     deploymentId: targetDeploymentId,
     lambdaRoutes: targetDeployment.LambdaRoutes,
     prerenders: targetDeployment.Prerenders,

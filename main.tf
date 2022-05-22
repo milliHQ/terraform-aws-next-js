@@ -37,28 +37,27 @@ resource "aws_dynamodb_table" "deployments" {
   hash_key  = "PK"
   range_key = "SK"
 
-  # deploymentId
   attribute {
     name = "PK"
     type = "S"
   }
 
-  # createDate
   attribute {
     name = "SK"
     type = "S"
   }
 
   attribute {
-    name = "CreateDate"
+    name = "GSI1SK"
     type = "S"
   }
 
   global_secondary_index {
-    name            = "CreateDateIndex"
-    hash_key        = "CreateDate"
-    range_key       = "PK"
-    projection_type = "ALL"
+    name               = "CreateDateIndex"
+    hash_key           = "PK"
+    range_key          = "GSI1SK"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["DeploymentId", "CreateDate", "Status", "DeploymentAlias"]
   }
 }
 

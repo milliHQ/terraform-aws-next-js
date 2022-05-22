@@ -1,23 +1,28 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
-import { DeploymentItemCreateDateIndex } from '../types';
+import { AliasItem } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 
 type StartKey = {
+  alias: string;
   deploymentId: string;
   createDate: string;
 };
 
-type ListDeploymentOptions = {
+type ListAliasesForDeploymentOptions = {
   /**
    * DynamoDB client
    */
   dynamoDBClient: DynamoDB;
   /**
-   * Name of the table that holds the deployments.
+   * Name of the table that holds the aliases.
    */
-  deploymentTableName: string;
+  aliasTableName: string;
+  /**
+   * The id of the deployment.
+   */
+  deploymentId: string;
   /**
    * Maximum number of items that should be returned.
    */
@@ -28,35 +33,33 @@ type ListDeploymentOptions = {
   startKey?: StartKey;
 };
 
-type ListDeploymentsResult = {
+type ListAliasesResult = {
   meta: {
     lastKey: StartKey | null;
     count: number;
   };
-  items: DeploymentItemCreateDateIndex[];
+  items: AliasItem[];
 };
 
 /**
- * Returns all deployments ordered by creationDate.
- *
- * @param options
- * @returns
+ * Returns all aliases that are associated with a deploymentId in DESC order.
  */
-async function listDeployments({
+async function listAliasesForDeployment({
+  aliasTableName,
   dynamoDBClient,
-  deploymentTableName,
+  deploymentId,
   limit,
   startKey,
-}: ListDeploymentOptions): Promise<ListDeploymentsResult> {
+}: ListAliasesForDeploymentOptions): Promise<ListAliasesResult> {
   const params: DynamoDB.QueryInput = {
-    TableName: deploymentTableName,
-    IndexName: 'CreateDateIndex',
+    TableName: aliasTableName,
+    IndexName: 'DeploymentIdIndex',
     ExpressionAttributeValues: {
       ':v1': {
-        S: 'DEPLOYMENTS',
+        S: deploymentId,
       },
     },
-    KeyConditionExpression: 'PK = :v1',
+    KeyConditionExpression: 'DeploymentId = :v1',
     Limit: limit,
     // Return the items in DESC order (newer -> older)
     ScanIndexForward: false,
@@ -65,13 +68,16 @@ async function listDeployments({
   if (startKey) {
     params.ExclusiveStartKey = {
       PK: {
-        S: 'DEPLOYMENTS',
+        S: startKey.alias,
       },
       SK: {
-        S: `D#${startKey.deploymentId}`,
+        S: `${deploymentId}#${startKey.createDate}`,
       },
-      GSI1SK: {
-        S: `${startKey.createDate}#D#${startKey.deploymentId}`,
+      DeploymentId: {
+        S: startKey.deploymentId,
+      },
+      CreateDateByAlias: {
+        S: `${startKey.createDate}#${startKey.alias}`,
       },
     };
   }
@@ -82,9 +88,10 @@ async function listDeployments({
 
   let lastKey: StartKey | null = null;
   if (LastEvaluatedKey) {
-    const [createDate, , deploymentId] = LastEvaluatedKey.GSI1SK.S!.split('#');
+    const [createDate] = LastEvaluatedKey.CreateDateByAlias.S!.split('#');
     lastKey = {
-      deploymentId: deploymentId,
+      alias: LastEvaluatedKey.PK.S!,
+      deploymentId: LastEvaluatedKey.DeploymentId.S!,
       createDate,
     };
   }
@@ -94,10 +101,8 @@ async function listDeployments({
       count: Count !== undefined ? Count : 0,
       lastKey,
     },
-    items: Items
-      ? Items.map(unmarshall as () => DeploymentItemCreateDateIndex)
-      : [],
+    items: Items ? Items.map(unmarshall as () => AliasItem) : [],
   };
 }
 
-export { listDeployments };
+export { listAliasesForDeployment };

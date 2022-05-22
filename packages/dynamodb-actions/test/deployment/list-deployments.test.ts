@@ -46,7 +46,7 @@ describe('ListDeployments', () => {
     });
 
     expect(result1.meta.count).toBe(10);
-    expect(result1.meta.lastKey!.deploymentId).toBe('test10');
+    expect(result1.meta.lastKey!.deploymentId).toBe('test11');
 
     // Second batch
     const result2 = await listDeployments({
@@ -57,7 +57,7 @@ describe('ListDeployments', () => {
     });
 
     expect(result2.meta.count).toBe(5);
-    expect(result2.meta.lastKey!.deploymentId).toBe('test15');
+    expect(result2.meta.lastKey!.deploymentId).toBe('test6');
 
     // Last batch
     const result3 = await listDeployments({

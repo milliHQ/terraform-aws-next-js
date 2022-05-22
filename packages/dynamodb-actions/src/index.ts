@@ -2,7 +2,7 @@
 export { createAlias } from './alias/create-alias';
 export { deleteAliasById } from './alias/delete-alias-by-id';
 export { getAliasById } from './alias/get-alias-by-id';
-export { getAliasesForDeployment } from './alias/get-aliases-for-deployment';
+export { listAliasesForDeployment } from './alias/list-aliases-for-deployment';
 
 // Deployment
 export { createDeployment } from './deployment/create-deployment';

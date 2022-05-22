@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 type CreateAliasOptions = {
   /**
@@ -16,7 +16,7 @@ type CreateAliasOptions = {
   /**
    * Date when the alias was created.
    */
-  createdDate: Date;
+  createDate?: Date;
   /**
    * If the alias is the default alias of an deployment.
    */
@@ -50,38 +50,50 @@ function createAlias({
   dynamoDBClient,
   aliasTableName,
   alias,
-  createdDate,
+  createDate = new Date(),
   isDeploymentAlias = false,
   deploymentId,
   lambdaRoutes,
   routes,
   prerenders,
 }: CreateAliasOptions) {
-  const createdDateString = createdDate.toISOString();
+  const createDateString = createDate.toISOString();
 
   // - Group by deploymentId
   // - Sort by Date
-  const sortKey = `${deploymentId}#${createdDateString}`;
+  const sortKey = `${deploymentId}#${createDateString}`;
+  // - Group by Date
+  const deploymentIdIndexSortKey = `${createDateString}#${alias}`;
 
   return dynamoDBClient
     .putItem({
       TableName: aliasTableName,
       Item: {
+        /**
+         * Keys
+         */
         PK: { S: alias },
         SK: {
           S: sortKey,
         },
+        DeploymentId: {
+          S: deploymentId,
+        },
+        CreateDateByAlias: {
+          S: deploymentIdIndexSortKey,
+        },
+
+        /**
+         * Attributes
+         */
         ItemVersion: {
           N: '1',
         },
-        CreatedDate: {
-          S: createdDateString,
+        CreateDate: {
+          S: createDateString,
         },
         DeploymentAlias: {
           BOOL: isDeploymentAlias,
-        },
-        DeploymentId: {
-          S: deploymentId,
         },
         Routes: {
           S: routes,

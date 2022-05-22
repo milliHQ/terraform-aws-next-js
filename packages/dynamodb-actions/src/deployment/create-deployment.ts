@@ -34,13 +34,20 @@ function createDeployment({
     .putItem({
       TableName: deploymentTableName,
       Item: {
+        // Keys
         PK: {
-          // DeploymentId
-          S: `${deploymentId}`,
+          S: 'DEPLOYMENTS',
         },
         SK: {
-          // Sort key is createDate
-          S: createDateString,
+          S: `D#${deploymentId}`,
+        },
+        GSI1SK: {
+          S: `${createDateString}#D#${deploymentId}`,
+        },
+
+        // Attributes
+        DeploymentId: {
+          S: deploymentId,
         },
         CreateDate: {
           S: createDateString,

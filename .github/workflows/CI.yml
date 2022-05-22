@@ -55,11 +55,14 @@ jobs:
         env:
           MINIO_ACCESS_KEY: test
           MINIO_SECRET_KEY: testtest
+      dynamodb:
+        image: amazon/dynamodb-local:latest
 
     env:
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: testtest
       S3_ENDPOINT: s3:9000
+      TEST_DYNAMO_ENDPOINT: dynamodb:8000
 
     steps:
       - uses: actions/checkout@v2

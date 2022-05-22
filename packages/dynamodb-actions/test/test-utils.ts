@@ -4,7 +4,7 @@ import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 function createTestDynamoDBClient() {
   return new DynamoDB({
-    endpoint: 'http://localhost:8000',
+    endpoint: process.env.TEST_DYNAMO_ENDPOINT ?? 'http://localhost:8000',
     region: 'mock',
     credentials: {
       accessKeyId: 'accessKeyId',
@@ -31,7 +31,11 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
           AttributeType: 'S',
         },
         {
-          AttributeName: 'CreateDate',
+          AttributeName: 'DeploymentId',
+          AttributeType: 'S',
+        },
+        {
+          AttributeName: 'CreateDateByAlias',
           AttributeType: 'S',
         },
       ],
@@ -49,6 +53,24 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
         ReadCapacityUnits: 0,
         WriteCapacityUnits: 0,
       },
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'DeploymentIdIndex',
+          KeySchema: [
+            {
+              AttributeName: 'DeploymentId',
+              KeyType: 'HASH',
+            },
+            {
+              AttributeName: 'CreateDateByAlias',
+              KeyType: 'RANGE',
+            },
+          ],
+          Projection: {
+            ProjectionType: 'ALL',
+          },
+        },
+      ],
     })
     .promise();
 
@@ -72,6 +94,10 @@ async function createDeploymentTestTable(dynamoDBClient: DynamoDB) {
           AttributeName: 'SK',
           AttributeType: 'S',
         },
+        {
+          AttributeName: 'GSI1SK',
+          AttributeType: 'S',
+        },
       ],
       KeySchema: [
         {
@@ -88,20 +114,27 @@ async function createDeploymentTestTable(dynamoDBClient: DynamoDB) {
         WriteCapacityUnits: 0,
       },
       GlobalSecondaryIndexes: [
+        // GSI1SK: CreateDateIndex
         {
           IndexName: 'CreateDateIndex',
           KeySchema: [
             {
-              AttributeName: 'CreateDate',
+              AttributeName: 'PK',
               KeyType: 'HASH',
             },
             {
-              AttributeName: 'PK',
+              AttributeName: 'GSI1SK',
               KeyType: 'RANGE',
             },
           ],
           Projection: {
-            ProjectionType: 'ALL',
+            ProjectionType: 'INCLUDE',
+            NonKeyAttributes: [
+              'DeploymentId',
+              'CreateDate',
+              'Status',
+              'DeploymentAlias',
+            ],
           },
         },
       ],
