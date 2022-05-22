@@ -32,7 +32,7 @@ async function createDeployment(
     deploymentId,
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     deploymentTableName: dynamoDB.getDeploymentTableName(),
-    createdDate: new Date(),
+    createDate: new Date(),
   });
 
   const { url, fields } = s3Client.createPresignedPost({

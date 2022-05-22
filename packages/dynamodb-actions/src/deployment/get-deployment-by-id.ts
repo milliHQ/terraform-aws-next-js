@@ -33,10 +33,13 @@ async function getDeploymentById({
     TableName: deploymentTableName,
     ExpressionAttributeValues: {
       ':v1': {
-        S: deploymentId,
+        S: 'DEPLOYMENTS',
+      },
+      ':v2': {
+        S: `D#${deploymentId}`,
       },
     },
-    KeyConditionExpression: 'PK = :v1',
+    KeyConditionExpression: 'PK = :v1 and SK = :v2',
     Limit: 1,
   };
 

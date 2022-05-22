@@ -8,9 +8,9 @@ The design consists of the following tables:
 
 ### DeploymentTable
 
-| Entity     | PK          | SK             |
-| ---------- | ----------- | -------------- |
-| Deployment | DEPLOYMENTS | D#&lt;D-id&gt; |
+| Entity     | PK          | SK             | GSI1SK                            |
+| ---------- | ----------- | -------------- | --------------------------------- |
+| Deployment | DEPLOYMENTS | D#&lt;D-id&gt; | &lt;CreateDate&gt;#D#&lt;D-id&gt; |
 
 #### GSI1: CreateDateIndex
 
@@ -20,13 +20,12 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
 <table>
   <thead>
     <tr>
-      <td colspan="2">Primary Key</td>
-      <td>Attributes</td>
+      <th colspan="2">Primary Key</th>
+      <th colspan="100%" rowspan="2">Attributes</th>
     </tr>
     <tr>
-      <td>PK</td>
-      <td>GSI1SK</td>
-      <td></td>
+      <th>PK</th>
+      <th>GSI1SK</th>
     </tr>
   </thead>
   <tbody>
@@ -43,6 +42,10 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
 
 ### AliasTable
 
+| Entity | PK               | SK               |
+| ------ | ---------------- | ---------------- |
+| Alias  | &lt;hostname&gt; | &lt;basePath&gt; |
+
 ## Actions
 
 The following actions on the database are supported:
@@ -51,5 +54,7 @@ The following actions on the database are supported:
   Lists all deployments from the DeploymentTable, sort by `CreateDate` DESC.
 - CreateDeployment  
   Inserts a new deployment into the DeploymentTable.
+- GetDeploymentById  
+  Returns the Deployment for the given ID. Returns `null` when it does not exist.
 - ListAliasesForDeployment  
   Lists all aliases that are associated with a given deployment, sort by `CreateDate` DESC.

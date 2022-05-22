@@ -16,7 +16,7 @@ type CreateDeploymentOptions = {
   /**
    * Date when the deployment was created.
    */
-  createdDate?: Date;
+  createDate?: Date;
 };
 
 /**
@@ -26,9 +26,9 @@ function createDeployment({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
-  createdDate = new Date(),
+  createDate = new Date(),
 }: CreateDeploymentOptions) {
-  const createDateString = createdDate.toISOString();
+  const createDateString = createDate.toISOString();
 
   return dynamoDBClient
     .putItem({
