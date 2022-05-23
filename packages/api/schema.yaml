@@ -95,6 +95,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    InvalidParamsError:
+      description: The validation of the parameters failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
 security:
   - sigv4: []
@@ -187,3 +193,17 @@ paths:
                 $ref: '#/components/schemas/Deployment'
         '404':
           $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a single deployment by its Id.
+      parameters:
+        - in: path
+          name: deploymentId
+          schema:
+            type: string
+          required: true
+          description: The id of the deployment to delete.
+      responses:
+        '204':
+          description: Successful response.
+        '400':
+          $ref: '#/components/responses/InvalidParamsError'

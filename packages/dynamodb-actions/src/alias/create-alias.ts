@@ -10,9 +10,13 @@ type CreateAliasOptions = {
    */
   aliasTableName: string;
   /**
-   * The full domain of the alias, e.g. my-alias.example.com.
+   * The full domain of the alias, in reversed form com.example.my-alias.
    */
-  alias: string;
+  hostnameRev: string;
+  /**
+   * The basePath under which the alias is served, defaults to `/.`
+   */
+  basePath?: string;
   /**
    * Date when the alias was created.
    */
@@ -49,7 +53,8 @@ type CreateAliasOptions = {
 function createAlias({
   dynamoDBClient,
   aliasTableName,
-  alias,
+  hostnameRev,
+  basePath = '/',
   createDate = new Date(),
   isDeploymentAlias = false,
   deploymentId,
@@ -59,38 +64,39 @@ function createAlias({
 }: CreateAliasOptions) {
   const createDateString = createDate.toISOString();
 
-  // - Group by deploymentId
-  // - Sort by Date
-  const sortKey = `${deploymentId}#${createDateString}`;
-  // - Group by Date
-  const deploymentIdIndexSortKey = `${createDateString}#${alias}`;
-
   return dynamoDBClient
     .putItem({
       TableName: aliasTableName,
       Item: {
-        /**
-         * Keys
-         */
-        PK: { S: alias },
+        // Keys
+        PK: {
+          S: 'ROUTES',
+        },
         SK: {
-          S: sortKey,
+          S: `${hostnameRev}#${basePath}`,
         },
-        DeploymentId: {
-          S: deploymentId,
+        GSI1PK: {
+          S: `D#${deploymentId}`,
         },
-        CreateDateByAlias: {
-          S: deploymentIdIndexSortKey,
+        GSI1SK: {
+          S: `${createDateString}#R#${hostnameRev}#${basePath}`,
         },
 
-        /**
-         * Attributes
-         */
+        // Attributes
         ItemVersion: {
           N: '1',
         },
         CreateDate: {
           S: createDateString,
+        },
+        DeploymentId: {
+          S: deploymentId,
+        },
+        HostnameRev: {
+          S: hostnameRev,
+        },
+        BasePath: {
+          S: basePath,
         },
         DeploymentAlias: {
           BOOL: isDeploymentAlias,

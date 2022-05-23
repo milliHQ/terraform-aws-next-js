@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+  '/aliases': {
+    get: {
+      parameters: {
+        query: {
+          /** Only list aliases that are associated with the specified deployment. */
+          deploymentId: string;
+          /** Beginning index from where to get the aliases. */
+          startIndex?: string;
+        };
+      };
+      responses: {
+        /** Successful response. */
+        200: {
+          content: {
+            'application/json': components['schemas']['Deployment'][][];
+          };
+        };
+      };
+    };
+  };
   '/deployments': {
     get: {
       parameters: {
@@ -53,6 +73,19 @@ export interface paths {
         404: components['responses']['NotFound'];
       };
     };
+    delete: {
+      parameters: {
+        path: {
+          /** The id of the deployment to delete. */
+          deploymentId: string;
+        };
+      };
+      responses: {
+        /** Successful response. */
+        204: never;
+        400: components['responses']['InvalidParamsError'];
+      };
+    };
   };
 }
 
@@ -65,6 +98,9 @@ export interface components {
     };
     Pagination: {
       next: string | null;
+    };
+    Alias: {
+      id?: string;
     };
     /** @enum {string} */
     DeploymentStatus:
@@ -90,6 +126,12 @@ export interface components {
   responses: {
     /** The specified resource was not found. */
     NotFound: {
+      content: {
+        'application/json': components['schemas']['Error'];
+      };
+    };
+    /** The validation of the parameters failed. */
+    InvalidParamsError: {
       content: {
         'application/json': components['schemas']['Error'];
       };

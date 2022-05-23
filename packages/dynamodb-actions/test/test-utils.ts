@@ -31,11 +31,11 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
           AttributeType: 'S',
         },
         {
-          AttributeName: 'DeploymentId',
+          AttributeName: 'GSI1PK',
           AttributeType: 'S',
         },
         {
-          AttributeName: 'CreateDateByAlias',
+          AttributeName: 'GSI1SK',
           AttributeType: 'S',
         },
       ],
@@ -58,16 +58,17 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
           IndexName: 'DeploymentIdIndex',
           KeySchema: [
             {
-              AttributeName: 'DeploymentId',
+              AttributeName: 'GSI1PK',
               KeyType: 'HASH',
             },
             {
-              AttributeName: 'CreateDateByAlias',
+              AttributeName: 'GSI1SK',
               KeyType: 'RANGE',
             },
           ],
           Projection: {
-            ProjectionType: 'ALL',
+            ProjectionType: 'INCLUDE',
+            NonKeyAttributes: ['DeploymentId', 'CreateDate'],
           },
         },
       ],

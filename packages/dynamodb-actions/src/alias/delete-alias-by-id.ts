@@ -12,21 +12,19 @@ type DeleteAliasByIdOptions = {
    */
   aliasTableName: string;
   /**
-   * The id of the alias that should be requested.
+   * The id of the alias that should be deleted.
    */
-  aliasId: string;
+  hostnameRev: string;
+  /**
+   * The basePath of the alias that should be deleted.
+   */
+  basePath: string;
 };
 
 async function deleteAliasById(options: DeleteAliasByIdOptions) {
   const { dynamoDBClient, aliasTableName } = options;
   // Cannot delete by query, so we have to receive the item first
-  const aliasToDelete = await getAliasById({
-    ...options,
-    attributes: {
-      PK: true,
-      SK: true,
-    },
-  });
+  const aliasToDelete = await getAliasById(options);
 
   if (!aliasToDelete) {
     throw new Error('Alias does not exist.');

@@ -1,7 +1,8 @@
 // Alias
 export { createAlias } from './alias/create-alias';
-export { deleteAliasById } from './alias/delete-alias-by-id';
 export { getAliasById } from './alias/get-alias-by-id';
+export { deleteAliasById } from './alias/delete-alias-by-id';
+export { getAliasByHostname } from './alias/get-alias-by-hostname';
 export { listAliasesForDeployment } from './alias/list-aliases-for-deployment';
 
 // Deployment
@@ -12,5 +13,8 @@ export { deleteDeploymentById } from './deployment/delete-deployment-by-id';
 export { updateDeploymentStatus } from './deployment/update-deployment-status';
 export { updateDeploymentStatusInProgress } from './deployment/update-deployment-status-in-progress';
 export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
+
+// Utils
+export { reverseHostname } from './utils/reverse-hostname';
 
 export * from './types';

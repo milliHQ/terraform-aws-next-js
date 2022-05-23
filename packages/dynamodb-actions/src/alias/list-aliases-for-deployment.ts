@@ -1,13 +1,14 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
-import { AliasItem } from '../types';
+import { RouteItem } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 
 type StartKey = {
-  alias: string;
+  hostnameRev: string;
   deploymentId: string;
   createDate: string;
+  basePath: string;
 };
 
 type ListAliasesForDeploymentOptions = {
@@ -38,7 +39,7 @@ type ListAliasesResult = {
     lastKey: StartKey | null;
     count: number;
   };
-  items: AliasItem[];
+  items: RouteItem[];
 };
 
 /**
@@ -56,10 +57,10 @@ async function listAliasesForDeployment({
     IndexName: 'DeploymentIdIndex',
     ExpressionAttributeValues: {
       ':v1': {
-        S: deploymentId,
+        S: `D#${deploymentId}`,
       },
     },
-    KeyConditionExpression: 'DeploymentId = :v1',
+    KeyConditionExpression: 'GSI1PK = :v1',
     Limit: limit,
     // Return the items in DESC order (newer -> older)
     ScanIndexForward: false,
@@ -68,16 +69,16 @@ async function listAliasesForDeployment({
   if (startKey) {
     params.ExclusiveStartKey = {
       PK: {
-        S: startKey.alias,
+        S: 'ROUTES',
       },
       SK: {
-        S: `${deploymentId}#${startKey.createDate}`,
+        S: `${startKey.hostnameRev}#${startKey.basePath}`,
       },
-      DeploymentId: {
-        S: startKey.deploymentId,
+      GSI1PK: {
+        S: `D#${startKey.deploymentId}`,
       },
-      CreateDateByAlias: {
-        S: `${startKey.createDate}#${startKey.alias}`,
+      GSI1SK: {
+        S: `${startKey.createDate}#R#${startKey.hostnameRev}#${startKey.basePath}`,
       },
     };
   }
@@ -88,10 +89,13 @@ async function listAliasesForDeployment({
 
   let lastKey: StartKey | null = null;
   if (LastEvaluatedKey) {
-    const [createDate] = LastEvaluatedKey.CreateDateByAlias.S!.split('#');
+    const [, deploymentId] = LastEvaluatedKey.GSI1PK.S!.split('#');
+    const [createDate, , hostnameRev, basePath] =
+      LastEvaluatedKey.GSI1SK.S!.split('#');
     lastKey = {
-      alias: LastEvaluatedKey.PK.S!,
-      deploymentId: LastEvaluatedKey.DeploymentId.S!,
+      hostnameRev,
+      basePath,
+      deploymentId,
       createDate,
     };
   }
@@ -101,7 +105,7 @@ async function listAliasesForDeployment({
       count: Count !== undefined ? Count : 0,
       lastKey,
     },
-    items: Items ? Items.map(unmarshall as () => AliasItem) : [],
+    items: Items ? Items.map(unmarshall as () => RouteItem) : [],
   };
 }
 

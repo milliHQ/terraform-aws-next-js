@@ -2,6 +2,7 @@ import {
   getAliasById,
   getDeploymentById,
   createAlias,
+  reverseHostname,
 } from '@millihq/tfn-dynamodb-actions';
 import { IsOptional, Length, validate } from 'class-validator';
 import { Request, Response } from 'lambda-api';
@@ -39,18 +40,19 @@ async function createOrUpdateAlias(req: Request, res: Response) {
   }
 
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
-  const aliasNameToCreate = payload.customDomain;
+  const hostnameToCreate = payload.customDomain;
 
   // Check if the target is an alias or an deployment-id
   const targetIsDeploymentId = payload.target.indexOf('.') === -1;
   let targetDeploymentId: string;
 
   if (!targetIsDeploymentId) {
+    const hostnameRev = reverseHostname(payload.target);
     // Target is another alias, get the deployment ID from the alias first
     const targetAlias = await getAliasById({
       dynamoDBClient: dynamoDB.getDynamoDBClient(),
       aliasTableName: dynamoDB.getAliasTableName(),
-      aliasId: payload.target,
+      hostnameRev,
       attributes: {
         DeploymentId: true,
       },
@@ -80,10 +82,11 @@ async function createOrUpdateAlias(req: Request, res: Response) {
   }
 
   // Check if the alias already exists
+  const customDomainRev = reverseHostname(payload.customDomain);
   const maybeExistingAlias = await getAliasById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    aliasId: payload.customDomain,
+    hostnameRev: customDomainRev,
     attributes: {
       DeploymentId: true,
       DeploymentAlias: true,
@@ -94,15 +97,16 @@ async function createOrUpdateAlias(req: Request, res: Response) {
   if (maybeExistingAlias && maybeExistingAlias.DeploymentAlias === true) {
     return res.error(
       400,
-      `Cannot override existing alias ${aliasNameToCreate} because it is a deployment alias that cannot be changed.`
+      `Cannot override existing alias ${hostnameToCreate} because it is a deployment alias that cannot be changed.`
     );
   }
 
   // Create the new alias
+  const hostnameToCreateRev = reverseHostname(hostnameToCreate);
   await createAlias({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    alias: aliasNameToCreate,
+    hostnameRev: hostnameToCreateRev,
     createDate: new Date(),
     deploymentId: targetDeploymentId,
     lambdaRoutes: targetDeployment.LambdaRoutes,

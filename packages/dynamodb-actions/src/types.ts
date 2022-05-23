@@ -1,3 +1,8 @@
+/**
+ * CDK Template that is used for a deployment.
+ */
+export type DeploymentTemplateType = 'FUNCTION_URLS' | 'API_GATEWAY';
+
 export type DeploymentItem = {
   /* ------------------------------- Keys ----------------------------------- */
 
@@ -6,18 +11,18 @@ export type DeploymentItem = {
    */
   PK: 'DEPLOYMENTS';
   /**
-   * Sort Key: D#<deployment-id>
+   * Sort Key: D#<deploymentId>
    */
   SK: string;
   /**
-   * Secondary sort key for the CreateDateIndex
+   * Sort key for the CreateDateIndex: <CreateDate>#D#<DeploymentId>
    */
   GSI1SK: string;
 
   /* ---------------------------- Attributes -------------------------------- */
 
   /**
-   * Id of the deployment
+   * Unique id of the deployment.
    */
   DeploymentId: string;
   /**
@@ -55,6 +60,10 @@ export type DeploymentItem = {
    * Only present if multi-deployment feature is enabled.
    */
   DeploymentAlias?: string;
+  /**
+   * The CDK template that is used for the deployment.
+   */
+  DeploymentTemplate: DeploymentTemplateType;
 };
 
 export type DeploymentItemCreateDateIndex = Pick<
@@ -62,16 +71,28 @@ export type DeploymentItemCreateDateIndex = Pick<
   'DeploymentId' | 'CreateDate' | 'Status' | 'DeploymentAlias'
 >;
 
-export type AliasItem = {
+export type RouteItem = {
+  /* ------------------------------- Keys ----------------------------------- */
+
   /**
-   * Alias (Partition Key), is always a full domain name,
-   * e.g. my-sub.example.com
+   * Partition Key: DEPLOYMENTS
    */
-  PK: string;
+  PK: 'ROUTES';
   /**
-   * DeploymentId#CreateDate (Sort Key)
+   * Sort Key: <HostnameRev>#<BasePath>
    */
   SK: string;
+  /**
+   * Partition Key for DeploymentIdIndex: D#<DeploymentId>
+   */
+  GSI1PK: string;
+  /**
+   * Sort Key for DeploymentIdIndex: <CreateDate>#R#<HostnameRev>#<BasePath>
+   */
+  GSI1SK: string;
+
+  /* ---------------------------- Attributes -------------------------------- */
+
   /**
    * Version of the item
    */

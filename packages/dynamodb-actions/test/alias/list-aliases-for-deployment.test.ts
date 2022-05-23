@@ -25,12 +25,12 @@ describe('ListAliasesForDeployment', () => {
   test('List all alias for a deploymentId', async () => {
     // Fill with aliases
     await Promise.all(
-      ['1.deployment1.com', '2.deployment1.com', '3.deployment1.com'].map(
-        (alias, index) => {
+      ['com.deployment1.1', 'com.deployment1.2', 'com.deployment1.3'].map(
+        (hostnameRev, index) => {
           return createAlias({
             dynamoDBClient,
             aliasTableName,
-            alias,
+            hostnameRev,
             createDate: new Date(2022, 0, 3 - index),
             deploymentId: 'deployment1',
             lambdaRoutes: '',
@@ -42,12 +42,12 @@ describe('ListAliasesForDeployment', () => {
     );
 
     await Promise.all(
-      ['1.deployment2.com', '2.deployment2.com', '3.deployment2.com'].map(
-        (alias, index) => {
+      ['com.deployment2.1', 'com.deployment2.2', 'com.deployment2.3'].map(
+        (hostnameRev, index) => {
           return createAlias({
             dynamoDBClient,
             aliasTableName,
-            alias,
+            hostnameRev,
             createDate: new Date(2022, 0, index + 1),
             deploymentId: 'deployment2',
             lambdaRoutes: '',
@@ -72,10 +72,11 @@ describe('ListAliasesForDeployment', () => {
   });
 
   test('Sort Order', async () => {
+    // #2
     await createAlias({
       dynamoDBClient,
       aliasTableName,
-      alias: '1.sortorder.com',
+      hostnameRev: 'com.sortorder.2',
       createDate: new Date(2022, 0, 2),
       deploymentId: 'sortOrderDeployment',
       lambdaRoutes: '',
@@ -83,10 +84,11 @@ describe('ListAliasesForDeployment', () => {
       routes: '',
     });
 
+    // #1
     await createAlias({
       dynamoDBClient,
       aliasTableName,
-      alias: '2.sortorder.com',
+      hostnameRev: 'com.sortorder.1',
       createDate: new Date(2022, 0, 3),
       deploymentId: 'sortOrderDeployment',
       lambdaRoutes: '',
@@ -94,10 +96,11 @@ describe('ListAliasesForDeployment', () => {
       routes: '',
     });
 
+    // #3
     await createAlias({
       dynamoDBClient,
       aliasTableName,
-      alias: '3.sortorder.com',
+      hostnameRev: 'com.sortorder.3',
       createDate: new Date(2022, 0, 1),
       deploymentId: 'sortOrderDeployment',
       lambdaRoutes: '',
@@ -117,7 +120,7 @@ describe('ListAliasesForDeployment', () => {
     expect(result1.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          PK: '2.sortorder.com',
+          SK: 'com.sortorder.1#/',
           DeploymentId: 'sortOrderDeployment',
           CreateDate: new Date(2022, 0, 3).toISOString(),
         }),
@@ -137,7 +140,7 @@ describe('ListAliasesForDeployment', () => {
     expect(result2.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          PK: '1.sortorder.com',
+          SK: 'com.sortorder.2#/',
           DeploymentId: 'sortOrderDeployment',
           CreateDate: new Date(2022, 0, 2).toISOString(),
         }),
@@ -157,7 +160,7 @@ describe('ListAliasesForDeployment', () => {
     expect(result3.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          PK: '3.sortorder.com',
+          SK: 'com.sortorder.3#/',
           DeploymentId: 'sortOrderDeployment',
           CreateDate: new Date(2022, 0, 1).toISOString(),
         }),

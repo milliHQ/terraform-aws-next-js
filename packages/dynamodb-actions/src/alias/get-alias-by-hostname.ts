@@ -4,7 +4,7 @@ import { RouteItem } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 
-type GetAliasByIdOptions = {
+type GetAliasByHostnameOptions = {
   /**
    * DynamoDB client
    */
@@ -14,26 +14,21 @@ type GetAliasByIdOptions = {
    */
   aliasTableName: string;
   /**
-   * Hostname of the route config that is requested.
+   * The hostname of the alias that should be requested.
    */
   hostnameRev: string;
-  /**
-   * Basepath of the route config that is requested.
-   */
-  basePath?: string;
   /**
    * Only return the attributes defined
    */
   attributes?: Partial<Record<keyof RouteItem, boolean>>;
 };
 
-async function getAliasById({
+async function getAliasByHostname({
   dynamoDBClient,
   aliasTableName,
   hostnameRev,
-  basePath = '/',
   attributes = {},
-}: GetAliasByIdOptions): Promise<RouteItem | null> {
+}: GetAliasByHostnameOptions): Promise<RouteItem | null> {
   const queryParams: DynamoDB.QueryInput = {
     TableName: aliasTableName,
     ExpressionAttributeValues: {
@@ -41,10 +36,10 @@ async function getAliasById({
         S: 'ROUTES',
       },
       ':v2': {
-        S: `${hostnameRev}#${basePath}`,
+        S: hostnameRev,
       },
     },
-    KeyConditionExpression: 'PK = :v1 and SK = :v2',
+    KeyConditionExpression: 'PK = :v1 and begins_with(SK, :v2)',
     Limit: 1,
   };
 
@@ -62,4 +57,4 @@ async function getAliasById({
   return unmarshall(Items![0]) as RouteItem;
 }
 
-export { getAliasById };
+export { getAliasByHostname };

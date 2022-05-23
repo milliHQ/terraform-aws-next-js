@@ -1,4 +1,8 @@
-import { deleteAliasById, getAliasById } from '@millihq/tfn-dynamodb-actions';
+import {
+  deleteAliasById,
+  getAliasById,
+  reverseHostname,
+} from '@millihq/tfn-dynamodb-actions';
 import { validate } from 'class-validator';
 import { Request, Response } from 'lambda-api';
 
@@ -21,13 +25,13 @@ async function deleteAlias(req: Request, res: Response) {
   }
 
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
-  const aliasToDelete = payload.customDomain;
+  const aliasToDelete = reverseHostname(payload.customDomain);
 
   // Check if the alias is protected (deployment alias)
   const dbAlias = await getAliasById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    aliasId: aliasToDelete,
+    hostnameRev: aliasToDelete,
     attributes: {
       DeploymentAlias: true,
     },
@@ -40,7 +44,8 @@ async function deleteAlias(req: Request, res: Response) {
   await deleteAliasById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    aliasId: aliasToDelete,
+    hostnameRev: aliasToDelete,
+    basePath: '/',
   });
 
   res.send({

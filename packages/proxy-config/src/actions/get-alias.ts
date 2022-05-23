@@ -1,4 +1,4 @@
-import { getAliasById } from '@millihq/tfn-dynamodb-actions';
+import { getAliasById, reverseHostname } from '@millihq/tfn-dynamodb-actions';
 import { CloudFrontResultResponse } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 
@@ -25,8 +25,9 @@ async function getAlias({
     throw new NotFoundError('Empty alias is not allowed');
   }
 
+  const hostnameRev = reverseHostname(alias);
   const aliasRecord = await getAliasById({
-    aliasId: alias,
+    hostnameRev,
     aliasTableName: dynamoDBTable,
     dynamoDBClient,
     attributes: {

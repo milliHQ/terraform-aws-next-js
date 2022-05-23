@@ -1,5 +1,7 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
+import { DeploymentTemplateType } from '../types';
+
 type CreateDeploymentOptions = {
   /**
    * DynamoDB client
@@ -17,6 +19,10 @@ type CreateDeploymentOptions = {
    * Date when the deployment was created.
    */
   createDate?: Date;
+  /**
+   * Template that should be used for deployment.
+   */
+  templateType?: DeploymentTemplateType;
 };
 
 /**
@@ -27,6 +33,7 @@ function createDeployment({
   deploymentTableName,
   deploymentId,
   createDate = new Date(),
+  templateType = 'FUNCTION_URLS',
 }: CreateDeploymentOptions) {
   const createDateString = createDate.toISOString();
 
@@ -57,6 +64,9 @@ function createDeployment({
         },
         Status: {
           S: 'INITIALIZED',
+        },
+        DeploymentTemplate: {
+          S: templateType,
         },
       },
     })

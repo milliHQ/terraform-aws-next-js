@@ -1,5 +1,6 @@
 import {
   createAlias,
+  reverseHostname,
   updateDeploymentStatus,
   updateDeploymentStatusFinished,
 } from '@millihq/tfn-dynamodb-actions';
@@ -98,11 +99,12 @@ async function handler(event: SNSEvent) {
             });
 
             // TODO: Handle case when multi deployments is not enabled
-            const deploymentAlias =
-              deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN;
+            const deploymentAlias = reverseHostname(
+              deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN
+            );
             await createAlias({
               dynamoDBClient,
-              alias: deploymentAlias,
+              hostnameRev: deploymentAlias,
               isDeploymentAlias: true,
               aliasTableName: dynamoDBTableNameAliases,
               createDate: new Date(),
