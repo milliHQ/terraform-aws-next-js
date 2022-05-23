@@ -21,7 +21,7 @@ async function listDeployments(
    * StartAt is a combined index key of the form: deploymentId#CreateDate that
    * needs to be splitted at the character `#`.
    */
-  const { startAt } = req.params;
+  const { startAt } = req.query;
   let startAtDeploymentId: string | undefined;
   let startAtCreateDate: string | undefined;
 
@@ -46,9 +46,13 @@ async function listDeployments(
         : undefined,
   });
 
-  const nextKey = meta.lastKey
-    ? `${meta.lastKey.deploymentId}${START_AT_KEY_SPLIT_CHAR}${meta.lastKey.createDate}`
-    : null;
+  let nextKey: string | null = null;
+  if (meta.lastKey) {
+    nextKey =
+      meta.lastKey.deploymentId +
+      START_AT_KEY_SPLIT_CHAR +
+      meta.lastKey.createDate;
+  }
 
   return {
     metadata: {

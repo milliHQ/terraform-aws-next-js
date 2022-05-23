@@ -53,6 +53,8 @@ components:
         - CREATE_COMPLETE
         - CREATE_FAILED
         - FINISHED
+        - DESTROY_IN_PROGRESS
+        - DESTROY_FAILED
 
     DeploymentInitialized:
       type: object
@@ -141,7 +143,7 @@ paths:
       summary: List all deployments sorted by its creation date DESC.
       parameters:
         - in: query
-          name: startIndex
+          name: startAt
           schema:
             type: string
           description: Beginning index from where to get the deployments.

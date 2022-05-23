@@ -3,6 +3,8 @@ import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { DeploymentItem } from '../types';
 import { getDeploymentById } from './get-deployment-by-id';
 
+const { unmarshall } = DynamoDB.Converter;
+
 type DeleteDeploymentByIdOptions = {
   /**
    * DynamoDB client
@@ -13,9 +15,9 @@ type DeleteDeploymentByIdOptions = {
    */
   deploymentTableName: string;
   /**
-   * Id of the deployment.
+   * Id of the deployment that should be deleted.
    */
-  deploymentId: string;
+  deploymentId: string | { PK: string; SK: string };
 };
 
 /**
@@ -29,14 +31,25 @@ async function deleteDeploymentById({
   deploymentTableName,
   deploymentId,
 }: DeleteDeploymentByIdOptions): Promise<DeploymentItem | null> {
-  const deploymentToDelete = await getDeploymentById({
-    dynamoDBClient,
-    deploymentTableName,
-    deploymentId,
-  });
+  let PK: string;
+  let SK: string;
 
-  if (!deploymentToDelete) {
-    return null;
+  if (typeof deploymentId === 'string') {
+    const deploymentToDelete = await getDeploymentById({
+      dynamoDBClient,
+      deploymentTableName,
+      deploymentId,
+    });
+
+    if (!deploymentToDelete) {
+      return null;
+    }
+
+    PK = deploymentToDelete.PK;
+    SK = deploymentToDelete.SK;
+  } else {
+    PK = deploymentId.PK;
+    SK = deploymentId.SK;
   }
 
   const deleteCommandResponse = await dynamoDBClient
@@ -44,20 +57,24 @@ async function deleteDeploymentById({
       TableName: deploymentTableName,
       Key: {
         PK: {
-          S: deploymentToDelete.PK,
+          S: PK,
         },
         SK: {
-          S: deploymentToDelete.SK,
+          S: SK,
         },
       },
+      ReturnValues: 'ALL_OLD',
     })
     .promise();
 
-  if (deleteCommandResponse.$response.error) {
-    throw deleteCommandResponse.$response.error;
+  if (
+    deleteCommandResponse.$response.error ||
+    !deleteCommandResponse.Attributes
+  ) {
+    return null;
   }
 
-  return deploymentToDelete;
+  return unmarshall(deleteCommandResponse.Attributes) as DeploymentItem;
 }
 
 export { deleteDeploymentById };

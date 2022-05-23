@@ -57,4 +57,12 @@ describe('DeleteDeploymentById', () => {
     });
     expect(response3).toBeNull();
   });
+
+  test('Delete a deployment by PK and SK', async () => {
+    await createDeployment({
+      dynamoDBClient,
+      deploymentTableName,
+      deploymentId: 'deploymentToDelete',
+    });
+  })
 });

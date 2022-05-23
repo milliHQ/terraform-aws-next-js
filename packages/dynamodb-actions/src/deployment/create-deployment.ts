@@ -1,6 +1,20 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
-import { DeploymentTemplateType } from '../types';
+import { DeploymentItem, DeploymentTemplateType } from '../types';
+
+const { marshall } = DynamoDB.Converter;
+
+type CreatedDeploymentItem = Pick<
+  DeploymentItem,
+  | 'PK'
+  | 'SK'
+  | 'GSI1SK'
+  | 'DeploymentId'
+  | 'CreateDate'
+  | 'ItemVersion'
+  | 'Status'
+  | 'DeploymentTemplate'
+>;
 
 type CreateDeploymentOptions = {
   /**
@@ -28,49 +42,40 @@ type CreateDeploymentOptions = {
 /**
  * Creates and initializes a new deployment.
  */
-function createDeployment({
+async function createDeployment({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
   createDate = new Date(),
   templateType = 'FUNCTION_URLS',
-}: CreateDeploymentOptions) {
+}: CreateDeploymentOptions): Promise<CreatedDeploymentItem> {
   const createDateString = createDate.toISOString();
+  const deploymentItemToCreate: CreatedDeploymentItem = {
+    // Keys
+    PK: 'DEPLOYMENTS',
+    SK: `D#${deploymentId}`,
+    GSI1SK: `${createDateString}#D#${deploymentId}`,
 
-  return dynamoDBClient
+    // Attributes
+    DeploymentId: deploymentId,
+    CreateDate: createDateString,
+    ItemVersion: 1,
+    Status: 'INITIALIZED',
+    DeploymentTemplate: templateType,
+  };
+
+  const response = await dynamoDBClient
     .putItem({
       TableName: deploymentTableName,
-      Item: {
-        // Keys
-        PK: {
-          S: 'DEPLOYMENTS',
-        },
-        SK: {
-          S: `D#${deploymentId}`,
-        },
-        GSI1SK: {
-          S: `${createDateString}#D#${deploymentId}`,
-        },
-
-        // Attributes
-        DeploymentId: {
-          S: deploymentId,
-        },
-        CreateDate: {
-          S: createDateString,
-        },
-        ItemVersion: {
-          N: '1',
-        },
-        Status: {
-          S: 'INITIALIZED',
-        },
-        DeploymentTemplate: {
-          S: templateType,
-        },
-      },
+      Item: marshall(deploymentItemToCreate),
     })
     .promise();
+
+  if (response.$response.error) {
+    throw response.$response.error;
+  }
+
+  return deploymentItemToCreate;
 }
 
 export { createDeployment };

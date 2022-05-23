@@ -29,7 +29,7 @@ export interface paths {
       parameters: {
         query: {
           /** Beginning index from where to get the deployments. */
-          startIndex?: string;
+          startAt?: string;
         };
       };
       responses: {
@@ -108,7 +108,9 @@ export interface components {
       | 'CREATE_IN_PROGRESS'
       | 'CREATE_COMPLETE'
       | 'CREATE_FAILED'
-      | 'FINISHED';
+      | 'FINISHED'
+      | 'DESTROY_IN_PROGRESS'
+      | 'DESTROY_FAILED';
     DeploymentInitialized: {
       id: string;
       status: components['schemas']['DeploymentStatus'];

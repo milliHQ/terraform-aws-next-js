@@ -6,6 +6,8 @@ import {
   createDeploymentTestTable,
 } from '../test-utils';
 
+const { unmarshall } = DynamoDB.Converter;
+
 describe('CreateDeployment', () => {
   let dynamoDBClient: DynamoDB;
   let deploymentTableName: string;
@@ -35,6 +37,33 @@ describe('CreateDeployment', () => {
       createDate,
     });
 
-    expect(result.$response.error).toBeNull();
+    const resultItem = {
+      PK: 'DEPLOYMENTS',
+      SK: 'D#abc',
+      GSI1SK: `${createDate.toISOString()}#D#abc`,
+      DeploymentId: 'abc',
+      CreateDate: createDate.toISOString(),
+      ItemVersion: 1,
+      Status: 'INITIALIZED',
+      DeploymentTemplate: 'FUNCTION_URLS',
+    };
+
+    expect(result).toMatchObject(resultItem);
+
+    // Check item in the database
+    const getItemResponse = await dynamoDBClient
+      .getItem({
+        Key: {
+          PK: {
+            S: resultItem.PK,
+          },
+          SK: {
+            S: resultItem.SK,
+          },
+        },
+        TableName: deploymentTableName,
+      })
+      .promise();
+    expect(unmarshall(getItemResponse.Item!)).toMatchObject(resultItem);
   });
 });

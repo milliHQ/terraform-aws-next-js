@@ -1,15 +1,21 @@
+import {
+  createDeployment,
+  getDeploymentById,
+} from '@millihq/tfn-dynamodb-actions';
 import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { API } from 'lambda-api';
 
 import { createApi } from '../../../src/api';
+import { DynamoDBServiceType } from '../../../src/services/dynamodb';
 import {
   mockS3Service,
   mockDynamoDBService,
   createAPIGatewayProxyEventV2,
 } from '../../test-utils';
 
-describe('CreateDeployment', () => {
+describe('DeleteDeployment', () => {
   let api: API;
+  let dynamoDBService: DynamoDBServiceType;
   let s3CleanupCallback: () => Promise<void>;
   let dynamoDBCleanupCallback: () => Promise<void>;
 
@@ -23,6 +29,7 @@ describe('CreateDeployment', () => {
 
     const dynamoDBMock = await mockDynamoDBService();
     api.app('dynamoDB', dynamoDBMock[0]);
+    dynamoDBService = dynamoDBMock[0];
     dynamoDBCleanupCallback = dynamoDBMock[1];
   });
 
@@ -31,37 +38,25 @@ describe('CreateDeployment', () => {
     await dynamoDBCleanupCallback();
   });
 
-  test('Valid createDeployment request', async () => {
-    const event = createAPIGatewayProxyEventV2({
-      uri: '/deployments',
-      method: 'POST',
+  test('Deployment without aliases', async () => {
+    createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentWithoutAlias',
     });
 
-    const result = (await api.run(
+    const event = createAPIGatewayProxyEventV2({
+      uri: '/deployments/deploymentWithoutAlias',
+      method: 'DELETE',
+    });
+    const response = (await api.run(
       event as any,
       {} as any
     )) as APIGatewayProxyStructuredResultV2;
-
-    expect(result).toMatchObject({
+    expect(response).toMatchObject({
       headers: { 'content-type': 'application/json' },
-      statusCode: 201,
+      statusCode: 204,
       isBase64Encoded: false,
-    });
-    expect(JSON.parse(result.body!)).toMatchObject({
-      id: expect.any(String),
-      uploadUrl: expect.any(String),
-      uploadAttributes: {
-        key: expect.any(String),
-        'Content-Type': expect.any(String),
-        'x-amz-meta-tf-next-deployment-id': expect.any(String),
-        bucket: expect.any(String),
-        'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-        'X-Amz-Credential': expect.any(String),
-        'X-Amz-Date': expect.any(String),
-        Policy: expect.any(String),
-        'X-Amz-Signature': expect.any(String),
-      },
-      status: 'INITIALIZED',
     });
   });
 });
