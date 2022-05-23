@@ -13,9 +13,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -48,7 +51,7 @@ jobs:
   test-integration:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
     services:
       s3:
         image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
@@ -57,6 +60,10 @@ jobs:
           MINIO_SECRET_KEY: testtest
       dynamodb:
         image: amazon/dynamodb-local:latest
+        # @note Github overwrites WORKDIR to repository path, so overwrite that again
+        options: >-
+          --workdir /home/dynamodblocal
+          --health-cmd "curl --fail http://127.0.0.1:8000/shell/ || exit 1" --health-interval 10s --health-timeout 5s --health-retries 5
 
     env:
       MINIO_ACCESS_KEY: test
@@ -65,6 +72,9 @@ jobs:
       TEST_DYNAMO_ENDPOINT: http://dynamodb:8000
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -75,7 +85,7 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Yarn install
+      - name: Install dependencies
         run: yarn --frozen-lockfile --cache-folder .yarn
 
       - name: Download build artifacts
@@ -90,8 +100,11 @@ jobs:
   test-e2e-prepare:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
