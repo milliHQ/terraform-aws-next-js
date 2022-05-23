@@ -9,6 +9,8 @@
   "scripts": {
     "build": "turbo run build",
     "test:prepare": "docker-compose up -d",
+    "test:runtime": "jest packages/runtime/**",
+    "test:not:runtime": "jest packages/** --testPathIgnorePatterns \"packages/runtime\"",
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts",

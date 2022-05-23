@@ -39,7 +39,7 @@ describe('DeleteDeployment', () => {
   });
 
   test('Deployment without aliases', async () => {
-    createDeployment({
+    const deployment = await createDeployment({
       dynamoDBClient: dynamoDBService.getDynamoDBClient(),
       deploymentTableName: dynamoDBService.getDeploymentTableName(),
       deploymentId: 'deploymentWithoutAlias',
@@ -58,5 +58,12 @@ describe('DeleteDeployment', () => {
       statusCode: 204,
       isBase64Encoded: false,
     });
+
+    const getDeploymentResponse = await getDeploymentById({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentWithoutAlias',
+    });
+    expect(getDeploymentResponse).toBeNull();
   });
 });

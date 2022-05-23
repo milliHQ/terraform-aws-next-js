@@ -94,7 +94,40 @@ jobs:
           path: packages
 
       - name: Jest
-        run: yarn test
+        run: yarn test:not:runtime
+
+  # We run the runtime tests in a dedicated task since running it with the
+  # other integration tests would cause a memory overflow.
+  test-integration-runtime:
+    needs: build
+    runs-on: ubuntu-latest
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
+
+    steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
+      - uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            .yarn
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --cache-folder .yarn
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: packages
+
+      - name: Jest
+        run: yarn test:runtime
 
   test-e2e-prepare:
     needs: build
@@ -136,7 +169,7 @@ jobs:
   publishRelease:
     name: Potentially publish release
     runs-on: ubuntu-latest
-    needs: [build, test-integration]
+    needs: [build, test-integration, test-integration-runtime]
     if: github.ref == 'refs/heads/main'
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -3,7 +3,7 @@ import { Request, Response } from 'lambda-api';
 import {
   listAliasesForDeployment,
   getDeploymentById,
-  deleteAliasById,
+  deleteDeploymentById as dynamoDBdeleteDeploymentById,
 } from '@millihq/tfn-dynamodb-actions';
 
 import { paths } from '../../../schema';
@@ -72,7 +72,25 @@ async function deleteDeploymentById(
      * the database without handling CloudFormation stack deletion.
      */
     case 'INITIALIZED': {
+      const deleteResponse = await dynamoDBdeleteDeploymentById({
+        dynamoDBClient: dynamoDB.getDynamoDBClient(),
+        deploymentTableName: dynamoDB.getDeploymentTableName(),
+        deploymentId: {
+          PK: deployment.PK,
+          SK: deployment.SK,
+        },
+      });
 
+      if (!deleteResponse) {
+        const errorResponse: ErrorResponse = {
+          code: 'DEPLOYMENT_DELETION_FAILED',
+          status: 400,
+          message: 'The deployment with the provided id could not be deleted.',
+        };
+        return res.status(400).json(errorResponse);
+      }
+
+      return res.sendStatus(204);
     }
 
     /**

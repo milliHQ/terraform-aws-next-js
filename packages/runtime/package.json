@@ -40,6 +40,7 @@
     "resolve-from": "5.0.0",
     "semver": "6.1.1",
     "set-cookie-parser": "2.4.6",
+    "ts-jest": "*",
     "typescript": "*",
     "yazl": "https://github.com/ijjk/yazl#70949c55b482647669ce37023017b1514c42b33c"
   }
