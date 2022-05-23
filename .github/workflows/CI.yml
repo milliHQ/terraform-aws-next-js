@@ -65,6 +65,8 @@ jobs:
           --workdir /home/dynamodblocal
 
     env:
+      # Increase heap size for running the tests
+      NODE_OPTIONS: '--max_old_space_size=4096'
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: testtest
       S3_ENDPOINT: s3:9000
