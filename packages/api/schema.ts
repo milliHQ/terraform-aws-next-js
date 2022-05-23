@@ -47,7 +47,7 @@ export interface paths {
     post: {
       responses: {
         /** Successful response. */
-        200: {
+        201: {
           content: {
             'application/json': components['schemas']['DeploymentInitialized'];
           };

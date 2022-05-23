@@ -23,7 +23,10 @@
     "@types/aws-lambda": "*",
     "@vercel/ncc": "*",
     "aws-sdk": "*",
-    "ncc-zip": "^2.0.0"
+    "jest": "*",
+    "ncc-zip": "^2.0.0",
+    "ts-jest": "*",
+    "typescript": "*"
   },
   "files": [
     "dist.zip",

@@ -8,7 +8,7 @@ import { S3ServiceType } from '../../services/s3';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 
 type SuccessResponse =
-  paths['/deployments']['post']['responses']['200']['content']['application/json'];
+  paths['/deployments']['post']['responses']['201']['content']['application/json'];
 
 const UPLOAD_LINK_EXPIRES_SECONDS = 60 * 5;
 // S3 Metadata Key where the deployment is stored
@@ -20,7 +20,7 @@ export function generateRandomDeploymentId() {
 
 async function createDeployment(
   req: Request,
-  _res: Response
+  res: Response
 ): Promise<SuccessResponse> {
   const s3Service = req.namespace.s3 as S3ServiceType;
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
@@ -46,6 +46,7 @@ async function createDeployment(
     Expires: UPLOAD_LINK_EXPIRES_SECONDS,
   });
 
+  res.status(201);
   return {
     id: deploymentId,
     uploadUrl: url,

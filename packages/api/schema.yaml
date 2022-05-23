@@ -167,7 +167,7 @@ paths:
     post:
       summary: Initializes a new deployment and creates a upload link where the deployment package can be uploaded to.
       responses:
-        '200':
+        '201':
           description: Successful response.
           content:
             application/json:

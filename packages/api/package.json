@@ -17,7 +17,9 @@
     "@types/aws-lambda": "*",
     "@vercel/ncc": "*",
     "ncc-zip": "^2.0.0",
+    "jest": "*",
     "openapi-typescript": "^5.3.0",
+    "ts-jest": "*",
     "typescript": "*"
   },
   "files": [

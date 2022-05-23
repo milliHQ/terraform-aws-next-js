@@ -46,7 +46,8 @@
     "@types/glob": "^7.1.2",
     "@types/node-fetch": "^2.0.0",
     "@types/tmp": "^0.2.0",
-    "@types/yargs": "^15.0.5"
+    "@types/yargs": "^15.0.5",
+    "typescript": "*"
   },
   "files": [
     "dist/**",

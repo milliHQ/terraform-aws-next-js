@@ -1,5 +1,5 @@
 import {
-  deleteAliasById,
+  deleteAliasById as dynamoDeleteAliasById,
   getAliasById,
   reverseHostname,
 } from '@millihq/tfn-dynamodb-actions';
@@ -15,7 +15,7 @@ class DeleteAliasPayload {
   customDomain: string;
 }
 
-async function deleteAlias(req: Request, res: Response) {
+async function deleteAliasById(req: Request, res: Response) {
   const payload = new DeleteAliasPayload();
   payload.customDomain = req.body.customDomain;
 
@@ -41,7 +41,7 @@ async function deleteAlias(req: Request, res: Response) {
     return res.error(400, 'Cannot delete alias');
   }
 
-  await deleteAliasById({
+  await dynamoDeleteAliasById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
     hostnameRev: aliasToDelete,
@@ -53,4 +53,4 @@ async function deleteAlias(req: Request, res: Response) {
   });
 }
 
-export { deleteAlias };
+export { deleteAliasById };

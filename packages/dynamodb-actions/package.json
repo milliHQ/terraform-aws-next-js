@@ -5,5 +5,10 @@
   "main": "src/index.ts",
   "dependencies": {
     "aws-sdk": "*"
+  },
+  "devDependencies": {
+    "jest": "*",
+    "ts-jest": "*",
+    "typescript": "*"
   }
 }
