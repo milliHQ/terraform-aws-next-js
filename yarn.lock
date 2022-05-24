@@ -2,15 +2,15 @@
 # yarn lockfile v1
 
 
-"@aws-cdk/aws-apigatewayv2-alpha@^2.22.0-alpha.0":
-  version "2.22.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-apigatewayv2-alpha/-/aws-apigatewayv2-alpha-2.22.0-alpha.0.tgz#1eda2ba5f5df94bc89146e181ccd744067a70f78"
-  integrity sha512-O8ZY2ny8TapdvD6iIULzBKJ4rn9JlmkwfDzfR7cYl7y+P220sLh1iJmU/m1yqtIRMLjv2022XCNBMZUJfwpVqQ==
+"@aws-cdk/aws-apigatewayv2-alpha@2.25.0-alpha.0":
+  version "2.25.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-apigatewayv2-alpha/-/aws-apigatewayv2-alpha-2.25.0-alpha.0.tgz#2ae17ed2da63b4156823009119c0983f527c5844"
+  integrity sha512-ZPORMtJ8clwQMm0cL5VL9aje8ODZB6bTWL9zT91GxJV0zgmsPKJFxc4E62nDGbKKE/tRnM/oq32Rr9rm/1569A==
 
-"@aws-cdk/aws-apigatewayv2-integrations-alpha@^2.22.0-alpha.0":
-  version "2.22.0-alpha.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-apigatewayv2-integrations-alpha/-/aws-apigatewayv2-integrations-alpha-2.22.0-alpha.0.tgz#7a0d7a395e69d71984aeab11144ae11bbd3875d8"
-  integrity sha512-QVXHA8J6ECkE29aT3Rnwtgxq15eDW3SlMuX8Z9J3BVqPPAH7rLAruD3hKL//KklVFd8xke7zBxMeYJ5CGkduZA==
+"@aws-cdk/aws-apigatewayv2-integrations-alpha@2.25.0-alpha.0":
+  version "2.25.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-apigatewayv2-integrations-alpha/-/aws-apigatewayv2-integrations-alpha-2.25.0-alpha.0.tgz#0aa310cea01b5cb195547c39c127dd91574b4cb2"
+  integrity sha512-SiaP9zfOfwm3xIpxfBslOIhoh8Q7ngYKCbgj8gP2BH08+QXUzusM0FUbFY+ucvGF7fcgd+oqorplxVmLEeFXZQ==
 
 "@aws-crypto/ie11-detection@^2.0.0":
   version "2.0.0"
@@ -2365,10 +2365,10 @@ at-least-node@^1.0.0:
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
-aws-cdk-lib@^2.22.0:
-  version "2.22.0"
-  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.22.0.tgz#21b13764eff8c44cfe8ab03509a173ee8b661475"
-  integrity sha512-Orz+c746XGm1QBJKb3Wh6qH2rpmHdYMS5A4Wk91niYzrY4Q2kck/XLeQtEwOzscbW2Hqwc6vXTEpkldAI2pzGw==
+aws-cdk-lib@2.25.0:
+  version "2.25.0"
+  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.25.0.tgz#6014ab5b73b2a3012c8081b9afc8411dcb9832a0"
+  integrity sha512-rcQeQu/lTmi1tg5DwV0gBqJtF73khApfHt9n7BIHkKbUWvCB50lIL1Q1/7cHvTicfQ62UnwFoPWwB0YqQceDVQ==
   dependencies:
     "@balena/dockerignore" "^1.0.2"
     case "1.6.3"
@@ -2377,7 +2377,7 @@ aws-cdk-lib@^2.22.0:
     jsonschema "^1.4.0"
     minimatch "^3.1.2"
     punycode "^2.1.1"
-    semver "^7.3.6"
+    semver "^7.3.7"
     yaml "1.10.2"
 
 aws-sdk@*, aws-sdk@2.1001.0, aws-sdk@^2.804.0:
@@ -6030,7 +6030,7 @@ semver@^6.0.0, semver@^6.2.0, semver@^6.3.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.0.tgz#ee0a64c8af5e8ceea67687b133761e1becbd1d3d"
   integrity sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==
 
-semver@^7.3.6:
+semver@^7.3.7:
   version "7.3.7"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.3.7.tgz#12c5b649afdbf9049707796e22a4028814ce523f"
   integrity sha512-QlYTucUYOews+WeEujDoEGziz4K6c47V/Bd+LjSSYcA94p+DmINdf7ncaUinThfvZyu13lN9OY1XDxt8C0Tw0g==

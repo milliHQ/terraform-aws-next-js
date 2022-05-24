@@ -3,7 +3,7 @@ import { Route } from '@vercel/routing-utils';
 /**
  * Supported runtime values for the Lambdas.
  */
-export type SupportedRuntime = 'nodejs12.x' | 'nodejs14.x';
+export type SupportedRuntime = 'nodejs12.x' | 'nodejs14.x' | 'nodejs16.x';
 
 export type LambdaDefinition = {
   /**
@@ -35,7 +35,7 @@ export type DeploymentConfig = {
     string,
     {
       handler: string;
-      runtime: 'nodejs12.x' | 'nodejs14.x';
+      runtime: SupportedRuntime;
       filename: string;
       route: string;
     }
