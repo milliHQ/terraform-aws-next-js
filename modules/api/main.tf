@@ -15,7 +15,9 @@ data "aws_iam_policy_document" "access_dynamodb_tables" {
     ]
     resources = [
       var.dynamodb_table_deployments_arn,
-      var.dynamodb_table_aliases_arn
+      "${var.dynamodb_table_deployments_arn}/index/*",
+      var.dynamodb_table_aliases_arn,
+      "${var.dynamodb_table_aliases_arn}/index/*",
     ]
   }
 }
