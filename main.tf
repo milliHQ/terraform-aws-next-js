@@ -4,6 +4,9 @@ data "aws_region" "current" {}
 # DynamoDB
 ##########
 
+# Please see the documentation in packages/dynamodb-actions for information
+# about the used schema.
+
 resource "aws_dynamodb_table" "aliases" {
   name         = "${var.deployment_name}_aliases"
   billing_mode = "PAY_PER_REQUEST"
@@ -11,16 +14,32 @@ resource "aws_dynamodb_table" "aliases" {
   hash_key  = "PK"
   range_key = "SK"
 
-  # alias
   attribute {
     name = "PK"
     type = "S"
   }
 
-  # deploymentId
   attribute {
     name = "SK"
     type = "S"
+  }
+
+  attribute {
+    name = "GSI1PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "GSI1SK"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name               = "DeploymentIdIndex"
+    hash_key           = "GSI1PK"
+    range_key          = "GSI1SK"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["CreateDate", "DeploymentId", "DeploymentAlias"]
   }
 
   tags = var.tags
@@ -57,7 +76,7 @@ resource "aws_dynamodb_table" "deployments" {
     hash_key           = "PK"
     range_key          = "GSI1SK"
     projection_type    = "INCLUDE"
-    non_key_attributes = ["DeploymentId", "CreateDate", "Status", "DeploymentAlias"]
+    non_key_attributes = ["CreateDate", "DeploymentAlias", "DeploymentId", "Status"]
   }
 }
 

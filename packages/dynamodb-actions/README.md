@@ -44,10 +44,10 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
     <tr>
       <td><code>DEPLOYMENTS</code></td>
       <td><code>&lt;CreateDate&gt;#D#&lt;DeploymentId&gt;</code></td>
-      <td>DeploymentId</td>
       <td>CreateDate</td>
-      <td>Status</td>
       <td>DeploymentAlias</td>
+      <td>DeploymentId</td>
+      <td>Status</td>
     </tr>
   </tbody>
 </table>
