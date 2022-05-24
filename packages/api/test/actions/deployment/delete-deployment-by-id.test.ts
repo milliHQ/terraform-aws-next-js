@@ -2,12 +2,14 @@ import {
   createAlias,
   createDeployment,
   getDeploymentById,
+  updateDeploymentStatusCreateInProgress,
   updateDeploymentStatusFinished,
 } from '@millihq/tfn-dynamodb-actions';
 import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { API } from 'lambda-api';
 
 import { createApi } from '../../../src/api';
+import { CloudFormationServiceType } from '../../../src/services/cloudformation';
 import { DynamoDBServiceType } from '../../../src/services/dynamodb';
 import {
   mockS3Service,
@@ -18,6 +20,7 @@ import {
 
 describe('DeleteDeployment', () => {
   let api: API;
+  let cloudFormationService: CloudFormationServiceType;
   let dynamoDBService: DynamoDBServiceType;
   let s3CleanupCallback: () => Promise<void>;
   let dynamoDBCleanupCallback: () => Promise<void>;
@@ -26,7 +29,8 @@ describe('DeleteDeployment', () => {
     api = createApi();
 
     // Insert mocks
-    api.app('cloudFormation', mockCloudFormationService());
+    cloudFormationService = mockCloudFormationService();
+    api.app('cloudFormation', cloudFormationService);
 
     const s3Mock = await mockS3Service();
     api.app('s3', s3Mock[0]);
@@ -41,6 +45,10 @@ describe('DeleteDeployment', () => {
   afterAll(async () => {
     await s3CleanupCallback();
     await dynamoDBCleanupCallback();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   test('Deployment without aliases', async () => {
@@ -73,11 +81,40 @@ describe('DeleteDeployment', () => {
   });
 
   test('Deployment with deployment alias', async () => {
+    // Insert temporary mock
+    const deleteStackSpy = jest.spyOn(cloudFormationService, 'deleteStack');
+
+    // Status: INITIALIZED
     const deployment = await createDeployment({
       dynamoDBClient: dynamoDBService.getDynamoDBClient(),
       deploymentTableName: dynamoDBService.getDeploymentTableName(),
       deploymentId: 'deploymentWithAlias',
     });
+
+    // Status: INITIALIZED -> CREATE_IN-PROGRESS
+    await updateDeploymentStatusCreateInProgress({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+      prerenders: 'foo',
+      routes: 'bar',
+      cloudFormationStack:
+        'arn:aws:cloudformation:eu-central-1:123456789123:stack/tfn-d35de1a94815e0562689b89b6225cd85/319a93a0-c3df-11ec-9e1a-0a226e11de6a',
+    });
+
+    // Status: CREATE_IN-PROGRESS -> FINISHED
+    await updateDeploymentStatusFinished({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+    });
+
     await createAlias({
       dynamoDBClient: dynamoDBService.getDynamoDBClient(),
       aliasTableName: dynamoDBService.getAliasTableName(),
@@ -87,14 +124,6 @@ describe('DeleteDeployment', () => {
       prerenders: '',
       routes: '',
       isDeploymentAlias: true,
-    });
-    await updateDeploymentStatusFinished({
-      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
-      deploymentTableName: dynamoDBService.getDeploymentTableName(),
-      deploymentId: {
-        PK: deployment.PK,
-        SK: deployment.SK,
-      },
     });
 
     const event = createAPIGatewayProxyEventV2({
@@ -110,5 +139,60 @@ describe('DeleteDeployment', () => {
       statusCode: 204,
       isBase64Encoded: false,
     });
+    expect(deleteStackSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('Deployment with custom alias', async () => {
+    const deployment = await createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentWithMultipleAliases',
+    });
+
+    // Deployment alias
+    await createAlias({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      aliasTableName: dynamoDBService.getAliasTableName(),
+      deploymentId: 'deploymentWithMultipleAliases',
+      hostnameRev: 'com.with-multiple-alias',
+      lambdaRoutes: '',
+      prerenders: '',
+      routes: '',
+      isDeploymentAlias: true,
+    });
+    // Custom alias
+    await createAlias({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      aliasTableName: dynamoDBService.getAliasTableName(),
+      deploymentId: 'deploymentWithMultipleAliases',
+      hostnameRev: 'com.with-multiple-alias.custom',
+      lambdaRoutes: '',
+      prerenders: '',
+      routes: '',
+    });
+
+    await updateDeploymentStatusFinished({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+    });
+
+    const event = createAPIGatewayProxyEventV2({
+      uri: '/deployments/deploymentWithMultipleAliases',
+      method: 'DELETE',
+    });
+    const response = (await api.run(
+      event as any,
+      {} as any
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(response).toMatchObject({
+      headers: { 'content-type': 'application/json' },
+      statusCode: 400,
+      isBase64Encoded: false,
+    });
+    expect(JSON.parse(response.body!)).toMatchObject({});
   });
 });

@@ -51,6 +51,8 @@ describe('Update deployment', () => {
       deploymentId,
       prerenders: 'foo',
       routes: 'bar',
+      cloudFormationStack:
+        'arn:aws:cloudformation:eu-central-1:123456789123:stack/tfn-d35de1a94815e0562689b89b6225cd85/319a93a0-c3df-11ec-9e1a-0a226e11de6a',
     });
     expect(updateResponse).toMatchObject(expectedObject);
 
@@ -84,6 +86,8 @@ describe('Update deployment', () => {
       deploymentId,
       prerenders: 'foo',
       routes: 'bar',
+      cloudFormationStack:
+        'arn:aws:cloudformation:eu-central-1:123456789123:stack/tfn-d35de1a94815e0562689b89b6225cd85/319a93a0-c3df-11ec-9e1a-0a226e11de6a',
     });
 
     // CREATE_IN_PROGRESS -> FINISHED

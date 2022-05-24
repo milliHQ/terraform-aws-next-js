@@ -16,6 +16,10 @@ type UpdateDeploymentStatusCreateInProgressOptions = {
    */
   deploymentId: string | { PK: string; SK: string };
   /**
+   * The CloudFormation stack ARN that is associated with this deployment.
+   */
+  cloudFormationStack: string;
+  /**
    * Stringified JSON object that contains routes that are served from
    * prerendered generated HTML files.
    */
@@ -36,6 +40,7 @@ function updateDeploymentStatusCreateInProgress({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
+  cloudFormationStack,
   prerenders,
   routes,
 }: UpdateDeploymentStatusCreateInProgressOptions) {
@@ -51,6 +56,7 @@ function updateDeploymentStatusCreateInProgress({
       LambdaRoutes: '{}',
       Prerenders: prerenders,
       Routes: routes,
+      CFStack: cloudFormationStack,
     },
   });
 }

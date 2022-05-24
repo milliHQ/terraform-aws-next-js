@@ -7,7 +7,7 @@ import {
 import { deploymentConfigurationKey, manifestVersion } from '../src/constants';
 import { getOrCreateManifest } from '../src/get-or-create-manifest';
 import { Manifest } from '../src/types';
-import { generateS3ClientForTesting } from './utils';
+import { generateS3ClientForTesting } from './test-utils';
 
 describe('deploy-trigger', () => {
   let s3: S3;

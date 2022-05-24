@@ -67,7 +67,7 @@ export type DeploymentItem = {
    */
   DeploymentTemplate: DeploymentTemplateType;
   /**
-   * The id of the CloudFormation stack that is associated with this deployment.
+   * The CloudFormation stack that are associated with this deployment.
    */
   CFStack?: string;
 };

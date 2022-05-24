@@ -54,8 +54,8 @@ async function handler(event: SNSEvent) {
       switch (ResourceStatus) {
         case 'CREATE_COMPLETE':
           try {
-            const stackId = parsedEvent.StackId;
-            if (!stackId) {
+            const stackARN = parsedEvent.StackId;
+            if (!stackARN) {
               throw new Error('No StackId present');
             }
 
@@ -63,12 +63,12 @@ async function handler(event: SNSEvent) {
             // Get the stack that triggered the event
             const stacksResponse = await cloudformationClient
               .describeStacks({
-                StackName: stackId,
+                StackName: stackARN,
               })
               .promise();
 
             if (!stacksResponse.Stacks || stacksResponse.Stacks.length !== 1) {
-              throw new Error('Could not retrieve stack with id: ' + stackId);
+              throw new Error('Could not retrieve stack with id: ' + stackARN);
             }
 
             const stack = stacksResponse.Stacks[0];

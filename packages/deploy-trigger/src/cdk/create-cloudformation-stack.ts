@@ -3,6 +3,13 @@ import CloudFormation from 'aws-sdk/clients/cloudformation';
 
 import { toCloudFormation } from './to-cloudformation';
 
+type CreateCloudFormationStackReturnValue = {
+  /**
+   * The full arn of the created CloudFormation stack.
+   */
+  stackARN: string;
+};
+
 type CreateCloudFormationStackOptions = {
   /**
    * SNS topic ARNs that should be notified of stack change events
@@ -17,7 +24,7 @@ async function createCloudFormationStack({
   notificationARNs,
   stack,
   stackName,
-}: CreateCloudFormationStackOptions) {
+}: CreateCloudFormationStackOptions): Promise<CreateCloudFormationStackReturnValue> {
   const cloudformationClient = new CloudFormation();
   const template = toCloudFormation(stack);
 
@@ -30,7 +37,17 @@ async function createCloudFormationStack({
     })
     .promise();
 
-  console.log('CF Result:', result);
+  if (result.$response.error) {
+    throw result.$response.error;
+  }
+
+  if (!result.$response.data?.StackId) {
+    throw new Error('No stackId returned.');
+  }
+
+  return {
+    stackARN: result.$response.data.StackId,
+  };
 }
 
 export { createCloudFormationStack };

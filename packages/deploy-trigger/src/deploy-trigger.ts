@@ -38,7 +38,7 @@ interface Props {
 interface Response {
   files: FileResult[];
   lambdas: LambdaDefinition[];
-  buildId: string;
+  deploymentId: string;
   deploymentConfig: DeploymentConfig;
 }
 
@@ -49,21 +49,21 @@ async function deployTrigger({
   deployBucket,
 }: Props): Promise<Response> {
   let deploymentConfig: DeploymentConfig | null = null;
-  let buildId: string | undefined;
+  let deploymentId: string | undefined;
   const params = {
     Key: key,
     Bucket: sourceBucket,
   };
 
-  // Get the buildId from the metadata of the package
+  // Get the deploymentId from the metadata of the package
   // If none is present, create a random id
   const zipHeaders = await s3.headObject(params).promise();
 
   if (zipHeaders.Metadata && DEPLOYMENT_ID_META_KEY in zipHeaders.Metadata) {
-    buildId = zipHeaders.Metadata[DEPLOYMENT_ID_META_KEY];
+    deploymentId = zipHeaders.Metadata[DEPLOYMENT_ID_META_KEY];
   }
 
-  if (!buildId) {
+  if (!deploymentId) {
     throw new Error('Could not get the deployment ID from the uploaded file.');
   }
 
@@ -106,7 +106,7 @@ async function deployTrigger({
         continue;
       } else if (filePath.startsWith('lambdas')) {
         contentType = 'application/zip';
-        targetKey = `${buildId}/_tf_next/${filePath}`;
+        targetKey = `${deploymentId}/_tf_next/${filePath}`;
 
         lambdaUploads.push(
           s3
@@ -120,7 +120,7 @@ async function deployTrigger({
         );
       } else {
         const filePathWithoutPrefix = filePath.substring('static/'.length);
-        targetKey = `${buildId}/${filePathWithoutPrefix}`;
+        targetKey = `${deploymentId}/${filePathWithoutPrefix}`;
 
         // Get ContentType
         // Static pre-rendered pages have no file extension,
@@ -202,7 +202,7 @@ async function deployTrigger({
     deploymentConfig,
     files,
     lambdas,
-    buildId,
+    deploymentId,
   };
 }
 

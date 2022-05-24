@@ -7,7 +7,7 @@ import {
   s3CreateBucket as createBucket,
 } from '../../../test/utils';
 import { DEPLOYMENT_ID_META_KEY, deployTrigger } from '../src/deploy-trigger';
-import { generateZipBundle } from './utils';
+import { generateZipBundle } from './test-utils';
 import { generateRandomBuildId } from '../src/utils/random-id';
 
 describe('deploy-trigger', () => {
@@ -66,8 +66,8 @@ describe('deploy-trigger', () => {
         packageContent
       );
 
-      const deploymentId = generateRandomBuildId();
-      const packageKey = `${deploymentId}.zip`;
+      const initialDeploymentId = generateRandomBuildId();
+      const packageKey = `${initialDeploymentId}.zip`;
 
       await s3
         .upload({
@@ -75,20 +75,20 @@ describe('deploy-trigger', () => {
           Body: fs.createReadStream(bundle),
           Bucket: sourceBucket.bucketName,
           Metadata: {
-            [DEPLOYMENT_ID_META_KEY]: deploymentId,
+            [DEPLOYMENT_ID_META_KEY]: initialDeploymentId,
           },
         })
         .promise();
 
       // Run deployTrigger
-      const { buildId, files } = await deployTrigger({
+      const { deploymentId, files } = await deployTrigger({
         s3,
         sourceBucket: sourceBucket.bucketName,
         deployBucket: targetBucket.bucketName,
         key: packageKey,
       });
 
-      expect(buildId).toBeDefined();
+      expect(deploymentId).toBe(initialDeploymentId);
       expect(files.length).toBe(packageContent.length);
 
       // Check targetBucket
@@ -102,7 +102,7 @@ describe('deploy-trigger', () => {
         expect(Contents).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              Key: `${buildId}/${fileKey}`,
+              Key: `${deploymentId}/${fileKey}`,
             }),
           ])
         );
@@ -112,7 +112,7 @@ describe('deploy-trigger', () => {
       const localeStaticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${buildId}/${localeStaticRouteKey}`,
+          Key: `${deploymentId}/${localeStaticRouteKey}`,
         })
         .promise();
 
@@ -127,7 +127,7 @@ describe('deploy-trigger', () => {
       const staticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${buildId}/${staticRouteKey}`,
+          Key: `${deploymentId}/${staticRouteKey}`,
         })
         .promise();
 
@@ -139,7 +139,7 @@ describe('deploy-trigger', () => {
       const staticAssetObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${buildId}/${staticAssetKey}`,
+          Key: `${deploymentId}/${staticAssetKey}`,
         })
         .promise();
       expect(staticAssetObject.ContentType).toBe(

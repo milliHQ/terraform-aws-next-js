@@ -1,4 +1,7 @@
-import { updateDeploymentStatusCreateInProgress } from '@millihq/tfn-dynamodb-actions';
+import {
+  updateDeploymentStatusCreateInProgress,
+  getDeploymentById,
+} from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
 import DynamoDB from 'aws-sdk/clients/dynamodb';
@@ -177,46 +180,60 @@ async function s3Handler(Record: S3EventRecord) {
     deploymentConfigurationKey
   );
 
-  // Unpack the package
-  console.log('HERE');
-  const { files, buildId, lambdas, deploymentConfig } = await deployTrigger({
-    s3,
-    sourceBucket,
-    deployBucket,
-    key,
+  // Unpack the package to S3
+  const { files, deploymentId, lambdas, deploymentConfig } =
+    await deployTrigger({
+      s3,
+      sourceBucket,
+      deployBucket,
+      key,
+    });
+
+  // Get the deployment from the Database
+  const deployment = await getDeploymentById({
+    dynamoDBClient,
+    deploymentTableName: dynamoDBTableNameDeployments,
+    deploymentId,
   });
 
-  console.log('BuildID:', buildId);
+  if (!deployment) {
+    throw new Error(
+      `Deployment with id ${deploymentId} could not be found in database.`
+    );
+    // TODO: Cleanup extracted files from S3
+  }
 
   // Create the stack
   const atomicDeployment =
-    deploymentConfig.type === 'APIGateway'
+    deployment.DeploymentTemplate === 'API_GATEWAY'
       ? new AtomicDeploymentAPIGateway({
-          deploymentId: buildId,
+          deploymentId,
           deploymentBucketId: deployBucket,
           lambdas: lambdas,
         })
       : new AtomicDeploymentFunctionUrls({
-          deploymentId: buildId,
+          deploymentId,
           deploymentBucketId: deployBucket,
           lambdas: lambdas,
         });
 
-  const stackName = `tfn-${buildId}`;
-  await updateDeploymentStatusCreateInProgress({
-    dynamoDBClient,
-    deploymentId: buildId,
-    deploymentTableName: dynamoDBTableNameDeployments,
-    routes: JSON.stringify(deploymentConfig.routes),
-    prerenders: JSON.stringify(deploymentConfig.prerenders),
-  });
-
   try {
-    await createCloudFormationStack({
+    const stackName = `tfn-${deploymentId}`;
+    const { stackARN } = await createCloudFormationStack({
       notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
       stack: atomicDeployment,
       // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
       stackName,
+    });
+
+    // TODO: Move this to the deployment controller
+    await updateDeploymentStatusCreateInProgress({
+      dynamoDBClient,
+      deploymentTableName: dynamoDBTableNameDeployments,
+      deploymentId,
+      routes: JSON.stringify(deploymentConfig.routes),
+      prerenders: JSON.stringify(deploymentConfig.prerenders),
+      cloudFormationStack: stackARN,
     });
   } catch (error) {
     // TODO: Update the item with failed status
@@ -228,7 +245,7 @@ async function s3Handler(Record: S3EventRecord) {
     bucket: deployBucket,
     expireAfterDays,
     files,
-    buildId,
+    buildId: deploymentId,
     deploymentConfigurationKey,
     manifest,
   });
