@@ -1,6 +1,6 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
-import { RouteItem } from '../types';
+import { RouteItemDeploymentIdIndex } from '../types';
 
 const { unmarshall } = DynamoDB.Converter;
 
@@ -39,7 +39,7 @@ type ListAliasesResult = {
     lastKey: StartKey | null;
     count: number;
   };
-  items: RouteItem[];
+  items: RouteItemDeploymentIdIndex[];
 };
 
 /**
@@ -105,7 +105,9 @@ async function listAliasesForDeployment({
       count: Count !== undefined ? Count : 0,
       lastKey,
     },
-    items: Items ? Items.map(unmarshall as () => RouteItem) : [],
+    items: Items
+      ? Items.map(unmarshall as () => RouteItemDeploymentIdIndex)
+      : [],
   };
 }
 

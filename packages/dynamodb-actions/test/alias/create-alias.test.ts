@@ -3,6 +3,8 @@ import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { createAlias } from '../../src';
 import { createAliasTestTable, createTestDynamoDBClient } from '../test-utils';
 
+const { unmarshall } = DynamoDB.Converter;
+
 describe('CreateAlias', () => {
   let dynamoDBClient: DynamoDB;
   let aliasTableName: string;
@@ -24,6 +26,12 @@ describe('CreateAlias', () => {
 
   test('Insert new alias', async () => {
     const createDate = new Date(2022, 0, 1);
+    const expectedObject = {
+      PK: 'ROUTES',
+      SK: 'com.example#/',
+      GSI1PK: 'D#abc',
+      GSI1SK: `${createDate.toISOString()}#R#com.example#/`,
+    };
     const response = await createAlias({
       dynamoDBClient,
       aliasTableName,
@@ -34,10 +42,8 @@ describe('CreateAlias', () => {
       routes: '',
       createDate,
     });
+    expect(response).toMatchObject(expectedObject);
 
-    expect(response.$response.error).toBeNull();
-
-    // Check keys
     const getItemResponse = await dynamoDBClient
       .getItem({
         Key: {
@@ -51,19 +57,6 @@ describe('CreateAlias', () => {
         TableName: aliasTableName,
       })
       .promise();
-    expect(getItemResponse.Item).toMatchObject({
-      PK: {
-        S: 'ROUTES',
-      },
-      SK: {
-        S: 'com.example#/',
-      },
-      GSI1PK: {
-        S: 'D#abc',
-      },
-      GSI1SK: {
-        S: `${createDate.toISOString()}#R#com.example#/`,
-      },
-    });
+    expect(unmarshall(getItemResponse.Item!)).toMatchObject(expectedObject);
   });
 });

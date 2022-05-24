@@ -11,8 +11,9 @@ export { listDeployments } from './deployment/list-deployments';
 export { getDeploymentById } from './deployment/get-deployment-by-id';
 export { deleteDeploymentById } from './deployment/delete-deployment-by-id';
 export { updateDeploymentStatus } from './deployment/update-deployment-status';
-export { updateDeploymentStatusInProgress } from './deployment/update-deployment-status-in-progress';
+export { updateDeploymentStatusCreateInProgress } from './deployment/update-deployment-status-create-in-progress';
 export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
+export { updateDeploymentStatusDestroyInProgress } from './deployment/update-deployment-status-destroy-in-progress';
 
 // Utils
 export { reverseHostname } from './utils/reverse-hostname';

@@ -7,12 +7,14 @@ import { deleteDeploymentById } from './actions/deployment/delete-deployment-by-
 import { createDeployment } from './actions/deployment/create-deployment';
 import { listDeployments } from './actions/deployment/list-deployments';
 
+import { CloudFormationService } from './services/cloudformation';
 import { DynamoDBService } from './services/dynamodb';
 import { S3Service } from './services/s3';
 
 function createApi() {
   const api = LambdaApi();
 
+  api.app('cloudFormation', CloudFormationService);
   api.app('dynamoDB', DynamoDBService);
   api.app('s3', S3Service);
 

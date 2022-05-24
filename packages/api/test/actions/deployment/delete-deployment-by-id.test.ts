@@ -1,6 +1,8 @@
 import {
+  createAlias,
   createDeployment,
   getDeploymentById,
+  updateDeploymentStatusFinished,
 } from '@millihq/tfn-dynamodb-actions';
 import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { API } from 'lambda-api';
@@ -11,6 +13,7 @@ import {
   mockS3Service,
   mockDynamoDBService,
   createAPIGatewayProxyEventV2,
+  mockCloudFormationService,
 } from '../../test-utils';
 
 describe('DeleteDeployment', () => {
@@ -23,6 +26,8 @@ describe('DeleteDeployment', () => {
     api = createApi();
 
     // Insert mocks
+    api.app('cloudFormation', mockCloudFormationService());
+
     const s3Mock = await mockS3Service();
     api.app('s3', s3Mock[0]);
     s3CleanupCallback = s3Mock[1];
@@ -39,7 +44,7 @@ describe('DeleteDeployment', () => {
   });
 
   test('Deployment without aliases', async () => {
-    const deployment = await createDeployment({
+    await createDeployment({
       dynamoDBClient: dynamoDBService.getDynamoDBClient(),
       deploymentTableName: dynamoDBService.getDeploymentTableName(),
       deploymentId: 'deploymentWithoutAlias',
@@ -65,5 +70,45 @@ describe('DeleteDeployment', () => {
       deploymentId: 'deploymentWithoutAlias',
     });
     expect(getDeploymentResponse).toBeNull();
+  });
+
+  test('Deployment with deployment alias', async () => {
+    const deployment = await createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentWithAlias',
+    });
+    await createAlias({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      aliasTableName: dynamoDBService.getAliasTableName(),
+      deploymentId: 'deploymentWithAlias',
+      hostnameRev: 'com.with-alias',
+      lambdaRoutes: '',
+      prerenders: '',
+      routes: '',
+      isDeploymentAlias: true,
+    });
+    await updateDeploymentStatusFinished({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+    });
+
+    const event = createAPIGatewayProxyEventV2({
+      uri: '/deployments/deploymentWithAlias',
+      method: 'DELETE',
+    });
+    const response = (await api.run(
+      event as any,
+      {} as any
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(response).toMatchObject({
+      headers: { 'content-type': 'application/json' },
+      statusCode: 204,
+      isBase64Encoded: false,
+    });
   });
 });

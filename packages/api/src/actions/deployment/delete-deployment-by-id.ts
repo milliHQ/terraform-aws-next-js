@@ -4,18 +4,29 @@ import {
   listAliasesForDeployment,
   getDeploymentById,
   deleteDeploymentById as dynamoDBdeleteDeploymentById,
+  deleteAliasById,
+  updateDeploymentStatusDestroyInProgress,
 } from '@millihq/tfn-dynamodb-actions';
 
 import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
+import { CloudFormationServiceType } from '../../services/cloudformation';
 
 type ErrorResponse =
   paths['/deployments/{deploymentId}']['delete']['responses']['400']['content']['application/json'];
+
+const RESPONSE_DEPLOYMENT_DELETION_FAILED: ErrorResponse = {
+  code: 'DEPLOYMENT_DELETION_FAILED',
+  status: 400,
+  message: 'The deployment with the provided id could not be deleted.',
+};
 
 async function deleteDeploymentById(
   req: Request,
   res: Response
 ): Promise<void> {
+  const cloudFormationService = req.namespace
+    .cloudFormation as CloudFormationServiceType;
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
   const deploymentId = req.params.deploymentId;
 
@@ -40,7 +51,11 @@ async function deleteDeploymentById(
     return alias.DeploymentAlias === false;
   });
 
-  if (!hasDeploymentAliasOnly) {
+  // When it only has a deployment alias the length of the returned aliases
+  // should be 1.
+  // However for the case that the alias was already deleted in the past and the
+  // deployment still exists we also allow 0 aliases.
+  if (!hasDeploymentAliasOnly || aliases.items.length > 1) {
     const errorResponse: ErrorResponse = {
       code: 'ALIASES_ASSOCIATED',
       status: 400,
@@ -82,12 +97,7 @@ async function deleteDeploymentById(
       });
 
       if (!deleteResponse) {
-        const errorResponse: ErrorResponse = {
-          code: 'DEPLOYMENT_DELETION_FAILED',
-          status: 400,
-          message: 'The deployment with the provided id could not be deleted.',
-        };
-        return res.status(400).json(errorResponse);
+        return res.status(400).json(RESPONSE_DEPLOYMENT_DELETION_FAILED);
       }
 
       return res.sendStatus(204);
@@ -100,6 +110,47 @@ async function deleteDeploymentById(
      */
     case 'CREATE_FAILED':
     case 'FINISHED':
+      // Delete aliases
+      const deploymentAlias = aliases.items[0];
+      if (deploymentAlias) {
+        await deleteAliasById({
+          dynamoDBClient: dynamoDB.getDynamoDBClient(),
+          aliasTableName: dynamoDB.getAliasTableName(),
+          SK: deploymentAlias.SK,
+        });
+      }
+
+      // Trigger stack deletion
+      if (deployment.CFStack) {
+        await cloudFormationService.deleteStack(deployment.CFStack);
+
+        await updateDeploymentStatusDestroyInProgress({
+          dynamoDBClient: dynamoDB.getDynamoDBClient(),
+          deploymentTableName: dynamoDB.getDeploymentTableName(),
+          deploymentId: {
+            PK: deployment.PK,
+            SK: deployment.SK,
+          },
+        });
+
+        return res.sendStatus(204);
+      }
+
+      // No CloudFormation Stack present, so we can delete it from the database
+      const deleteResponse = await dynamoDBdeleteDeploymentById({
+        dynamoDBClient: dynamoDB.getDynamoDBClient(),
+        deploymentTableName: dynamoDB.getDeploymentTableName(),
+        deploymentId: {
+          PK: deployment.PK,
+          SK: deployment.SK,
+        },
+      });
+
+      if (!deleteResponse) {
+        return res.status(400).json(RESPONSE_DEPLOYMENT_DELETION_FAILED);
+      }
+
+      return res.sendStatus(204);
 
     case 'DESTROY_IN_PROGRESS': {
       const errorResponse: ErrorResponse = {

@@ -1,4 +1,4 @@
-import { updateDeploymentStatusInProgress } from '@millihq/tfn-dynamodb-actions';
+import { updateDeploymentStatusCreateInProgress } from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
 import DynamoDB from 'aws-sdk/clients/dynamodb';
@@ -203,7 +203,7 @@ async function s3Handler(Record: S3EventRecord) {
         });
 
   const stackName = `tfn-${buildId}`;
-  await updateDeploymentStatusInProgress({
+  await updateDeploymentStatusCreateInProgress({
     dynamoDBClient,
     deploymentId: buildId,
     deploymentTableName: dynamoDBTableNameDeployments,

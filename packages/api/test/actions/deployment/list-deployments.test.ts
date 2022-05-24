@@ -8,6 +8,7 @@ import {
   mockS3Service,
   mockDynamoDBService,
   createAPIGatewayProxyEventV2,
+  mockCloudFormationService,
 } from '../../test-utils';
 
 describe('CreateDeployment', () => {
@@ -20,6 +21,8 @@ describe('CreateDeployment', () => {
     api = createApi();
 
     // Insert mocks
+    api.app('cloudFormation', mockCloudFormationService());
+
     const s3Mock = await mockS3Service();
     api.app('s3', s3Mock[0]);
     s3CleanupCallback = s3Mock[1];

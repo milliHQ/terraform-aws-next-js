@@ -12,6 +12,7 @@ All entities that are used across the tables are listed here with their short na
 
 - Deployment (D)
 - Route (R)
+- ConfigNextJS (CN)
 
 ## Tables
 
@@ -53,11 +54,14 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
 
 ### AliasTable
 
+An alias is a virtual construct and consists of multiple entities with the same sort key (SK) but different partition keys (PK).
+
 The table is designed for a high ReadCapacity consumption through `PK` & `SK` keys (main query is `getAliasByHostname`).
 
-| Entity    | PK       | SK                         | GSI1PK             | GSI1SK                                    |
-| --------- | -------- | -------------------------- | ------------------ | ----------------------------------------- |
-| Route (R) | `ROUTES` | `<HostnameRev>#<BasePath>` | `D#<DeploymentId>` | `<CreateDate>#R#<HostnameRev>#<BasePath>` |
+| Entity            | PK             | SK                         | GSI1PK             | GSI1SK                                     |
+| ----------------- | -------------- | -------------------------- | ------------------ | ------------------------------------------ |
+| Route (R)         | `ROUTES`       | `<HostnameRev>#<BasePath>` | `D#<DeploymentId>` | `<CreateDate>#R#<HostnameRev>#<BasePath>`  |
+| ConfigNextJS (CN) | `CONFIGNEXTJS` | `<HostnameRev>#<BasePath>` | `D#<DeploymentId>` | `<CreateDate>#CN#<HostnameRev>#<BasePath>` |
 
 - `<HostnameRev>`  
   Full domain under which a deployment is served in reverse order (e.g. `com.example.subdomain`).
@@ -85,8 +89,9 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
     <tr>
       <td><code>D#&lt;D-id&gt;</code></td>
       <td><code>&lt;CreateDate&gt;#R#&lt;hostnameRev&gt;#&lt;basePath&gt;</code></td>
-      <td>DeploymentId</td>
       <td>CreateDate</td>
+      <td>DeploymentId</td>
+      <td>DeploymentAlias</td>
     </tr>
   </tbody>
 </table>
@@ -105,12 +110,13 @@ The following actions on the database are supported:
   Returns the Deployment for the given ID. Returns `null` when it does not exist.
 - `deleteDeploymentById`
 - `updateDeploymentStatus`
-- `updateDeploymentStatusInProgress`
+- `updateDeploymentStatusCreateInProgress`
 - `updateDeploymentStatusFinished`
 
 ### Aliases
 
-- `createAlias`
+- `createAlias`  
+  Inserts a new route item into the AliasTable.
 - `deleteAliasById`
 - `getAliasById`
 - `listAliasesForDeployment`  

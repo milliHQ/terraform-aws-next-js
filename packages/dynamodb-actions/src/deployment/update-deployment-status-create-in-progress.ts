@@ -1,9 +1,8 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
-import { updateItem } from '../utils/dynamodb';
-import { getDeploymentById } from './get-deployment-by-id';
+import { updateDeployment } from './update-deployment';
 
-type UpdateDeploymentStatusInProgressOptions = {
+type UpdateDeploymentStatusCreateInProgressOptions = {
   /**
    * DynamoDB client
    */
@@ -15,7 +14,7 @@ type UpdateDeploymentStatusInProgressOptions = {
   /**
    * ID of the deployment.
    */
-  deploymentId: string;
+  deploymentId: string | { PK: string; SK: string };
   /**
    * Stringified JSON object that contains routes that are served from
    * prerendered generated HTML files.
@@ -33,31 +32,18 @@ type UpdateDeploymentStatusInProgressOptions = {
  * @param options
  * @returns
  */
-async function updateDeploymentStatusInProgress({
+function updateDeploymentStatusCreateInProgress({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
   prerenders,
   routes,
-}: UpdateDeploymentStatusInProgressOptions) {
-  const deployment = await getDeploymentById({
+}: UpdateDeploymentStatusCreateInProgressOptions) {
+  return updateDeployment({
     dynamoDBClient,
-    deploymentId,
     deploymentTableName,
-  });
-
-  if (!deployment) {
-    throw new Error(`Deployment does not exist: "${deploymentId}"`);
-  }
-
-  return updateItem({
-    client: dynamoDBClient,
-    tableName: deploymentTableName,
-    key: {
-      PK: deployment.PK,
-      SK: deployment.SK,
-    },
-    item: {
+    deploymentId,
+    updateAttributes: {
       Status: 'CREATE_IN_PROGRESS',
       // Lambda routes are empty at the creation of the stack since they
       // can only be determined when the stack creation is finished and the
@@ -69,4 +55,4 @@ async function updateDeploymentStatusInProgress({
   });
 }
 
-export { updateDeploymentStatusInProgress };
+export { updateDeploymentStatusCreateInProgress };

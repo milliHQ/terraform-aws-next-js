@@ -66,6 +66,10 @@ export type DeploymentItem = {
    * The CDK template that is used for the deployment.
    */
   DeploymentTemplate: DeploymentTemplateType;
+  /**
+   * The id of the CloudFormation stack that is associated with this deployment.
+   */
+  CFStack?: string;
 };
 
 export type DeploymentItemCreateDateIndex = Pick<
@@ -100,6 +104,19 @@ export type RouteItem = {
    */
   ItemVersion: number;
   /**
+   * Timestamp when the deployment was created. Format is ISO 8601.
+   */
+  CreateDate: string;
+  /**
+   * The hostname where the alias belongs to in reversed form.
+   * e.g. com.example.sub
+   */
+  HostnameRev: string;
+  /**
+   * The basePath of the alias.
+   */
+  BasePath: string;
+  /**
    * Stringified object that contains the route config.
    */
   Routes: string;
@@ -121,6 +138,17 @@ export type RouteItem = {
    */
   DeploymentAlias: boolean;
 };
+
+export type RouteItemDeploymentIdIndex = Pick<
+  RouteItem,
+  | 'PK'
+  | 'SK'
+  | 'GSI1PK'
+  | 'GSI1SK'
+  | 'CreateDate'
+  | 'DeploymentAlias'
+  | 'DeploymentId'
+>;
 
 export type PaginatedQuery<Item> = {
   /**

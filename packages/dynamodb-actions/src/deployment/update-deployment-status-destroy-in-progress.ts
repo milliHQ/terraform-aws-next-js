@@ -2,7 +2,7 @@ import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 import { updateDeployment } from './update-deployment';
 
-type UpdateDeploymentStatusFinishedOptions = {
+type UpdateDeploymentStatusDestroyInProgress = {
   /**
    * DynamoDB client
    */
@@ -15,33 +15,27 @@ type UpdateDeploymentStatusFinishedOptions = {
    * ID of the deployment.
    */
   deploymentId: string | { PK: string; SK: string };
-  /**
-   * The alias that is assigned with this deployment.
-   */
-  deploymentAlias?: string;
 };
 
 /**
- * Updates the status of an existing deployment to finished state.
+ * Updates the status of an existing deployment to DESTROY_IN_PROGRESS.
  *
  * @param options
  * @returns
  */
-function updateDeploymentStatusFinished({
+function updateDeploymentStatusDestroyInProgress({
   dynamoDBClient,
   deploymentTableName,
   deploymentId,
-  deploymentAlias,
-}: UpdateDeploymentStatusFinishedOptions) {
+}: UpdateDeploymentStatusDestroyInProgress) {
   return updateDeployment({
     dynamoDBClient,
     deploymentTableName,
     deploymentId,
     updateAttributes: {
-      DeploymentAlias: deploymentAlias,
-      Status: 'FINISHED',
+      Status: 'DESTROY_IN_PROGRESS',
     },
   });
 }
 
-export { updateDeploymentStatusFinished };
+export { updateDeploymentStatusDestroyInProgress };

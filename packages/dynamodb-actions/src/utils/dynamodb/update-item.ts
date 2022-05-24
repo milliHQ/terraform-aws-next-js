@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 const { marshall, unmarshall } = DynamoDB.Converter;
 
@@ -29,7 +29,8 @@ type UpdateItemOptions = {
  * @param options
  */
 async function updateItem({ client, tableName, key, item }: UpdateItemOptions) {
-  const itemKeys = Object.keys(item);
+  // Filter out keys that have undefined values
+  const itemKeys = Object.keys(item).filter((key) => item[key] !== undefined);
 
   // When we do updates we need to tell DynamoDB what fields we want updated.
   // If that's not annoying enough, we also need to be careful as some field names

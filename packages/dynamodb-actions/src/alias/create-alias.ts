@@ -1,5 +1,26 @@
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 
+import { RouteItem } from '../types';
+
+const { marshall } = DynamoDB.Converter;
+
+type CreatedRouteItem = Pick<
+  RouteItem,
+  | 'PK'
+  | 'SK'
+  | 'GSI1PK'
+  | 'GSI1SK'
+  | 'BasePath'
+  | 'CreateDate'
+  | 'DeploymentAlias'
+  | 'DeploymentId'
+  | 'HostnameRev'
+  | 'ItemVersion'
+  | 'LambdaRoutes'
+  | 'Prerenders'
+  | 'Routes'
+>;
+
 type CreateAliasOptions = {
   /**
    * DynamoDB client
@@ -10,7 +31,7 @@ type CreateAliasOptions = {
    */
   aliasTableName: string;
   /**
-   * The full domain of the alias, in reversed form com.example.my-alias.
+   * The full domain of the alias, in reversed form: com.example.my-alias
    */
   hostnameRev: string;
   /**
@@ -50,7 +71,7 @@ type CreateAliasOptions = {
 /**
  * Creates a new alias for an deployment.
  */
-function createAlias({
+async function createAlias({
   dynamoDBClient,
   aliasTableName,
   hostnameRev,
@@ -61,58 +82,39 @@ function createAlias({
   lambdaRoutes,
   routes,
   prerenders,
-}: CreateAliasOptions) {
+}: CreateAliasOptions): Promise<CreatedRouteItem> {
   const createDateString = createDate.toISOString();
+  const routeItemToCreate: CreatedRouteItem = {
+    // Keys
+    PK: 'ROUTES',
+    SK: `${hostnameRev}#${basePath}`,
+    GSI1PK: `D#${deploymentId}`,
+    GSI1SK: `${createDateString}#R#${hostnameRev}#${basePath}`,
 
-  return dynamoDBClient
+    // Attributes
+    ItemVersion: 1,
+    CreateDate: createDateString,
+    DeploymentId: deploymentId,
+    HostnameRev: hostnameRev,
+    BasePath: basePath,
+    DeploymentAlias: isDeploymentAlias,
+    Routes: routes,
+    LambdaRoutes: lambdaRoutes,
+    Prerenders: prerenders,
+  };
+
+  const response = await dynamoDBClient
     .putItem({
       TableName: aliasTableName,
-      Item: {
-        // Keys
-        PK: {
-          S: 'ROUTES',
-        },
-        SK: {
-          S: `${hostnameRev}#${basePath}`,
-        },
-        GSI1PK: {
-          S: `D#${deploymentId}`,
-        },
-        GSI1SK: {
-          S: `${createDateString}#R#${hostnameRev}#${basePath}`,
-        },
-
-        // Attributes
-        ItemVersion: {
-          N: '1',
-        },
-        CreateDate: {
-          S: createDateString,
-        },
-        DeploymentId: {
-          S: deploymentId,
-        },
-        HostnameRev: {
-          S: hostnameRev,
-        },
-        BasePath: {
-          S: basePath,
-        },
-        DeploymentAlias: {
-          BOOL: isDeploymentAlias,
-        },
-        Routes: {
-          S: routes,
-        },
-        LambdaRoutes: {
-          S: lambdaRoutes,
-        },
-        Prerenders: {
-          S: prerenders,
-        },
-      },
+      Item: marshall(routeItemToCreate),
     })
     .promise();
+
+  if (response.$response.error) {
+    throw response.$response.error;
+  }
+
+  return routeItemToCreate;
 }
 
 export { createAlias };

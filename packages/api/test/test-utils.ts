@@ -10,6 +10,7 @@ import { APIGatewayProxyEventV2 } from 'aws-lambda';
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import S3 from 'aws-sdk/clients/s3';
 
+import { CloudFormationServiceType } from '../src/services/cloudformation';
 import { DynamoDBServiceType } from '../src/services/dynamodb';
 import { S3ServiceType } from '../src/services/s3';
 
@@ -124,6 +125,14 @@ async function mockDynamoDBService(): Promise<
   ];
 }
 
+function mockCloudFormationService(): CloudFormationServiceType {
+  return class CloudFormationServiceMock {
+    static deleteStack(_stackName: string) {
+      return Promise.resolve();
+    }
+  };
+}
+
 type CreateAPIGatewayProxyEventV2Options = {
   uri: string;
   method?: 'GET' | 'POST' | 'DELETE' | string;
@@ -166,4 +175,9 @@ function createAPIGatewayProxyEventV2({
   };
 }
 
-export { mockS3Service, mockDynamoDBService, createAPIGatewayProxyEventV2 };
+export {
+  mockS3Service,
+  mockDynamoDBService,
+  mockCloudFormationService,
+  createAPIGatewayProxyEventV2,
+};
