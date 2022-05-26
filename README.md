@@ -230,18 +230,12 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
 | deployment\_name | Identifier for the deployment group (only lowercase alphanumeric characters and hyphens are allowed). | `string` | `"tf-next"` | no |
 | enable\_multiple\_deployments | Controls whether it should be possible to run multiple deployments in parallel (requires multiple\_deployments\_base\_domain). | `bool` | `false` | no |
-| expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
 | image\_optimization\_lambda\_memory\_size | Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `2048` | no |
 | lambda\_attach\_policy\_json | Whether to deploy additional lambda JSON policies. If false, lambda\_policy\_json will not be attached to the lambda function. (Necessary since policy strings are only known after apply when using Terraforms data.aws\_iam\_policy\_document) | `bool` | `false` | no |
 | lambda\_attach\_to\_vpc | Set to true if the Lambda functions should be attached to a VPC. Use this setting if VPC resources should be accessed by the Lambda functions. When setting this to true, use vpc\_security\_group\_ids and vpc\_subnet\_ids to specify the VPC networking. Note that attaching to a VPC would introduce a delay on to cold starts | `bool` | `false` | no |
-| lambda\_environment\_variables | Map that defines environment variables for the Lambda Functions in Next.js. | `map(string)` | `{}` | no |
-| lambda\_memory\_size | Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `1024` | no |
 | lambda\_policy\_json | Additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
 | lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws\_iam\_role access for the lambda | `string` | `null` | no |
-| lambda\_runtime | Lambda Function runtime | `string` | `"nodejs14.x"` | no |
-| lambda\_timeout | Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
 | multiple\_deployments\_base\_domain | Default wildcard domain where new deployments should be available. Should be in the form of *.example.com. | `string` | `null` | no |
-| next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 | tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
 | tags\_s3\_bucket | Tag metadata to label AWS S3 buckets. Overrides tags with the same name in input variable tags. | `map(string)` | `{}` | no |
 | vpc\_security\_group\_ids | The list of Security Group IDs to be used by the Lambda functions. lambda\_attach\_to\_vpc should be set to true for these to be applied. | `list(string)` | `[]` | no |
