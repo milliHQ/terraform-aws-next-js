@@ -61,7 +61,6 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
   It consists of a dedicated S3 bucket and a single Lambda function.
   The bucket is only used by Terraform to upload the static content from the `tf-next build` command as a zip archive.
   The upload then triggers the Lambda which unzips the content and deploys it to the static content S3 bucket ([`II`](#II-s3-static-content)).
-  Static assets from previous deployments are then marked to be expired in a certain amount of days (default 30, configurable via `expire_static_assets` variable).
   After the successful deployment a CloudFront [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html) is created to propagate the route changes to every edge location.
 
 - **Proxy Config Distribution**

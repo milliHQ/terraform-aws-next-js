@@ -117,8 +117,6 @@ module "deploy_controller" {
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  expire_static_assets = var.expire_static_assets
-
   cloudfront_id               = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
   cloudfront_arn              = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
   deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn

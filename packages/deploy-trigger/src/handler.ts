@@ -41,24 +41,6 @@ const timeOutBetweenInvalidations = 60;
 const numberOfRetriesForInvalidation = 3;
 
 function parseExpireAfterDays() {
-  if (process.env.EXPIRE_AFTER_DAYS) {
-    if (process.env.EXPIRE_AFTER_DAYS === 'never') {
-      return 'never';
-    }
-
-    // Parse to int
-    try {
-      const days = Number(process.env.EXPIRE_AFTER_DAYS);
-      if (days >= 0) {
-        return days;
-      }
-
-      return 'never';
-    } catch (err) {
-      return defaultExpireAfterDays;
-    }
-  }
-
   return defaultExpireAfterDays;
 }
 

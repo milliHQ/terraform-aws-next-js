@@ -1,11 +1,6 @@
-##########
-# Settings
-##########
-variable "next_tf_dir" {
-  description = "Relative path to the .next-tf dir."
-  type        = string
-  default     = "./.next-tf"
-}
+####################
+# Image Optimization
+####################
 
 variable "create_image_optimization" {
   description = "Controls whether resources for image optimization support should be created or not."
@@ -17,12 +12,6 @@ variable "image_optimization_lambda_memory_size" {
   description = "Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments."
   type        = number
   default     = 2048
-}
-
-variable "expire_static_assets" {
-  description = "Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration."
-  type        = number
-  default     = 30
 }
 
 ######################
@@ -44,29 +33,6 @@ variable "multiple_deployments_base_domain" {
 ###################
 # Lambdas (Next.js)
 ###################
-variable "lambda_environment_variables" {
-  type        = map(string)
-  description = "Map that defines environment variables for the Lambda Functions in Next.js."
-  default     = {}
-}
-
-variable "lambda_runtime" {
-  description = "Lambda Function runtime"
-  type        = string
-  default     = "nodejs14.x"
-}
-
-variable "lambda_memory_size" {
-  description = "Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments."
-  type        = number
-  default     = 1024
-}
-
-variable "lambda_timeout" {
-  description = "Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway)."
-  type        = number
-  default     = 10
-}
 
 variable "lambda_policy_json" {
   description = "Additional policy document as JSON to attach to the Lambda Function role"

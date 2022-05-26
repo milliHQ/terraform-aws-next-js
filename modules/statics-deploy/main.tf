@@ -44,30 +44,7 @@ resource "aws_s3_bucket_acl" "static_deploy" {
   acl    = "private"
 }
 
-# TODO: Delete
-resource "aws_s3_bucket_lifecycle_configuration" "static_deploy" {
-  bucket = aws_s3_bucket.static_deploy.id
-
-  rule {
-    id = "Expire static assets"
-
-    expiration {
-      days = var.expire_static_assets > 0 ? var.expire_static_assets : 0
-    }
-
-    filter {
-      tag {
-        key   = "tfnextExpire"
-        value = "true"
-      }
-    }
-
-    status = var.expire_static_assets >= 0 ? "Enabled" : "Disabled" # -1 disables the cleanup
-  }
-}
-
 # CloudFront permissions for the bucket
-
 resource "aws_cloudfront_origin_access_identity" "this" {
   comment = "S3 CloudFront access ${aws_s3_bucket.static_deploy.id}"
 }
@@ -282,7 +259,6 @@ module "deploy_trigger" {
   environment_variables = {
     NODE_ENV               = "production"
     TARGET_BUCKET          = aws_s3_bucket.static_deploy.id
-    EXPIRE_AFTER_DAYS      = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
     DISTRIBUTION_ID        = var.cloudfront_id
     SQS_QUEUE_URL          = aws_sqs_queue.this.id
     DEPLOY_STATUS_SNS_ARN  = var.deploy_status_sns_topic_arn

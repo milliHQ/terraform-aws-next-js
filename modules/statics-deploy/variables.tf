@@ -3,10 +3,6 @@ variable "deploy_trigger_module_version" {
   default = "0.12.2"
 }
 
-variable "expire_static_assets" {
-  type = number
-}
-
 variable "cloudfront_id" {
   description = "The ID of the CloudFront distribution where the route invalidations should be sent to."
   type        = string
