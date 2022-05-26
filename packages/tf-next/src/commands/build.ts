@@ -1,4 +1,6 @@
-import tmp from 'tmp';
+import * as path from 'path';
+import * as util from 'util';
+
 import { build } from '@millihq/tf-next-runtime';
 import {
   glob,
@@ -8,15 +10,13 @@ import {
   Prerender,
   download,
 } from '@vercel/build-utils';
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import { Route } from '@vercel/routing-utils';
 import archiver from 'archiver';
-import * as util from 'util';
 import findWorkspaceRoot from 'find-yarn-workspace-root';
+import * as fs from 'fs-extra';
+import tmp from 'tmp';
 
-import { ConfigOutput } from '../types';
-import { removeRoutesByPrefix } from '../utils/routes';
+import { CommandDefaultOptions, ConfigOutput } from '../types';
 import { findEntryPoint } from '../utils';
 
 // Config file version (For detecting incompatibility issues in Terraform)
@@ -65,41 +65,25 @@ function normalizeRoute(input: string) {
   return input.replace(/\/index$/, '/');
 }
 
-function writeStaticWebsiteFiles(
-  outputFile: string,
-  files: StaticWebsiteFiles
-) {
-  return new Promise<void>(async (resolve, reject) => {
-    // Create a zip package for the static website files
-    const output = fs.createWriteStream(outputFile);
-    const archive = archiver('zip', {
-      zlib: { level: 9 },
-    });
-
-    archive.pipe(output);
-
-    output.on('close', function () {
-      console.log(archive.pointer() + ' total bytes');
-      resolve();
-    });
-
-    archive.on('error', (err) => {
-      reject(err);
-    });
-
-    for (const [key, file] of Object.entries(files)) {
-      const buf = await streamToBuffer(file.toStream());
-      archive.append(buf, { name: key });
-    }
-
-    archive.finalize();
-  });
-}
-
-function writeOutput(props: OutputProps) {
+/**
+ * Creates a zip file from the build output with the following format:
+ *
+ * deployment.zip
+ * ├── lambdas/
+ * |   ├── lambda1.zip
+ * |   └── lambda2.zip
+ * ├── static/
+ * |   ├── _next/...
+ * |   └── prerendered-site
+ * └── config.json
+ */
+async function writeOutput(props: OutputProps) {
+  const lambdaDirPrefix = 'lambdas/';
+  const staticDirPrefix = 'static/';
   const config: ConfigOutput = {
     lambdas: {},
     staticRoutes: [],
+    lambdaRoutes: [],
     routes: props.routes,
     buildId: props.buildId,
     prerenders: props.prerenders,
@@ -107,19 +91,6 @@ function writeOutput(props: OutputProps) {
     version: TF_NEXT_VERSION,
     images: props.images,
   };
-
-  for (const [key, lambda] of Object.entries(props.lambdas)) {
-    const zipFilename = path.join(props.outputDir, 'lambdas', `${key}.zip`);
-    fs.outputFileSync(zipFilename, lambda.zipBuffer);
-    const route = `/${key}`;
-
-    config.lambdas[key] = {
-      handler: lambda.handler,
-      runtime: lambda.runtime as 'nodejs12.x' | 'nodejs14.x',
-      filename: path.relative(props.outputDir, zipFilename),
-      route: normalizeRoute(route),
-    };
-  }
 
   config.staticRoutes = Object.keys(props.staticWebsiteFiles)
     .map((fullFilePath) =>
@@ -134,38 +105,76 @@ function writeOutput(props: OutputProps) {
     // Add leading / to the route
     .map((fullFilePath) => `/${fullFilePath}`);
 
-  const staticFilesArchive = writeStaticWebsiteFiles(
-    path.join(props.outputDir, config.staticFilesArchive),
-    props.staticWebsiteFiles
+  // Initialize zip archive
+  const outputFile = fs.createWriteStream(
+    path.join(props.outputDir, 'deployment.zip')
   );
+  const archive = archiver('zip', {
+    zlib: { level: 5 },
+  });
 
-  // Write config.json
-  const writeConfig = fs.outputJSON(
-    path.join(props.outputDir, 'config.json'),
-    config,
-    {
-      spaces: 2,
+  // Fill the archive
+  await new Promise<void>(async (resolve, reject) => {
+    archive.pipe(outputFile);
+
+    outputFile.on('close', function () {
+      console.log(archive.pointer() + ' total bytes');
+      resolve();
+    });
+
+    archive.on('error', (err) => {
+      reject(err);
+    });
+
+    // Pack lambdas
+    for (const [key, lambda] of Object.entries(props.lambdas)) {
+      const zipFilename = `${key}.zip`;
+      const route = `/${key}`;
+      config.lambdaRoutes.push(route);
+
+      config.lambdas[key] = {
+        handler: lambda.handler,
+        runtime: lambda.runtime as 'nodejs12.x' | 'nodejs14.x',
+        filename: zipFilename,
+        route: normalizeRoute(route),
+      };
+
+      archive.append(lambda.zipBuffer, {
+        name: lambdaDirPrefix + zipFilename,
+      });
     }
-  );
 
-  return Promise.all([writeConfig, staticFilesArchive]);
+    // Pack static files
+    for (const [key, file] of Object.entries(props.staticWebsiteFiles)) {
+      const buf = await streamToBuffer(file.toStream());
+      archive.append(buf, { name: `${staticDirPrefix}${key}` });
+    }
+
+    // Write config.json
+    archive.append(JSON.stringify(config, null, 2), {
+      name: 'config.json',
+    });
+
+    archive.finalize();
+  });
 }
 
-interface BuildProps {
+/* -----------------------------------------------------------------------------
+ * Build Command
+ * ---------------------------------------------------------------------------*/
+
+type BuildCommandProps = CommandDefaultOptions & {
   skipDownload?: boolean;
-  logLevel?: 'verbose' | 'none';
   deleteBuildCache?: boolean;
-  cwd: string;
   target?: 'AWS';
-}
+};
 
 async function buildCommand({
   skipDownload = false,
   logLevel,
   deleteBuildCache = true,
   cwd,
-  target = 'AWS',
-}: BuildProps) {
+}: BuildCommandProps) {
   let buildOutput: OutputProps | null = null;
   const mode = skipDownload ? 'local' : 'download';
 
@@ -224,11 +233,11 @@ async function buildCommand({
     for (const [key, file] of Object.entries(buildResult.output)) {
       switch (file.type) {
         case 'Lambda': {
-          lambdas[key] = (file as unknown) as Lambda;
+          lambdas[key] = file as unknown as Lambda;
           break;
         }
         case 'Prerender': {
-          prerenders[key] = (file as unknown) as Prerender;
+          prerenders[key] = file as unknown as Prerender;
           break;
         }
         case 'FileFsRef': {
@@ -252,17 +261,10 @@ async function buildCommand({
       }
     }
 
-    // Routes that are not handled by the AWS proxy module `_next/static/*` are filtered out
-    // for better performance
-    const optimizedRoutes =
-      target === 'AWS'
-        ? removeRoutesByPrefix(buildResult.routes, '_next/static/')
-        : buildResult.routes;
-
     buildOutput = {
       buildId,
       prerenders: prerenderedOutput,
-      routes: optimizedRoutes,
+      routes: buildResult.routes,
       lambdas,
       staticWebsiteFiles,
       outputDir: outputDir,
@@ -272,7 +274,7 @@ async function buildCommand({
 
     if (logLevel === 'verbose') {
       console.log(
-        util.format('Routes:\n%s', JSON.stringify(optimizedRoutes, null, 2))
+        util.format('Routes:\n%s', JSON.stringify(buildResult.routes, null, 2))
       );
     }
 

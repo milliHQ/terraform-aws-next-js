@@ -9,16 +9,19 @@
   "scripts": {
     "build": "turbo run build",
     "test:prepare": "docker-compose up -d",
+    "test:runtime": "jest packages/runtime/**",
+    "test:not:runtime": "jest packages/** --testPathIgnorePatterns \"packages/runtime\"",
     "test": "jest packages/**",
     "test:e2e:prepare": "node test/build-fixtures.js",
     "test:e2e": "jest test/routes.test.ts",
     "release": "release-it --no-npm",
-    "release:ci": "release-it --no-increment --no-git.push --ci"
+    "release:ci": "release-it --no-increment --no-git.push --ci",
+    "postinstall": "patch-package"
   },
   "devDependencies": {
     "@millihq/sammy": "^2.0.1",
-    "@release-it/bumper": "^3.0.1",
     "@ofhouse/keep-a-changelog": "2.3.0-no-increment-fix",
+    "@release-it/bumper": "^3.0.1",
     "@tsconfig/node14": "^1.0.1",
     "@types/aws-lambda": "^8.10.76",
     "@types/hjson": "^2.4.2",
@@ -28,18 +31,24 @@
     "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
     "hjson": "^3.2.2",
-    "jest": "^27.2.1",
-    "prettier": "^2.0.5",
+    "jest": "*",
+    "postinstall-postinstall": "^2.1.0",
+    "prettier": "^2.6.2",
     "release-it": "^14.12.3",
     "release-it-yarn-workspaces": "^2.0.1",
     "tmp": "^0.2.1",
-    "ts-jest": "^27.0.5",
+    "ts-jest": "*",
     "turbo": "^1.2.4",
-    "typescript": "^4.4.2"
+    "typescript": "*"
   },
   "resolutions": {
+    "@types/aws-lambda": "^8.10.95",
+    "@vercel/ncc": "^0.33.4",
     "archiver": "^5.3.0",
-    "aws-sdk": "2.1001.0"
+    "aws-sdk": "2.1001.0",
+    "jest": "27.2.1",
+    "ts-jest": "27.0.5",
+    "typescript": "4.6.4"
   },
   "release-it": {
     "git": {

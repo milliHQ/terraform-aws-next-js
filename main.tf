@@ -1,45 +1,133 @@
-locals {
-  # next-tf config
-  config_dir           = trimsuffix(var.next_tf_dir, "/")
-  config_file          = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas              = lookup(local.config_file, "lambdas", {})
-  static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
+data "aws_region" "current" {}
 
-  # Build the proxy config JSON
-  config_file_images  = lookup(local.config_file, "images", {})
-  config_file_version = lookup(local.config_file, "version", 0)
-  static_routes_json  = lookup(local.config_file, "staticRoutes", [])
-  routes_json         = lookup(local.config_file, "routes", [])
-  lambda_routes_json = flatten([
-    for integration_key, integration in local.lambdas : [
-      lookup(integration, "route", "/")
+##########
+# DynamoDB
+##########
+
+# Please see the documentation in packages/dynamodb-actions for information
+# about the used schema.
+
+resource "aws_dynamodb_table" "aliases" {
+  name         = "${var.deployment_name}_aliases"
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key  = "PK"
+  range_key = "SK"
+
+  attribute {
+    name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "SK"
+    type = "S"
+  }
+
+  attribute {
+    name = "GSI1PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "GSI1SK"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "DeploymentIdIndex"
+    hash_key        = "GSI1PK"
+    range_key       = "GSI1SK"
+    projection_type = "INCLUDE"
+    non_key_attributes = [
+      "BasePath",
+      "CreateDate",
+      "DeploymentId",
+      "DeploymentAlias",
+      "HostnameRev"
     ]
-  ])
-  prerenders_json = lookup(local.config_file, "prerenders", {})
-  proxy_config_json = jsonencode({
-    routes       = local.routes_json
-    staticRoutes = local.static_routes_json
-    lambdaRoutes = local.lambda_routes_json
-    prerenders   = local.prerenders_json
-  })
+  }
+
+  tags = var.tags
 }
 
-#########
-# Lambdas
-#########
+# Using infrequent access tier here since this table is only used during API
+# operations (creating deployments and aliases), but serves no customer facing
+# purposes.
+resource "aws_dynamodb_table" "deployments" {
+  name         = "${var.deployment_name}_deployments"
+  billing_mode = "PAY_PER_REQUEST"
+  table_class  = "STANDARD_INFREQUENT_ACCESS"
+
+  hash_key  = "PK"
+  range_key = "SK"
+
+  attribute {
+    name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "SK"
+    type = "S"
+  }
+
+  attribute {
+    name = "GSI1SK"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name               = "CreateDateIndex"
+    hash_key           = "PK"
+    range_key          = "GSI1SK"
+    projection_type    = "INCLUDE"
+    non_key_attributes = ["CreateDate", "DeploymentAlias", "DeploymentId", "Status"]
+  }
+}
+
+###################
+# Deploy Controller
+###################
+
+module "deploy_controller" {
+  source = "./modules/deploy-controller"
+
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
+
+  enable_multiple_deployments      = var.enable_multiple_deployments
+  multiple_deployments_base_domain = var.multiple_deployments_base_domain
+
+  deployment_name = var.deployment_name
+  tags            = var.tags
+
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+}
+
+###################
+# Deployment Lambda
+###################
 
 # Static deployment to S3 website and handles CloudFront invalidations
 module "statics_deploy" {
   source = "./modules/statics-deploy"
 
-  static_files_archive = local.static_files_archive
   expire_static_assets = var.expire_static_assets
 
-  cloudfront_id  = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
-  cloudfront_arn = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
+  cloudfront_id               = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_id : var.cloudfront_external_id
+  cloudfront_arn              = var.cloudfront_create_distribution ? module.cloudfront_main[0].cloudfront_arn : var.cloudfront_external_arn
+  deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn
+
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
-  use_awscli_for_static_upload     = var.use_awscli_for_static_upload
 
   deployment_name = var.deployment_name
   tags            = var.tags
@@ -49,87 +137,27 @@ module "statics_deploy" {
   tf_next_module_root      = path.module
 }
 
-# Lambda
+#####
+# API
+#####
 
-resource "aws_lambda_function" "this" {
-  for_each = local.lambdas
+module "api" {
+  source = "./modules/api"
 
-  function_name = "${var.deployment_name}_${each.key}"
-  description   = "Managed by Terraform Next.js"
-  role          = aws_iam_role.lambda[each.key].arn
-  handler       = lookup(each.value, "handler", "")
-  runtime       = lookup(each.value, "runtime", var.lambda_runtime)
-  memory_size   = lookup(each.value, "memory", var.lambda_memory_size)
-  timeout       = var.lambda_timeout
-  tags          = var.tags
+  dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
+  dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
+  dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
+  upload_bucket_id                = module.statics_deploy.upload_bucket_id
+  upload_bucket_region            = module.statics_deploy.upload_bucket_region
+  upload_bucket_arn               = module.statics_deploy.upload_bucket_arn
 
-  filename         = "${local.config_dir}/${lookup(each.value, "filename", "")}"
-  source_code_hash = filebase64sha256("${local.config_dir}/${lookup(each.value, "filename", "")}")
+  deployment_name = var.deployment_name
+  tags            = var.tags
 
-  dynamic "environment" {
-    for_each = length(var.lambda_environment_variables) > 0 ? [true] : []
-    content {
-      variables = var.lambda_environment_variables
-    }
-  }
-
-  dynamic "vpc_config" {
-    for_each = var.lambda_attach_to_vpc ? [true] : []
-    content {
-      security_group_ids = var.vpc_security_group_ids
-      subnet_ids         = var.vpc_subnet_ids
-    }
-  }
-
-  depends_on = [aws_iam_role_policy_attachment.lambda_logs, aws_cloudwatch_log_group.this]
-}
-
-# Lambda invoke permission
-
-resource "aws_lambda_permission" "current_version_triggers" {
-  for_each = local.lambdas
-
-  statement_id  = "AllowInvokeFromApiGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = "${var.deployment_name}_${each.key}"
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${module.api_gateway.apigatewayv2_api_execution_arn}/*/*/*"
-}
-
-#############
-# Api-Gateway
-#############
-
-locals {
-  integrations_keys = flatten([
-    for integration_key, integration in local.lambdas : [
-      "ANY ${lookup(integration, "route", "")}/{proxy+}"
-    ]
-  ])
-  integration_values = flatten([
-    for integration_key, integration in local.lambdas : {
-      lambda_arn             = aws_lambda_function.this[integration_key].arn
-      payload_format_version = "2.0"
-      timeout_milliseconds   = var.lambda_timeout * 1000
-    }
-  ])
-  integrations = zipmap(local.integrations_keys, local.integration_values)
-}
-
-module "api_gateway" {
-  source  = "terraform-aws-modules/apigateway-v2/aws"
-  version = "1.1.0"
-
-  name          = var.deployment_name
-  description   = "Managed by Terraform Next.js"
-  protocol_type = "HTTP"
-
-  create_api_domain_name = false
-
-  integrations = local.integrations
-
-  tags = var.tags
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
 }
 
 ############
@@ -158,12 +186,11 @@ module "next_image" {
   # device) sizes to the optimizer and by setting the other
   # (next_image_device_sizes) to an empty array which prevents the optimizer
   # from adding the default device settings
-  next_image_domains                 = lookup(local.config_file_images, "domains", [])
-  next_image_image_sizes             = lookup(local.config_file_images, "sizes", [])
-  next_image_device_sizes            = []
-  next_image_formats                 = lookup(local.config_file_images, "formats", null)
-  next_image_dangerously_allow_SVG   = lookup(local.config_file_images, "dangerouslyAllowSVG", false)
-  next_image_content_security_policy = lookup(local.config_file_images, "contentSecurityPolicy", null)
+
+  # TODO: Find way to pass these dynamically from the deployment
+  next_image_domains      = []
+  next_image_image_sizes  = []
+  next_image_device_sizes = []
 
   source_bucket_id = module.statics_deploy.static_bucket_id
 
@@ -183,13 +210,26 @@ module "next_image" {
 module "proxy_config" {
   source = "./modules/cloudfront-proxy-config"
 
-  cloudfront_price_class = var.cloudfront_price_class
-  proxy_config_json      = local.proxy_config_json
-  proxy_config_version   = local.config_file_version
+  cloudfront_price_class           = var.cloudfront_price_class
+  lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
+
+  dynamodb_region             = data.aws_region.current.name
+  dynamodb_table_aliases_arn  = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name = aws_dynamodb_table.aliases.id
+
+  static_deploy_bucket_region = module.statics_deploy.static_bucket_region
+  static_deploy_bucket_arn    = module.statics_deploy.static_bucket_arn
+  static_deploy_bucket_id     = module.statics_deploy.static_bucket_id
 
   deployment_name = var.deployment_name
   tags            = var.tags
-  tags_s3_bucket  = var.tags_s3_bucket
+
+  debug_use_local_packages = var.debug_use_local_packages
+  tf_next_module_root      = path.module
+
+  providers = {
+    aws.global_region = aws.global_region
+  }
 }
 
 #####################
@@ -222,16 +262,6 @@ module "proxy" {
 # Managed origin policy for default behavior
 data "aws_cloudfront_origin_request_policy" "managed_all_viewer" {
   name = "Managed-AllViewer"
-}
-
-# Managed origin policy for static assets
-data "aws_cloudfront_origin_request_policy" "managed_cors_s3_origin" {
-  name = "Managed-CORS-S3Origin"
-}
-
-# Managed cache policy
-data "aws_cloudfront_cache_policy" "managed_caching_optimized" {
-  name = "Managed-CachingOptimized"
 }
 
 locals {
@@ -296,13 +326,11 @@ locals {
 
     custom_header = [
       {
+        // Intentionally using http here (instead of https) to safe the time
+        // the SSL handshake costs.
         name  = "x-env-config-endpoint"
         value = "http://${module.proxy_config.config_endpoint}"
       },
-      {
-        name  = "x-env-api-endpoint"
-        value = trimprefix(module.api_gateway.apigatewayv2_api_api_endpoint, "https://")
-      }
     ]
   }
 
@@ -347,27 +375,12 @@ locals {
     }
   }
 
-  # Next.js static assets behavior
-  cloudfront_ordered_cache_behavior_static_assets = {
-    path_pattern     = "/_next/static/*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.cloudfront_origin_static_content.origin_id
-
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.managed_cors_s3_origin.id
-    cache_policy_id          = data.aws_cloudfront_cache_policy.managed_caching_optimized.id
-  }
-
   # next/image behavior
   cloudfront_ordered_cache_behavior_next_image = var.create_image_optimization ? module.next_image[0].cloudfront_cache_behavior : null
 
   # Little hack here to create a dynamic object with different number of attributes
   # using filtering: https://www.terraform.io/docs/language/expressions/for.html#filtering-elements
   _cloudfront_ordered_cache_behaviors = {
-    static_assets = merge(local.cloudfront_ordered_cache_behavior_static_assets, { create = true })
     next_image = merge(local.cloudfront_ordered_cache_behavior_next_image, {
       create = var.create_image_optimization
     })

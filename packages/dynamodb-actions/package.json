@@ -1,0 +1,14 @@
+{
+  "name": "@millihq/tfn-dynamodb-actions",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "aws-sdk": "*"
+  },
+  "devDependencies": {
+    "jest": "*",
+    "ts-jest": "*",
+    "typescript": "*"
+  }
+}

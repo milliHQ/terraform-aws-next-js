@@ -1,6 +1,8 @@
 {
-  "lambdaRoutes": ["/__NEXT_API_LAMBDA_0", "/__NEXT_PAGE_LAMBDA_0"],
-  "staticRoutes": [],
+  "lambdaRoutes": {
+    "/__NEXT_API_LAMBDA_0": "lambda1.localhost",
+    "/__NEXT_PAGE_LAMBDA_0": "lambda2.localhost"
+  },
   "routes": [
     {
       "src": "^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$",

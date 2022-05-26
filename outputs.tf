@@ -1,5 +1,15 @@
-output "static_upload_bucket_id" {
-  value = module.statics_deploy.static_upload_bucket_id
+output "upload_bucket_id" {
+  value = module.statics_deploy.upload_bucket_id
+}
+
+output "api_endpoint" {
+  description = "API endpoint that is used by the CLI."
+  value       = module.api.api_endpoint
+}
+
+output "api_endpoint_access_policy_arn" {
+  description = "ARN of the policy that grants access to the API endpoint."
+  value       = module.api.api_endpoint_access_policy_arn
 }
 
 ##################################
@@ -43,13 +53,4 @@ output "cloudfront_origins" {
 output "cloudfront_custom_error_response" {
   description = "Preconfigured custom error response the CloudFront distribution should use."
   value       = local.cloudfront_custom_error_response
-}
-
-#####################
-# IAM role for Lambda
-#####################
-
-output "lambda_execution_role_arns" {
-  description = "Lambda execution IAM Role ARNs"
-  value       = { for k, v in local.lambdas : k => aws_iam_role.lambda[k].arn }
 }

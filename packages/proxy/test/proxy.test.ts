@@ -1,21 +1,39 @@
 import { Proxy } from '../src/proxy';
 import { ProxyConfig } from '../src/types';
+import { generateMockedFetchResponse } from './test-utils';
 
 describe('Proxy', () => {
   describe('Proxy::Routing 001', () => {
     let proxy: Proxy;
+    let config: ProxyConfig;
+
     beforeAll(() => {
       // Initialize proxy
-      const config = require('./res/config-001.json') as ProxyConfig;
-      proxy = new Proxy(
-        config.routes,
-        config.lambdaRoutes,
-        config.staticRoutes
-      );
+      config = require('./res/config-001.json') as ProxyConfig;
+      const staticRoutes = ['favicon.ico', 'sitemap.xml'];
+      const mockedFetch = jest.fn().mockImplementation((url: string) => {
+        for (const staticRoute of staticRoutes) {
+          if (
+            url ===
+            `http://localhost/filesystem/123/${encodeURIComponent(staticRoute)}`
+          ) {
+            return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+          }
+        }
+
+        return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
+      });
+      proxy = new Proxy(mockedFetch as any);
     });
 
-    test('/: Index Lambda route', () => {
-      const route = proxy.route('/');
+    test('/: Index Lambda route', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
@@ -28,8 +46,14 @@ describe('Proxy', () => {
       );
     });
 
-    test('/about: Route not found', () => {
-      const route = proxy.route('/about');
+    test('/about: Route not found', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/about'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
@@ -41,8 +65,14 @@ describe('Proxy', () => {
       );
     });
 
-    test('/test/a/b/c: Slug Lambda Route', () => {
-      const route = proxy.route('/test/a/b/c');
+    test('/test/a/b/c: Slug Lambda Route', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/test/a/b/c'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
@@ -55,8 +85,14 @@ describe('Proxy', () => {
       );
     });
 
-    test('/sitemap.xml: Static file routing', () => {
-      const route = proxy.route('/sitemap.xml');
+    test('/sitemap.xml: Static file routing', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/sitemap.xml'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
@@ -70,19 +106,24 @@ describe('Proxy', () => {
 
   describe('Proxy::Routing 002', () => {
     let proxy: Proxy;
+    let config: ProxyConfig;
 
     beforeAll(() => {
       // Initialize proxy
-      const config = require('./res/config-002.json') as ProxyConfig;
-      proxy = new Proxy(
-        config.routes,
-        config.lambdaRoutes,
-        config.staticRoutes
-      );
+      config = require('./res/config-002.json') as ProxyConfig;
+      // No static routes
+      const mockedFetch = jest.fn().mockImplementation(() => {
+        return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
+      });
+      proxy = new Proxy(mockedFetch as any);
     });
 
-    test('/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc: Dynamic URL', () => {
-      const route = proxy.route(
+    test('/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc: Dynamic URL', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
         '/product/corsair-vengeance-ram-GuyH42koQBDk0pFJq3tc'
       );
       expect(route).toEqual(
@@ -100,23 +141,39 @@ describe('Proxy', () => {
 
   describe('Proxy::Routing 003', () => {
     let proxy: Proxy;
+    let config: ProxyConfig;
 
     beforeAll(() => {
       // Initialize proxy
-      const config = require('./res/config-003.json') as ProxyConfig;
-      proxy = new Proxy(
-        config.routes,
-        config.lambdaRoutes,
-        config.staticRoutes
-      );
+      config = require('./res/config-003.json') as ProxyConfig;
+      const staticRoutes = ['404', 'hello'];
+      const mockedFetch = jest.fn().mockImplementation((url: string) => {
+        for (const staticRoute of staticRoutes) {
+          if (
+            url ===
+            `http://localhost/filesystem/123/${encodeURIComponent(staticRoute)}`
+          ) {
+            return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+          }
+        }
+
+        return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
+      });
+      proxy = new Proxy(mockedFetch as any);
     });
 
-    test('/hello/: Trailing slash', () => {
-      const route = proxy.route('/hello/');
+    test('/hello/: Trailing slash', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/hello/'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
-          dest: '/hello',
+          dest: '/hello/',
           status: 308,
           headers: {
             Location: '/hello',
@@ -125,8 +182,14 @@ describe('Proxy', () => {
       );
     });
 
-    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', () => {
-      const route = proxy.route('/unknown-route-with-trailing-slash/');
+    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/unknown-route-with-trailing-slash/'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,
@@ -142,19 +205,35 @@ describe('Proxy', () => {
 
   describe('Proxy::Routing 004', () => {
     let proxy: Proxy;
+    let config: ProxyConfig;
 
     beforeAll(() => {
       // Initialize proxy
-      const config = require('./res/config-004.json') as ProxyConfig;
-      proxy = new Proxy(
-        config.routes,
-        config.lambdaRoutes,
-        config.staticRoutes
-      );
+      config = require('./res/config-004.json') as ProxyConfig;
+      const staticRoutes = ['404', 'hello'];
+      const mockedFetch = jest.fn().mockImplementation((url: string) => {
+        for (const staticRoute of staticRoutes) {
+          if (
+            url ===
+            `http://localhost/filesystem/123/${encodeURIComponent(staticRoute)}`
+          ) {
+            return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+          }
+        }
+
+        return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
+      });
+      proxy = new Proxy(mockedFetch as any);
     });
 
-    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', () => {
-      const route = proxy.route('/unknown-route-with-trailing-slash/');
+    test('/unknown-route-with-trailing-slash/: Redirect trailing slash of unknown route', async () => {
+      const route = await proxy.route(
+        '123',
+        config.routes,
+        config.lambdaRoutes,
+        'http://localhost',
+        '/unknown-route-with-trailing-slash/'
+      );
       expect(route).toEqual(
         expect.objectContaining({
           found: true,

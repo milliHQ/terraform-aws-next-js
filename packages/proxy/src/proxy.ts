@@ -1,9 +1,18 @@
 import { URL, URLSearchParams } from 'url';
 import { Route, isHandler, HandleValue } from '@vercel/routing-utils';
 
+import { fetchFileSystem } from './actions/fetch-file-system';
 import isURL from './util/is-url';
 import { resolveRouteParameters } from './util/resolve-route-parameters';
-import { RouteResult, HTTPHeaders } from './types';
+import { TTLCache } from './util/ttl-cache';
+import { RouteResult, HTTPHeaders, FileSystemEntry } from './types';
+import { ETagCache } from './util/etag-cache';
+
+type NodeFetch = typeof import('node-fetch').default;
+
+/* -----------------------------------------------------------------------------
+ * Utils
+ * ---------------------------------------------------------------------------*/
 
 // Since we have no replacement for url.parse, thanks Node.js
 // https://github.com/nodejs/node/issues/12682
@@ -33,15 +42,22 @@ function appendURLSearchParams(
   return param1;
 }
 
-export class Proxy {
-  routes: Route[];
-  lambdaRoutes: Set<string>;
-  staticRoutes: Set<string>;
+/* -----------------------------------------------------------------------------
+ * Proxy
+ * ---------------------------------------------------------------------------*/
 
-  constructor(routes: Route[], lambdaRoutes: string[], staticRoutes: string[]) {
-    this.routes = routes;
-    this.lambdaRoutes = new Set<string>(lambdaRoutes);
-    this.staticRoutes = new Set<string>(staticRoutes);
+export class Proxy {
+  filesystemCache: TTLCache<FileSystemEntry>;
+  routeCache: ETagCache<RouteResult>;
+  fetch: NodeFetch;
+
+  constructor(fetch: NodeFetch) {
+    this.fetch = fetch;
+
+    // TTL for filesystem is 0 since TTL is determined by the cache-control
+    // of the file.
+    this.filesystemCache = new TTLCache(0);
+    this.routeCache = new ETagCache();
   }
 
   /**
@@ -51,14 +67,15 @@ export class Proxy {
    *    querystring.
    * @returns Absolute path to the file that is matched, otherwise null
    */
-  private _checkFileSystem(
+  async checkFileSystem(
+    deploymentId: string,
+    fileSystemEndpointUrl: string,
     requestedFilePathWithPossibleQuerystring: string
-  ): string | null {
+  ): Promise<string | null> {
     // Make sure the querystring is removed from the requested file before
     // doing the lookup
-    const querystringStartPos = requestedFilePathWithPossibleQuerystring.indexOf(
-      '?'
-    );
+    const querystringStartPos =
+      requestedFilePathWithPossibleQuerystring.indexOf('?');
     const requestedFilePath =
       querystringStartPos === -1
         ? requestedFilePathWithPossibleQuerystring
@@ -67,34 +84,51 @@ export class Proxy {
             querystringStartPos
           );
 
-    // 1: Check if the original filePath is present
-    if (this.staticRoutes.has(requestedFilePath)) {
-      return requestedFilePath;
+    // If the last character is a `/` (invalid S3 key), change it to `/index`
+    let requestedFilePathWithoutTrailingSlash = requestedFilePath;
+    if (requestedFilePath.charAt(requestedFilePath.length - 1) === '/') {
+      requestedFilePathWithoutTrailingSlash = requestedFilePath + 'index';
     }
 
-    // 2: The last character in the requested filePath is a `/`
-    if (requestedFilePath.charAt(requestedFilePath.length - 1) === '/') {
-      // 2.1: Remove trailing `/`
-      const requestedFilePathWithoutTrailingSlash = requestedFilePath.slice(
-        0,
-        -1
+    // If the first character is a `/` (invalid S3 key), remove it
+    let s3Key = requestedFilePathWithoutTrailingSlash;
+    if (s3Key.charAt(0) === '/') {
+      s3Key = s3Key.substring(1);
+    }
+
+    try {
+      const file = await fetchFileSystem(
+        this.fetch,
+        this.filesystemCache,
+        fileSystemEndpointUrl,
+        deploymentId,
+        s3Key
       );
-      if (this.staticRoutes.has(requestedFilePathWithoutTrailingSlash)) {
+
+      if (file) {
         return requestedFilePathWithoutTrailingSlash;
       }
+    } catch (error) {
+      console.error(
+        'Unhandled error while checking fileSystem for route: ' +
+          requestedFilePathWithoutTrailingSlash
+      );
+      console.error(error);
 
-      // 2.2: Replace trailing `/` with `/index`
-      const requestedFilePathWithIndexExtension = `${requestedFilePath}index`;
-      if (this.staticRoutes.has(requestedFilePathWithIndexExtension)) {
-        return requestedFilePathWithIndexExtension;
-      }
+      return null;
     }
 
-    // requestedFilePath does not match a static route
+    // requestedFilePath does not match a key in S3
     return null;
   }
 
-  route(reqUrl: string) {
+  async route(
+    deploymentId: string,
+    routes: Route[],
+    lambdaRoutes: Record<string, string>,
+    fileSystemEndpointUrl: string,
+    reqUrl: string
+  ) {
     const parsedUrl = parseUrl(reqUrl);
     let { searchParams, pathname: reqPathname = '/' } = parsedUrl;
     let result: RouteResult | undefined;
@@ -120,7 +154,7 @@ export class Proxy {
       };
     }
 
-    for (let routeIndex = 0; routeIndex < this.routes.length; routeIndex++) {
+    for (let routeIndex = 0; routeIndex < routes.length; routeIndex++) {
       /**
        * This is how the routing basically works:
        * (For reference see: https://vercel.com/docs/configuration#routes)
@@ -132,7 +166,7 @@ export class Proxy {
        *
        */
 
-      const routeConfig = this.routes[routeIndex];
+      const routeConfig = routes[routeIndex];
 
       //////////////////////////////////////////////////////////////////////////
       // Phase 1: Check for handler
@@ -142,7 +176,11 @@ export class Proxy {
         // Check if the path is a static file that should be served from the
         // filesystem
         if (routeConfig.handle === 'filesystem') {
-          const filePath = this._checkFileSystem(reqPathname);
+          const filePath = await this.checkFileSystem(
+            deploymentId,
+            fileSystemEndpointUrl,
+            reqPathname
+          );
 
           // Check if the route matches a route from the filesystem
           if (filePath !== null) {
@@ -227,11 +265,15 @@ export class Proxy {
         }
 
         if (routeConfig.check && phase !== 'hit') {
-          if (this.lambdaRoutes.has(destPath)) {
+          if (destPath in lambdaRoutes) {
             target = 'lambda';
           } else {
             // Check if the path matches a route from the filesystem
-            const filePath = this._checkFileSystem(destPath);
+            const filePath = await this.checkFileSystem(
+              deploymentId,
+              fileSystemEndpointUrl,
+              destPath
+            );
             if (filePath !== null) {
               setTargetFilesystem(filePath);
               break;

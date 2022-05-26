@@ -17,8 +17,8 @@
     "dist"
   ],
   "devDependencies": {
-    "@tsconfig/node10": "^1.0.8",
-    "@types/aws-lambda": "^8.10.76",
+    "@tsconfig/node12": "^1.0.9",
+    "@types/aws-lambda": "*",
     "@types/buffer-crc32": "0.2.0",
     "@types/find-up": "4.0.0",
     "@types/fs-extra": "8.0.0",
@@ -36,10 +36,12 @@
     "find-up": "4.1.0",
     "fs-extra": "7.0.0",
     "get-port": "5.0.0",
+    "jest": "*",
     "resolve-from": "5.0.0",
     "semver": "6.1.1",
     "set-cookie-parser": "2.4.6",
-    "typescript": "^4.1.3",
+    "ts-jest": "*",
+    "typescript": "*",
     "yazl": "https://github.com/ijjk/yazl#70949c55b482647669ce37023017b1514c42b33c"
   }
 }

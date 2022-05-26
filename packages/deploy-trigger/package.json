@@ -11,24 +11,33 @@
     "directory": "packages/deploy-trigger"
   },
   "scripts": {
-    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
+    "build": "ncc-zip build -i '*.zip' -f handler --license third-party-licenses.txt src/handler.ts",
     "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
+    "@aws-cdk/aws-apigatewayv2-alpha": "2.25.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "2.25.0-alpha.0",
+    "@millihq/tfn-dynamodb-actions": "*",
+    "aws-cdk-lib": "2.25.0",
+    "constructs": "^10.0.130",
     "mime-types": "^2.1.33"
   },
   "devDependencies": {
     "@types/archiver": "^5.1.0",
-    "@types/aws-lambda": "^8.10.76",
+    "@types/aws-lambda": "*",
     "@types/mime-types": "^2.1.1",
     "@types/tmp": "^0.2.0",
     "@types/unzipper": "^0.10.3",
-    "@vercel/ncc": "^0.33.4",
+    "@vercel/ncc": "*",
     "archiver": "^5.3.0",
     "aws-sdk": "*",
+    "jest": "*",
     "ncc-zip": "^2.0.0",
+    "patch-package": "^6.4.7",
     "tmp": "^0.2.1",
+    "ts-jest": "*",
+    "typescript": "*",
     "unzipper": "^0.10.11"
   },
   "files": [

@@ -1,5 +1,3 @@
-import { STATUS_CODES } from 'http';
-
 import {
   CloudFrontHeaders,
   CloudFrontResultResponse,
@@ -8,7 +6,7 @@ import {
 } from 'aws-lambda';
 
 import { appendQuerystring } from './util/append-querystring';
-import { fetchProxyConfig } from './util/fetch-proxy-config';
+import { fetchProxyConfig } from './actions/fetch-proxy-config';
 import { generateCloudFrontHeaders } from './util/generate-cloudfront-headers';
 import {
   createCustomOriginFromApiGateway,
@@ -16,11 +14,25 @@ import {
   serveRequestFromCustomOrigin,
   serveRequestFromS3Origin,
 } from './util/custom-origin';
+import { TTLCache } from './util/ttl-cache';
 import { Proxy } from './proxy';
 import { ProxyConfig, RouteResult } from './types';
+import { renderError } from './error/render-error';
+import { MissingConfigError } from './error/missing-config';
+import { getEnv } from './util/get-env';
 
-let proxyConfig: ProxyConfig;
-let proxy: Proxy;
+/**
+ * We use a custom fetch implementation here that caches DNS resolutions
+ * to improve performance for repeated requests.
+ */
+const fetch = require('@vercel/fetch-cached-dns')(require('node-fetch'));
+
+// TTL in ms
+const CACHE_TTL = 60_000;
+
+// Calculating with a
+const proxyConfigCache = new TTLCache<ProxyConfig>(CACHE_TTL);
+const proxy = new Proxy(fetch);
 
 /**
  * Checks if a route result issued a redirect
@@ -62,7 +74,6 @@ function isRedirect(
 
       return {
         status: routeResult.status.toString(),
-        statusDescription: STATUS_CODES[routeResult.status],
         headers: generateCloudFrontHeaders(initialHeaders, routeResult.headers),
         body: `Redirecting to ${redirectTargetWithQuerystring} (${routeResult.status})`,
       };
@@ -73,13 +84,13 @@ function isRedirect(
 }
 
 /**
- * Internal handler that is called by the handler.
+ * Handler that is called by Lambda@Edge.
  *
  * @param event - Incoming event from CloudFront
  *    @see {@link http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html}
  * @returns CloudFront request or response modified by the proxy.
  */
-async function main(
+async function handler(
   event: CloudFrontRequestEvent
 ): Promise<CloudFrontRequest | CloudFrontResultResponse> {
   /**
@@ -88,115 +99,126 @@ async function main(
    * Changing properties inside of the function may cause unwanted side-effects
    * that are difficult to track.
    */
-  const { request } = event.Records[0].cf;
-  const configEndpoint = request.origin!.s3!.customHeaders[
-    'x-env-config-endpoint'
-  ][0].value;
-  const apiEndpoint = request.origin!.s3!.customHeaders['x-env-api-endpoint'][0]
-    .value;
 
   try {
+    const { request } = event.Records[0].cf;
+    const configEndpoint = getEnv(request, 'x-env-config-endpoint');
+    const alias = request.headers.host[0].value;
+    // TODO: Remove
+    const apiEndpoint = '';
+
+    if (!alias) {
+      throw new Error('Alias could not be determined from request');
+    }
+
+    const proxyConfig = await fetchProxyConfig(
+      fetch,
+      proxyConfigCache,
+      configEndpoint,
+      alias
+    );
+
     if (!proxyConfig) {
-      proxyConfig = await fetchProxyConfig(configEndpoint);
-      proxy = new Proxy(
-        proxyConfig.routes,
-        proxyConfig.lambdaRoutes,
-        proxyConfig.staticRoutes
+      throw new MissingConfigError();
+    }
+
+    // Check if we have a prerender route
+    // Bypasses proxy
+    if (request.uri in proxyConfig.prerenders) {
+      const customOrigin = createCustomOriginFromApiGateway(
+        `/${proxyConfig.prerenders[request.uri].lambda}`,
+        proxyConfig.lambdaRoutes
+      );
+      return serveRequestFromCustomOrigin(request, customOrigin);
+    }
+
+    // Handle request by proxy
+
+    // Append query string if we have one
+    // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
+    const requestPath =
+      request.querystring !== ''
+        ? `${request.uri}?${request.querystring}`
+        : request.uri;
+    const proxyResult = await proxy.route(
+      proxyConfig.deploymentId,
+      proxyConfig.routes,
+      proxyConfig.lambdaRoutes,
+      configEndpoint,
+      requestPath
+    );
+
+    // Check for redirect
+    const redirect = isRedirect(proxyResult);
+    if (redirect) {
+      return redirect;
+    }
+
+    // Check if route is served by lambda
+    if (proxyResult.target === 'lambda') {
+      // Modify request to be served from Api Gateway
+      const customOrigin = createCustomOriginFromApiGateway(
+        proxyResult.dest,
+        proxyConfig.lambdaRoutes
+      );
+
+      // Append querystring if we have any
+      const querystring = proxyResult.uri_args
+        ? proxyResult.uri_args.toString()
+        : '';
+
+      return serveRequestFromCustomOrigin(
+        request,
+        customOrigin,
+        proxyResult.headers,
+        querystring
       );
     }
-  } catch (err) {
-    console.error('Error while initialization:', err);
-    return serveRequestFromS3Origin(request);
-  }
 
-  // Check if we have a prerender route
-  // Bypasses proxy
-  if (request.uri in proxyConfig.prerenders) {
-    const customOrigin = createCustomOriginFromApiGateway(
-      apiEndpoint,
-      `/${proxyConfig.prerenders[request.uri].lambda}`
-    );
-    return serveRequestFromCustomOrigin(request, customOrigin);
-  }
+    if (proxyResult.target === 'url') {
+      // Modify request to be served from external host
+      const [customOrigin, destUrl] = createCustomOriginFromUrl(
+        proxyResult.dest
+      );
+      // Modify URI to match the path
+      const uri = destUrl.pathname;
 
-  // Handle request by proxy
+      // Append querystring if we have any
+      const querystring = proxyResult.uri_args
+        ? proxyResult.uri_args.toString()
+        : '';
 
-  // Append query string if we have one
-  // @see: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
-  const requestPath =
-    request.querystring !== ''
-      ? `${request.uri}?${request.querystring}`
-      : request.uri;
-  const proxyResult = proxy.route(requestPath);
+      return serveRequestFromCustomOrigin(
+        request,
+        customOrigin,
+        proxyResult.headers,
+        querystring,
+        uri
+      );
+    }
 
-  // Check for redirect
-  const redirect = isRedirect(proxyResult);
-  if (redirect) {
-    return redirect;
-  }
+    // Route is served by S3 bucket
+    const notFound =
+      proxyResult.phase === 'error' && proxyResult.status === 404;
+    const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
+    return serveRequestFromS3Origin(request, proxyConfig.deploymentId, uri);
+  } catch (error: any) {
+    if (!error.isHandled) {
+      // Log full error message to CloudWatch Logs
+      console.error(error);
+    }
 
-  // Check if route is served by lambda
-  if (proxyResult.target === 'lambda') {
-    // Modify request to be served from Api Gateway
-    const customOrigin = createCustomOriginFromApiGateway(
-      apiEndpoint,
-      proxyResult.dest
-    );
+    // Errors that generate its own response
+    if (error.toCloudFrontResponse) {
+      return error.toCloudFrontResponse();
+    }
 
-    // Append querystring if we have any
-    const querystring = proxyResult.uri_args
-      ? proxyResult.uri_args.toString()
-      : '';
-
-    return serveRequestFromCustomOrigin(
-      request,
-      customOrigin,
-      proxyResult.headers,
-      querystring
-    );
-  }
-
-  if (proxyResult.target === 'url') {
-    // Modify request to be served from external host
-    const [customOrigin, destUrl] = createCustomOriginFromUrl(proxyResult.dest);
-    // Modify URI to match the path
-    const uri = destUrl.pathname;
-
-    // Append querystring if we have any
-    const querystring = proxyResult.uri_args
-      ? proxyResult.uri_args.toString()
-      : '';
-
-    return serveRequestFromCustomOrigin(
-      request,
-      customOrigin,
-      proxyResult.headers,
-      querystring,
-      uri
-    );
-  }
-
-  // Route is served by S3 bucket
-  const notFound = proxyResult.phase === 'error' && proxyResult.status === 404;
-  const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
-  return serveRequestFromS3Origin(request, uri);
-}
-
-/**
- * Handler that is called by Lambda@Edge.
- *
- * @param event - Incoming event from CloudFront
- *    @see {@link http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html}
- * @returns CloudFront request or response modified by the proxy.
- */
-export async function handler(
-  event: CloudFrontRequestEvent
-): Promise<CloudFrontRequest | CloudFrontResultResponse> {
-  try {
-    return main(event);
-  } catch (error) {
-    // Something went terribly wrong - Should never be called!
-    console.error('Unexpected error occurred: ', error);
-    return event.Records[0].cf.request;
+    // Unhandled error
+    return renderError({
+      errorCode: 'PROXY_ERROR',
+      status: 500,
+    });
   }
 }
+
+export { handler };

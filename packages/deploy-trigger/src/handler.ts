@@ -1,5 +1,10 @@
+import {
+  updateDeploymentStatusCreateInProgress,
+  getDeploymentById,
+} from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 import S3 from 'aws-sdk/clients/s3';
 import SQS from 'aws-sdk/clients/sqs';
 
@@ -12,7 +17,11 @@ import {
   createInvalidation,
   prepareInvalidations,
 } from './create-invalidation';
-import { generateRandomId } from './utils';
+import { ensureEnv } from './utils/ensure-env';
+import { generateRandomId } from './utils/random-id';
+import { AtomicDeploymentAPIGateway } from './cdk/aws-construct';
+import { AtomicDeploymentFunctionUrls } from './cdk/aws-construct-function-urls';
+import { createCloudFormationStack } from './cdk/create-cloudformation-stack';
 
 interface InvalidationSQSMessage {
   id: string;
@@ -80,7 +89,9 @@ async function createCloudFrontInvalidation(
         InvalidationBatch,
       })
       .promise();
-  } catch (err: any) {
+  } catch (error) {
+    const err = error as any;
+
     console.log(err);
     if (err.code === 'TooManyInvalidationsInProgress') {
       // Send the invalidation back to the queue
@@ -140,6 +151,13 @@ export const handler = async function (event: S3Event | SQSEvent) {
 };
 
 async function s3Handler(Record: S3EventRecord) {
+  const dynamoDBRegion = ensureEnv('TABLE_REGION');
+  const dynamoDBTableNameDeployments = ensureEnv('TABLE_NAME_DEPLOYMENTS');
+
+  const dynamoDBClient = new DynamoDB({
+    region: dynamoDBRegion,
+  });
+
   let s3: S3;
   // Only for testing purposes when connecting against a local S3 backend
   if (process.env.__DEBUG__USE_LOCAL_BUCKET) {
@@ -153,7 +171,7 @@ async function s3Handler(Record: S3EventRecord) {
 
   // Get needed information of the event
   const { object } = Record.s3;
-  const { versionId, key } = object;
+  const { key } = object;
   const sourceBucket = Record.s3.bucket.name;
 
   const manifest = await getOrCreateManifest(
@@ -162,14 +180,64 @@ async function s3Handler(Record: S3EventRecord) {
     deploymentConfigurationKey
   );
 
-  // Unpack the package
-  const { files, buildId } = await deployTrigger({
-    s3,
-    sourceBucket,
-    deployBucket,
-    key,
-    versionId,
+  // Unpack the package to S3
+  const { files, deploymentId, lambdas, deploymentConfig } =
+    await deployTrigger({
+      s3,
+      sourceBucket,
+      deployBucket,
+      key,
+    });
+
+  // Get the deployment from the Database
+  const deployment = await getDeploymentById({
+    dynamoDBClient,
+    deploymentTableName: dynamoDBTableNameDeployments,
+    deploymentId,
   });
+
+  if (!deployment) {
+    throw new Error(
+      `Deployment with id ${deploymentId} could not be found in database.`
+    );
+    // TODO: Cleanup extracted files from S3
+  }
+
+  // Create the stack
+  const atomicDeployment =
+    deployment.DeploymentTemplate === 'API_GATEWAY'
+      ? new AtomicDeploymentAPIGateway({
+          deploymentId,
+          deploymentBucketId: deployBucket,
+          lambdas: lambdas,
+        })
+      : new AtomicDeploymentFunctionUrls({
+          deploymentId,
+          deploymentBucketId: deployBucket,
+          lambdas: lambdas,
+        });
+
+  try {
+    const stackName = `tfn-${deploymentId}`;
+    const { stackARN } = await createCloudFormationStack({
+      notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
+      stack: atomicDeployment,
+      // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
+      stackName,
+    });
+
+    // TODO: Move this to the deployment controller
+    await updateDeploymentStatusCreateInProgress({
+      dynamoDBClient,
+      deploymentTableName: dynamoDBTableNameDeployments,
+      deploymentId,
+      routes: JSON.stringify(deploymentConfig.routes),
+      prerenders: JSON.stringify(deploymentConfig.prerenders),
+      cloudFormationStack: stackARN,
+    });
+  } catch (error) {
+    // TODO: Update the item with failed status
+  }
 
   // Update the manifest
   const { invalidate: invalidationPaths } = await updateManifest({
@@ -177,7 +245,7 @@ async function s3Handler(Record: S3EventRecord) {
     bucket: deployBucket,
     expireAfterDays,
     files,
-    buildId,
+    buildId: deploymentId,
     deploymentConfigurationKey,
     manifest,
   });

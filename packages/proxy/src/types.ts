@@ -1,12 +1,14 @@
 import { URLSearchParams } from 'url';
+
 import { Route, HandleValue } from '@vercel/routing-utils';
 
 export type HTTPHeaders = Record<string, string>;
 
 export interface ProxyConfig {
+  etag: string;
+  deploymentId: string;
   routes: Route[];
-  lambdaRoutes: string[];
-  staticRoutes: string[];
+  lambdaRoutes: Record<string, string>;
   prerenders: Record<string, { lambda: string }>;
 }
 
@@ -36,3 +38,7 @@ export interface RouteResult {
   // the phase that this route is defined in
   phase?: HandleValue | null;
 }
+
+export type FileSystemEntry = {
+  etag: string;
+};

@@ -4,6 +4,7 @@ export interface ConfigOutput {
   buildId: string;
   routes: Route[];
   staticRoutes: string[];
+  lambdaRoutes: string[];
   staticFilesArchive: string;
   lambdas: Record<
     string,
@@ -26,3 +27,14 @@ export interface ConfigOutput {
   };
   version: number;
 }
+
+export type CommandDefaultOptions = {
+  /**
+   * The current working directory where the command is executed from
+   */
+  cwd: string;
+  /**
+   * LogLevel of the command
+   */
+  logLevel?: 'verbose' | 'none';
+};

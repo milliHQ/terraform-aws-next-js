@@ -15,5 +15,9 @@
   "scripts": {
     "build": "tsc"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "jest": "*",
+    "ts-jest": "*",
+    "typescript": "*"
+  }
 }

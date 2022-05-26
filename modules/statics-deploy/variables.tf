@@ -1,7 +1,3 @@
-variable "static_files_archive" {
-  type = string
-}
-
 variable "deploy_trigger_module_version" {
   type    = string
   default = "0.12.2"
@@ -26,9 +22,29 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
-variable "use_awscli_for_static_upload" {
-  type    = bool
-  default = false
+#####################
+# Deployment database
+#####################
+
+variable "dynamodb_region" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_arn" {
+  type = string
+}
+
+variable "dynamodb_table_deployments_name" {
+  type = string
+}
+
+#####
+# SNS
+#####
+
+variable "deploy_status_sns_topic_arn" {
+  description = "ARN of the SNS topic where CloudFormation status changes should be sent to."
+  type        = string
 }
 
 ###########

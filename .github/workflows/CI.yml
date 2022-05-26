@@ -13,9 +13,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -48,20 +51,31 @@ jobs:
   test-integration:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
     services:
       s3:
         image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
         env:
           MINIO_ACCESS_KEY: test
           MINIO_SECRET_KEY: testtest
+      dynamodb:
+        image: amazon/dynamodb-local:latest
+        # @note Github overwrites WORKDIR to repository path, so overwrite that again
+        options: >-
+          --workdir /home/dynamodblocal
 
     env:
+      # Increase heap size for running the tests
+      NODE_OPTIONS: '--max_old_space_size=4096'
       MINIO_ACCESS_KEY: test
       MINIO_SECRET_KEY: testtest
       S3_ENDPOINT: s3:9000
+      TEST_DYNAMO_ENDPOINT: http://dynamodb:8000
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -72,7 +86,7 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Yarn install
+      - name: Install dependencies
         run: yarn --frozen-lockfile --cache-folder .yarn
 
       - name: Download build artifacts
@@ -82,13 +96,49 @@ jobs:
           path: packages
 
       - name: Jest
-        run: yarn test
+        run: yarn test:not:runtime
+
+  # We run the runtime tests in a dedicated task since running it with the
+  # other integration tests would cause a memory overflow.
+  test-integration-runtime:
+    needs: build
+    runs-on: ubuntu-latest
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
+
+    steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
+      - uses: actions/checkout@v2
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            .yarn
+            **/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --cache-folder .yarn
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: packages
+
+      - name: Jest
+        run: yarn test:runtime
 
   test-e2e-prepare:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs14.x:latest
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.17
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -118,71 +168,10 @@ jobs:
           path: test/fixtures/**/.next-tf/**/*
           if-no-files-found: error
 
-  test-e2e:
-    needs: [build, test-e2e-prepare]
-    runs-on: ubuntu-latest
-    services:
-      s3:
-        image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
-        env:
-          MINIO_ACCESS_KEY: test
-          MINIO_SECRET_KEY: testtest
-        ports:
-          - 9000:9000
-    env:
-      SAM_CLI_TELEMETRY: 0
-      # Don't worry these are fake AWS credentials for AWS SAM
-      AWS_ACCESS_KEY_ID: ABIAZLJNBT8I3KFOU4NO
-      AWS_SECRET_ACCESS_KEY: 4Xt3Rbx4DO21MhK1IHXZXRvVRDuqaQ0Wo5lILA/h
-      MINIO_ACCESS_KEY: test
-      MINIO_SECRET_KEY: testtest
-
-    steps:
-      - name: Setup AWS SAM
-        run: |
-          brew tap aws/tap
-          brew install aws-sam-cli
-          sam --version
-
-      - uses: actions/checkout@v2
-
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            .yarn
-            **/node_modules
-          key: ${{ runner.os }}-e2e-${{ hashFiles('yarn.lock') }}
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: dist
-          path: packages
-
-      - name: Download prebuilt e2e fixtures
-        uses: actions/download-artifact@v2
-        with:
-          name: e2e-fixtures
-          path: test/fixtures
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --cache-folder .yarn
-
-      - name: Run e2e-test
-        run: yarn test:e2e --runInBand
-
-      - name: Output SAM logs
-        run: |
-          printf "\n\nOutput of sam-local.log:\n"
-          cat sam-local.log
-          printf "\n\nOutput of sam-api.log:\n"
-          cat sam-api.log
-
   publishRelease:
     name: Potentially publish release
     runs-on: ubuntu-latest
-    needs: [build, test-integration, test-e2e]
+    needs: [build, test-integration, test-integration-runtime]
     if: github.ref == 'refs/heads/main'
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

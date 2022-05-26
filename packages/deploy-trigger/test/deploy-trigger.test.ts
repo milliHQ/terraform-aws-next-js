@@ -6,8 +6,9 @@ import {
   BucketHandler,
   s3CreateBucket as createBucket,
 } from '../../../test/utils';
-import { deployTrigger } from '../src/deploy-trigger';
-import { generateZipBundle } from './utils';
+import { DEPLOYMENT_ID_META_KEY, deployTrigger } from '../src/deploy-trigger';
+import { generateZipBundle } from './test-utils';
+import { generateRandomBuildId } from '../src/utils/random-id';
 
 describe('deploy-trigger', () => {
   let s3: S3;
@@ -42,7 +43,6 @@ describe('deploy-trigger', () => {
     });
 
     test('Extract an uploaded deployment', async () => {
-      const packageKey = 'static-website-files.zip';
       const staticRouteKey = '404';
       const localeStaticRouteKey = 'es';
       const staticAssetKey = '_next/static/some.js';
@@ -54,25 +54,41 @@ describe('deploy-trigger', () => {
       ];
 
       // Create an dummy deployment package
-      const bundle = await generateZipBundle(packageContent);
+      const bundle = await generateZipBundle(
+        {
+          routes: [],
+          lambdas: {},
+          lambdaRoutes: [],
+          prerenders: {},
+          staticRoutes: [],
+          version: 1,
+        },
+        packageContent
+      );
+
+      const initialDeploymentId = generateRandomBuildId();
+      const packageKey = `${initialDeploymentId}.zip`;
 
       await s3
         .upload({
-          Key: 'static-website-files.zip',
+          Key: packageKey,
           Body: fs.createReadStream(bundle),
           Bucket: sourceBucket.bucketName,
+          Metadata: {
+            [DEPLOYMENT_ID_META_KEY]: initialDeploymentId,
+          },
         })
         .promise();
 
       // Run deployTrigger
-      const { buildId, files } = await deployTrigger({
+      const { deploymentId, files } = await deployTrigger({
         s3,
         sourceBucket: sourceBucket.bucketName,
         deployBucket: targetBucket.bucketName,
         key: packageKey,
       });
 
-      expect(buildId).toBeDefined();
+      expect(deploymentId).toBe(initialDeploymentId);
       expect(files.length).toBe(packageContent.length);
 
       // Check targetBucket
@@ -86,7 +102,7 @@ describe('deploy-trigger', () => {
         expect(Contents).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              Key: fileKey,
+              Key: `${deploymentId}/${fileKey}`,
             }),
           ])
         );
@@ -96,7 +112,7 @@ describe('deploy-trigger', () => {
       const localeStaticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: localeStaticRouteKey,
+          Key: `${deploymentId}/${localeStaticRouteKey}`,
         })
         .promise();
 
@@ -109,7 +125,10 @@ describe('deploy-trigger', () => {
 
       // Check the mime-type and Cache-Control headers
       const staticRouteObject = await s3
-        .getObject({ Bucket: targetBucket.bucketName, Key: staticRouteKey })
+        .getObject({
+          Bucket: targetBucket.bucketName,
+          Key: `${deploymentId}/${staticRouteKey}`,
+        })
         .promise();
 
       expect(staticRouteObject.ContentType).toBe('text/html; charset=utf-8');
@@ -118,7 +137,10 @@ describe('deploy-trigger', () => {
       );
 
       const staticAssetObject = await s3
-        .getObject({ Bucket: targetBucket.bucketName, Key: staticAssetKey })
+        .getObject({
+          Bucket: targetBucket.bucketName,
+          Key: `${deploymentId}/${staticAssetKey}`,
+        })
         .promise();
       expect(staticAssetObject.ContentType).toBe(
         'application/javascript; charset=utf-8'

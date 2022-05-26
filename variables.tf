@@ -25,10 +25,20 @@ variable "expire_static_assets" {
   default     = 30
 }
 
-variable "use_awscli_for_static_upload" {
-  description = "Use AWS CLI when uploading static resources to S3 instead of default Bash script. Some cases may fail with 403 Forbidden when using the Bash script."
+######################
+# Multiple deployments
+######################
+
+variable "enable_multiple_deployments" {
+  description = "Controls whether it should be possible to run multiple deployments in parallel (requires multiple_deployments_base_domain)."
   type        = bool
   default     = false
+}
+
+variable "multiple_deployments_base_domain" {
+  description = "Default wildcard domain where new deployments should be available. Should be in the form of *.example.com."
+  type        = string
+  default     = null
 }
 
 ###################

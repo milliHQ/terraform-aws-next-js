@@ -48,11 +48,19 @@ export function createCustomOriginFromUrl(
  * @returns
  */
 export function createCustomOriginFromApiGateway(
-  apiEndpoint: string,
-  path: string
+  path: string,
+  lambdaMapping: Record<string, string>
 ): CloudFrontCustomOrigin {
+  const _url = lambdaMapping[path];
+
+  if (!_url) {
+    throw new Error('Lambda does not exist');
+  }
+
+  const url = new URL(_url);
+
   return {
-    domainName: apiEndpoint,
+    domainName: url.hostname,
     path,
     customHeaders: {},
     keepaliveTimeout: 5,
@@ -110,12 +118,14 @@ function serveRequestFromCustomOrigin(
 /**
  * Modifies a CloudFront response object so that the response gets served by S3.
  *
- * @param request - Incoming request from the handler. Gets modified by the
- *    function.
+ * @param request Incoming request from the handler. Gets modified by the
+ *                function.
+ * @param deploymentId DeploymentId that should be used to serve the content.
  * @returns Modified request that is served from S3.
  */
 function serveRequestFromS3Origin(
   request: CloudFrontRequest,
+  deploymentId: string,
   uri?: string
 ): CloudFrontRequest {
   // Modify `Host` header to match the S3 host. If the `Host` header is
@@ -131,7 +141,7 @@ function serveRequestFromS3Origin(
   });
 
   if (typeof uri === 'string') {
-    request.uri = uri;
+    request.uri = `/${deploymentId}${uri}`;
   }
 
   // Querystring is not supported by S3 origin

@@ -12,8 +12,8 @@ import {
 import { getOrCreateManifest } from '../src/get-or-create-manifest';
 import { Manifest } from '../src/types';
 import { getInvalidationKeys, updateManifest } from '../src/update-manifest';
-import { generateRandomBuildId } from '../src/utils';
-import { addFilesToS3Bucket, generateS3ClientForTesting } from './utils';
+import { generateRandomBuildId } from '../src/utils/random-id';
+import { addFilesToS3Bucket, generateS3ClientForTesting } from './test-utils';
 
 describe('deploy-trigger', () => {
   let s3: S3;

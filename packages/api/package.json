@@ -1,0 +1,30 @@
+{
+  "name": "@millihq/terraform-next-api",
+  "version": "0.12.2",
+  "scripts": {
+    "generate:schema": "openapi-typescript schema.yaml --output schema.ts --prettier-config ../../.prettier.config.js",
+    "build": "ncc-zip build -f handler --license third-party-licenses.txt src/handler.ts",
+    "prepack": "cp dist/third-party-licenses.txt ../../LICENSE ./",
+    "postpack": "rm ./LICENSE ./third-party-licenses.txt"
+  },
+  "dependencies": {
+    "@millihq/tfn-dynamodb-actions": "*",
+    "aws-sdk": "*",
+    "class-validator": "^0.13.2",
+    "lambda-api": "^0.11.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "*",
+    "@types/validator": "^13.0.0",
+    "@vercel/ncc": "*",
+    "jest": "*",
+    "ncc-zip": "^2.0.0",
+    "openapi-typescript": "^5.3.0",
+    "ts-jest": "*",
+    "typescript": "*"
+  },
+  "files": [
+    "dist.zip",
+    "third-party-licenses.txt"
+  ]
+}

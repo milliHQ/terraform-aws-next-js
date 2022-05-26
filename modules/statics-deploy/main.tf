@@ -19,14 +19,6 @@ resource "aws_s3_bucket_acl" "static_upload" {
   acl    = "private"
 }
 
-# We are using versioning here to ensure that no file gets overridden at upload
-resource "aws_s3_bucket_versioning" "static_upload" {
-  bucket = aws_s3_bucket.static_upload.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_notification" "on_create" {
   bucket = aws_s3_bucket.static_upload.id
 
@@ -52,6 +44,7 @@ resource "aws_s3_bucket_acl" "static_deploy" {
   acl    = "private"
 }
 
+# TODO: Delete
 resource "aws_s3_bucket_lifecycle_configuration" "static_deploy" {
   bucket = aws_s3_bucket.static_deploy.id
 
@@ -141,6 +134,48 @@ data "aws_iam_policy_document" "access_static_deploy" {
     ]
     resources = [var.cloudfront_arn]
   }
+
+  # Permissions for CloudFormation to create resources
+  statement {
+    actions = [
+      "apigateway:*",
+      "cloudformation:CreateStack",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:PassRole",
+      "iam:PutRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "lambda:AddPermission",
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:CreateFunctionUrlConfig",
+      "lambda:GetFunctionUrlConfig",
+      "lambda:GetFunction",
+      "lambda:RemovePermission",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DeleteRetentionPolicy",
+      "logs:PutRetentionPolicy",
+      "logs:TagLogGroup",
+      "logs:UntagLogGroup",
+    ]
+    resources = ["*"]
+  }
+
+  # Allow CloudFormation to publish status changes to the SNS queue
+  statement {
+    effect = "Allow"
+    actions = [
+      "sns:Publish"
+    ]
+    resources = [var.deploy_status_sns_topic_arn]
+  }
 }
 
 #
@@ -155,6 +190,19 @@ data "aws_iam_policy_document" "access_static_upload" {
       "s3:DeleteObjectVersion"
     ]
     resources = ["${aws_s3_bucket.static_upload.arn}/*"]
+  }
+}
+
+# Access the dynamoDB deployment table
+data "aws_iam_policy_document" "access_dynamodb_table_deployments" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:Query",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem"
+    ]
+    resources = [var.dynamodb_table_deployments_arn]
   }
 }
 
@@ -223,19 +271,23 @@ module "deploy_trigger" {
   }
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 3
+  number_of_policy_jsons = 4
   policy_jsons = [
     data.aws_iam_policy_document.access_static_deploy.json,
     data.aws_iam_policy_document.access_static_upload.json,
-    data.aws_iam_policy_document.access_sqs_queue.json
+    data.aws_iam_policy_document.access_sqs_queue.json,
+    data.aws_iam_policy_document.access_dynamodb_table_deployments.json
   ]
 
   environment_variables = {
-    NODE_ENV          = "production"
-    TARGET_BUCKET     = aws_s3_bucket.static_deploy.id
-    EXPIRE_AFTER_DAYS = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
-    DISTRIBUTION_ID   = var.cloudfront_id
-    SQS_QUEUE_URL     = aws_sqs_queue.this.id
+    NODE_ENV               = "production"
+    TARGET_BUCKET          = aws_s3_bucket.static_deploy.id
+    EXPIRE_AFTER_DAYS      = var.expire_static_assets >= 0 ? var.expire_static_assets : "never"
+    DISTRIBUTION_ID        = var.cloudfront_id
+    SQS_QUEUE_URL          = aws_sqs_queue.this.id
+    DEPLOY_STATUS_SNS_ARN  = var.deploy_status_sns_topic_arn
+    TABLE_REGION           = var.dynamodb_region
+    TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
   }
 
   event_source_mapping = {
@@ -244,43 +296,6 @@ module "deploy_trigger" {
       event_source_arn = aws_sqs_queue.this.arn
     }
   }
-}
-
-###########################
-# Upload static files to s3
-###########################
-
-resource "null_resource" "static_s3_upload_awscli" {
-  count = var.use_awscli_for_static_upload ? 1 : 0
-  triggers = {
-    static_files_archive = filemd5(var.static_files_archive)
-  }
-
-  provisioner "local-exec" {
-    command = "aws s3 cp --region ${aws_s3_bucket.static_upload.region} ${abspath(var.static_files_archive)} s3://${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
-  }
-
-  # Make sure this only runs when the bucket and the lambda trigger are setup
-  depends_on = [
-    aws_s3_bucket_notification.on_create
-  ]
-}
-
-resource "null_resource" "static_s3_upload" {
-  count = var.use_awscli_for_static_upload ? 0 : 1
-  triggers = {
-    static_files_archive = filemd5(var.static_files_archive)
-  }
-
-  provisioner "local-exec" {
-    command     = "./s3-put -r ${aws_s3_bucket.static_upload.region} -T ${abspath(var.static_files_archive)} /${aws_s3_bucket.static_upload.id}/${basename(var.static_files_archive)}"
-    working_dir = "${path.module}/s3-bash4/bin"
-  }
-
-  # Make sure this only runs when the bucket and the lambda trigger are setup
-  depends_on = [
-    aws_s3_bucket_notification.on_create
-  ]
 }
 
 ################################
