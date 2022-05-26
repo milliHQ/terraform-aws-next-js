@@ -230,6 +230,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | create\_image\_optimization | Controls whether resources for image optimization support should be created or not. | `bool` | `true` | no |
 | debug\_use\_local\_packages | Use locally built packages rather than download them from npm. | `bool` | `false` | no |
 | deployment\_name | Identifier for the deployment group (only lowercase alphanumeric characters and hyphens are allowed). | `string` | `"tf-next"` | no |
+| enable\_multiple\_deployments | Controls whether it should be possible to run multiple deployments in parallel (requires multiple\_deployments\_base\_domain). | `bool` | `false` | no |
 | expire\_static\_assets | Number of days after which static assets from previous deployments should be removed from S3. Set to -1 to disable expiration. | `number` | `30` | no |
 | image\_optimization\_lambda\_memory\_size | Amount of memory in MB the worker Lambda Function for image optimization can use. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `2048` | no |
 | lambda\_attach\_policy\_json | Whether to deploy additional lambda JSON policies. If false, lambda\_policy\_json will not be attached to the lambda function. (Necessary since policy strings are only known after apply when using Terraforms data.aws\_iam\_policy\_document) | `bool` | `false` | no |
@@ -240,10 +241,10 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws\_iam\_role access for the lambda | `string` | `null` | no |
 | lambda\_runtime | Lambda Function runtime | `string` | `"nodejs14.x"` | no |
 | lambda\_timeout | Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
+| multiple\_deployments\_base\_domain | Default wildcard domain where new deployments should be available. Should be in the form of *.example.com. | `string` | `null` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 | tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
 | tags\_s3\_bucket | Tag metadata to label AWS S3 buckets. Overrides tags with the same name in input variable tags. | `map(string)` | `{}` | no |
-| use\_awscli\_for\_static\_upload | Use AWS CLI when uploading static resources to S3 instead of default Bash script. Some cases may fail with 403 Forbidden when using the Bash script. | `bool` | `false` | no |
 | vpc\_security\_group\_ids | The list of Security Group IDs to be used by the Lambda functions. lambda\_attach\_to\_vpc should be set to true for these to be applied. | `list(string)` | `[]` | no |
 | vpc\_subnet\_ids | The list of VPC subnet IDs to attach the Lambda functions. lambda\_attach\_to\_vpc should be set to true for these to be applied. | `list(string)` | `[]` | no |
 
@@ -251,6 +252,8 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 | Name | Description |
 |------|-------------|
+| api\_endpoint | API endpoint that is used by the CLI. |
+| api\_endpoint\_access\_policy\_arn | ARN of the policy that grants access to the API endpoint. |
 | cloudfront\_custom\_error\_response | Preconfigured custom error response the CloudFront distribution should use. |
 | cloudfront\_default\_cache\_behavior | Preconfigured default cache behavior the CloudFront distribution should use. |
 | cloudfront\_default\_root\_object | Preconfigured root object the CloudFront distribution should use. |
@@ -258,8 +261,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | cloudfront\_hosted\_zone\_id | Zone id of the main CloudFront distribution (When created). |
 | cloudfront\_ordered\_cache\_behaviors | Preconfigured ordered cache behaviors the CloudFront distribution should use. |
 | cloudfront\_origins | Preconfigured origins the CloudFront distribution should use. |
-| lambda\_execution\_role\_arns | Lambda execution IAM Role ARNs |
-| static\_upload\_bucket\_id | n/a |
+| upload\_bucket\_id | n/a |
 
 <!--- END_TF_DOCS --->
 <!-- prettier-ignore-end -->
