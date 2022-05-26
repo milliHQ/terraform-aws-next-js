@@ -7,6 +7,11 @@ output "api_endpoint" {
   value       = module.api.api_endpoint
 }
 
+output "api_endpoint_access_policy_arn" {
+  description = "ARN of the policy that grants access to the API endpoint."
+  value       = module.api.api_endpoint_access_policy_arn
+}
+
 ##################################
 # Internal CloudFront distribution
 ##################################

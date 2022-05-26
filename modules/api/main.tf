@@ -135,4 +135,6 @@ resource "aws_iam_policy" "access_api" {
   description = "Managed by Terraform Next.js"
 
   policy = data.aws_iam_policy_document.access_api.json
+
+  tags = var.tags
 }

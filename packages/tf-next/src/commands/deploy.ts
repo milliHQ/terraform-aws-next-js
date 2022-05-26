@@ -5,27 +5,12 @@ import { FormDataEncoder } from 'form-data-encoder';
 import { FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
-import ora from 'ora';
 
 import { CommandDefaultOptions } from '../types';
 import { createDeployment } from '../api/deployment/create-deployment';
 import { getDeploymentById } from '../api/deployment/get-deployment-by-id';
 import { FetchAWSSigV4Options } from '../utils/fetch-aws-sig-v4';
-
-/**
- * Same spinner configuration as Next.js
- * @see {@link https://github.com/vercel/next.js/blob/canary/packages/next/build/spinner.ts}
- */
-const dotsSpinner = {
-  frames: ['.', '..', '...'],
-  interval: 200,
-};
-
-function createSpinner(text: string) {
-  const spinner = ora({ spinner: dotsSpinner, prefixText: text });
-
-  return spinner;
-}
+import { createSpinner } from '../utils/create-spinner';
 
 function delay(t: number) {
   return new Promise(function (resolve) {

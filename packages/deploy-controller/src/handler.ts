@@ -99,12 +99,15 @@ async function handler(event: SNSEvent) {
             });
 
             // TODO: Handle case when multi deployments is not enabled
-            const deploymentAlias = reverseHostname(
+            const deploymentAliasBasePath = '/';
+            const deploymentAliasHostname =
+              deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN;
+            const deploymentAliasHostnameRev = reverseHostname(
               deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN
             );
             await createAlias({
               dynamoDBClient,
-              hostnameRev: deploymentAlias,
+              hostnameRev: deploymentAliasHostnameRev,
               isDeploymentAlias: true,
               aliasTableName: dynamoDBTableNameAliases,
               createDate: new Date(),
@@ -113,13 +116,15 @@ async function handler(event: SNSEvent) {
               // Copy values over from the deployment
               routes: deployment.Routes,
               prerenders: deployment.Prerenders,
+              basePath: deploymentAliasBasePath,
             });
 
             await updateDeploymentStatusFinished({
               dynamoDBClient,
               deploymentId,
               deploymentTableName: dynamoDBTableNameDeployments,
-              deploymentAlias,
+              deploymentAlias:
+                deploymentAliasHostname + deploymentAliasBasePath,
             });
           } catch (error) {
             console.log('ERROR', error);

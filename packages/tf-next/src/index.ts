@@ -14,7 +14,7 @@ globalYargs
   })
 
   /* ---------------------------------------------------------------------------
-   * Command: Build
+   * Command: build
    * -------------------------------------------------------------------------*/
 
   .command(
@@ -38,7 +38,7 @@ globalYargs
   )
 
   /* ---------------------------------------------------------------------------
-   * Command: Deploy
+   * Command: deploy
    * -------------------------------------------------------------------------*/
 
   .command(
@@ -60,6 +60,37 @@ globalYargs
 
       const deployCommand = (await import('./commands/deploy')).default;
       await deployCommand({
+        apiEndpoint: endpoint,
+        logLevel: verbose ? 'verbose' : 'none',
+        cwd,
+      });
+    }
+  )
+
+  /* -----------------------------------------------------------------------------
+   * Command: deployment ls
+   * ---------------------------------------------------------------------------*/
+
+  .command(
+    'deployment ls',
+    'List the latest deployments',
+    (yargs) => {
+      yargs.option('endpoint', {
+        type: 'string',
+        description: 'API endpoint to use.',
+      });
+    },
+    async ({ endpoint, verbose, profile }) => {
+      const cwd = process.cwd();
+
+      if (typeof endpoint !== 'string') {
+        console.error('Endpoint URL not provided.');
+        return;
+      }
+
+      const listDeploymentsCommand = (await import('./commands/deployment-ls'))
+        .default;
+      await listDeploymentsCommand({
         apiEndpoint: endpoint,
         logLevel: verbose ? 'verbose' : 'none',
         cwd,

@@ -2,19 +2,24 @@
 
 ![CI status](https://github.com/milliHQ/terraform-aws-next-js/workflows/CI/badge.svg)
 
+> **Note:** The main branch currently contains the atomic deployments alpha preview.  
+> For the lastest stable release, please see the [`v0.x` branch](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x).
+
 A zero-config Terraform module for self-hosting Next.js sites serverless on AWS Lambda.
 
 ## Features
 
 Some features are still under development, here is a list of features that are currently supported and what we plan to bring with the next releases:
 
-- ✅ &nbsp;[Next.js](https://nextjs.org/) 11, 10 & 9 support
+- ✅ &nbsp;Supports any version of [Next.js](https://nextjs.org/)
 - ✅ &nbsp;[Terraform](https://www.terraform.io/) `v0.15+`
+- ✅ &nbsp;Unlimited parallel deployments of Next.js apps (atomic deployments)
 - ✅ &nbsp;Static, SSG, Lambda and API pages (with [dynamic routes](https://nextjs.org/docs/routing/dynamic-routes))
 - ✅ &nbsp;Automatic expiration of old static assets
 - ✅ &nbsp;[Rewrites](https://nextjs.org/docs/api-reference/next.config.js/rewrites) & [Redirects](https://nextjs.org/docs/api-reference/next.config.js/redirects)
 - ✅ &nbsp;[Image Component & Image Optimization](https://nextjs.org/docs/basic-features/image-optimization) support
 - 🚧 &nbsp;[Incremental Static Regeneration](https://nextjs.org/docs/basic-features/data-fetching#incremental-static-regeneration)
+- ⛔️&nbsp; [Middleware](https://nextjs.org/docs/advanced-features/middleware) (Not supported by Lambda@Edge / CloudFront functions)
 
 ## Architecture
 
