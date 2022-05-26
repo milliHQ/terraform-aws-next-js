@@ -24,12 +24,6 @@ async function getDeploymentById(
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     deploymentTableName: dynamoDB.getDeploymentTableName(),
     deploymentId,
-    attributes: {
-      PK: true,
-      Status: true,
-      DeploymentAlias: true,
-      CreateDate: true,
-    },
   });
 
   if (!result) {
@@ -43,7 +37,7 @@ async function getDeploymentById(
 
   return {
     // Required attributes
-    id: result.PK,
+    id: result.DeploymentId,
     createDate: result.CreateDate,
     status: result.Status,
     // Optional attributes

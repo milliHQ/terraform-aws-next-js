@@ -1,4 +1,4 @@
-import { createDeployment, createAlias } from '@millihq/tfn-dynamodb-actions';
+import { createAlias } from '@millihq/tfn-dynamodb-actions';
 import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { API } from 'lambda-api';
 

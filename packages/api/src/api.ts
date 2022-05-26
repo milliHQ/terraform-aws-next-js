@@ -21,6 +21,7 @@ function createApi() {
 
   // aliases
   api.delete('/aliases/:hostname/:basePath', deleteAliasById);
+  api.delete('/aliases/:hostname', deleteAliasById);
   api.get('/aliases', listAliases);
   api.post('/aliases', createOrUpdateAlias);
 

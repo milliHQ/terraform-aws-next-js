@@ -49,6 +49,24 @@ export interface paths {
       };
     };
   };
+  '/aliases/{hostname}/{basePath}': {
+    delete: {
+      parameters: {
+        path: {
+          /** The hostname of the alias that should be deleted. */
+          hostname: string;
+          /** The basePath of the alias that should be deleted. If not present, defaults to `/`. */
+          basePath?: string;
+        };
+      };
+      responses: {
+        /** Successful response. */
+        204: never;
+        400: components['responses']['InvalidParamsError'];
+        404: components['responses']['NotFound'];
+      };
+    };
+  };
   '/deployments': {
     get: {
       parameters: {

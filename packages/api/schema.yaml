@@ -177,6 +177,29 @@ paths:
         '400':
           $ref: '#/components/responses/InvalidParamsError'
 
+  /aliases/{hostname}/{basePath}:
+    delete:
+      summary: Request a deployment by its Id.
+      parameters:
+        - in: path
+          name: hostname
+          schema:
+            type: string
+          required: true
+          description: The hostname of the alias that should be deleted.
+        - in: path
+          name: basePath
+          schema:
+            type: string
+          description: The basePath of the alias that should be deleted. If not present, defaults to `/`.
+      responses:
+        '204':
+          description: Successful response.
+        '400':
+          $ref: '#/components/responses/InvalidParamsError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /deployments:
     get:
       summary: List all deployments sorted by its creation date DESC.

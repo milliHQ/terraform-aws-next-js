@@ -8,31 +8,22 @@ import {
 } from '@millihq/tfn-dynamodb-actions';
 import { IsOptional, Length, validate, IsUrl, isURL } from 'class-validator';
 import { Request, Response } from 'lambda-api';
-import Validator from 'validator';
 
 import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
-import { generateAliasId } from './alias-utils';
+import { generateAliasId, hostnameValidationOptions } from './alias-utils';
 
 type SuccessResponse =
   paths['/aliases']['post']['responses']['201']['content']['application/json'];
 type ErrorResponse =
   paths['/aliases']['post']['responses']['400']['content']['application/json'];
 
-const urlValidationOptions: Validator.IsURLOptions = {
-  require_host: true,
-  allow_query_components: false,
-  require_valid_protocol: true,
-  protocols: [],
-  disallow_auth: true,
-};
-
 class CreateOrUpdateAliasPayload {
   /**
    * The alias name that should be created.
    * Consists of hostname and basePath, e.g. example.com/
    */
-  @IsUrl(urlValidationOptions)
+  @IsUrl(hostnameValidationOptions)
   alias: string;
 
   /**
@@ -85,7 +76,7 @@ async function createOrUpdateAlias(
 
   if (!targetIsDeploymentId) {
     // Check if the target is an URL
-    if (!isURL(payload.target, urlValidationOptions)) {
+    if (!isURL(payload.target, hostnameValidationOptions)) {
       const errorResponse: ErrorResponse = {
         code: 'INVALID_PARAMS',
         status: 400,
