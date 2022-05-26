@@ -1,17 +1,38 @@
+import { URL } from 'url';
+
 import {
   getAliasById,
   getDeploymentById,
   createAlias,
   reverseHostname,
 } from '@millihq/tfn-dynamodb-actions';
-import { IsOptional, Length, validate } from 'class-validator';
+import { IsOptional, Length, validate, IsUrl, isURL } from 'class-validator';
 import { Request, Response } from 'lambda-api';
+import Validator from 'validator';
 
+import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 
+type SuccessResponse =
+  paths['/aliases']['post']['responses']['201']['content']['application/json'];
+type ErrorResponse =
+  paths['/aliases']['post']['responses']['400']['content']['application/json'];
+
+const urlValidationOptions: Validator.IsURLOptions = {
+  require_host: true,
+  allow_query_components: false,
+  require_valid_protocol: true,
+  protocols: [],
+  disallow_auth: true,
+};
+
 class CreateOrUpdateAliasPayload {
-  @Length(1)
-  customDomain: string;
+  /**
+   * The alias name that should be created.
+   * Consists of hostname and basePath, e.g. example.com/
+   */
+  @IsUrl(urlValidationOptions)
+  alias: string;
 
   /**
    * deploymentId or alias (other customDomain)
@@ -28,38 +49,69 @@ class CreateOrUpdateAliasPayload {
   override?: boolean;
 }
 
-async function createOrUpdateAlias(req: Request, res: Response) {
+async function createOrUpdateAlias(
+  req: Request,
+  res: Response
+): Promise<SuccessResponse | void> {
+  const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
+  const { body: requestBody = {} } = req;
+
+  // Validate requestBody
   const payload = new CreateOrUpdateAliasPayload();
-  payload.customDomain = req.body.customDomain;
-  payload.target = req.body.target;
-  payload.override = req.body.override;
+  payload.alias = requestBody.alias;
+  payload.target = requestBody.target;
+  payload.override = requestBody.override;
 
   const payloadErrors = await validate(payload);
   if (payloadErrors.length > 0) {
-    return res.error(400, 'Payload validation', payloadErrors);
+    const errorResponse: ErrorResponse = {
+      code: 'INVALID_PARAMS',
+      status: 400,
+      message: payloadErrors.toString(),
+    };
+    return res.status(400).json(errorResponse);
   }
 
-  const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
-  const hostnameToCreate = payload.customDomain;
+  // URL always requires a protocol
+  const aliasToCreateUrl = new URL(`http://${payload.alias}`);
+  const aliasToCreateHostname = aliasToCreateUrl.hostname;
+  const aliasToCreateHostnameRev = reverseHostname(aliasToCreateHostname);
+  const aliasToCreateBasePath = aliasToCreateUrl.pathname;
 
   // Check if the target is an alias or an deployment-id
-  const targetIsDeploymentId = payload.target.indexOf('.') === -1;
   let targetDeploymentId: string;
+  const targetIsDeploymentId = payload.target.indexOf('.') === -1;
 
   if (!targetIsDeploymentId) {
-    const hostnameRev = reverseHostname(payload.target);
+    // Check if the target is an URL
+    if (!isURL(payload.target, urlValidationOptions)) {
+      const errorResponse: ErrorResponse = {
+        code: 'INVALID_PARAMS',
+        status: 400,
+        message: 'Parameter target is not a valid alias.',
+      };
+      return res.status(400).json(errorResponse);
+    }
+
+    // URL always requires a protocol
+    const aliasTargetUrl = new URL(`http://${payload.target}`);
+    const aliasTargetHostnameRev = reverseHostname(aliasTargetUrl.hostname);
+
     // Target is another alias, get the deployment ID from the alias first
     const targetAlias = await getAliasById({
       dynamoDBClient: dynamoDB.getDynamoDBClient(),
       aliasTableName: dynamoDB.getAliasTableName(),
-      hostnameRev,
-      attributes: {
-        DeploymentId: true,
-      },
+      hostnameRev: aliasTargetHostnameRev,
+      basePath: aliasTargetUrl.pathname,
     });
 
     if (!targetAlias) {
-      return res.error(400, `Alias target ${payload.target} does not exist.`);
+      const errorResponse: ErrorResponse = {
+        code: 'INVALID_ALIAS',
+        status: 400,
+        message: `Alias target ${payload.target} does not exist.`,
+      };
+      return res.status(400).json(errorResponse);
     }
 
     targetDeploymentId = targetAlias.DeploymentId;
@@ -75,47 +127,60 @@ async function createOrUpdateAlias(req: Request, res: Response) {
   });
 
   if (!targetDeployment) {
-    return res.error(
-      400,
-      `Deployment with id ${targetDeploymentId} does not exist.`
-    );
+    const errorResponse: ErrorResponse = {
+      code: 'INVALID_DEPLOYMENT_ID',
+      status: 400,
+      message: `Deployment with id ${targetDeploymentId} does not exist.`,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   // Check if the alias already exists
-  const customDomainRev = reverseHostname(payload.customDomain);
   const maybeExistingAlias = await getAliasById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    hostnameRev: customDomainRev,
-    attributes: {
-      DeploymentId: true,
-      DeploymentAlias: true,
-    },
+    hostnameRev: aliasToCreateHostnameRev,
+    basePath: aliasToCreateBasePath,
   });
 
-  // When alias already exists and it is a deployment alias, abort
-  if (maybeExistingAlias && maybeExistingAlias.DeploymentAlias === true) {
-    return res.error(
-      400,
-      `Cannot override existing alias ${hostnameToCreate} because it is a deployment alias that cannot be changed.`
-    );
+  if (maybeExistingAlias) {
+    if (maybeExistingAlias.DeploymentAlias === true) {
+      const errorResponse: ErrorResponse = {
+        code: 'DEPLOYMENT_ALIAS',
+        status: 400,
+        message: `Cannot override existing alias ${payload.alias} because it is a deployment alias that cannot be changed.`,
+      };
+      return res.status(400).json(errorResponse);
+    }
+
+    // If override option is not set explicit, fail
+    if (!payload.override) {
+      const errorResponse: ErrorResponse = {
+        code: 'ALIAS_OVERRIDE_NOT_ALLOWED',
+        status: 400,
+        message: `Cannot override existing alias ${payload.alias} because override flag is not set.`,
+      };
+      return res.status(400).json(errorResponse);
+    }
   }
 
   // Create the new alias
-  const hostnameToCreateRev = reverseHostname(hostnameToCreate);
-  await createAlias({
+  const createdAlias = await createAlias({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
-    hostnameRev: hostnameToCreateRev,
-    createDate: new Date(),
+    hostnameRev: aliasToCreateHostnameRev,
     deploymentId: targetDeploymentId,
     lambdaRoutes: targetDeployment.LambdaRoutes,
     prerenders: targetDeployment.Prerenders,
     routes: targetDeployment.Routes,
   });
 
+  const createdAliasHostname = reverseHostname(createdAlias.HostnameRev);
+
+  res.status(201);
   return {
-    status: 200,
+    id: createdAliasHostname + createdAlias.BasePath,
+    deployment: createdAlias.DeploymentId,
   };
 }
 

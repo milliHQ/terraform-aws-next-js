@@ -44,6 +44,11 @@ components:
       properties:
         id:
           type: string
+        deployment:
+          type: string
+      required:
+        - id
+        - deployment
 
     DeploymentStatus:
       type: string
@@ -137,6 +142,35 @@ paths:
                   type: array
                   items:
                     $ref: '#/components/schemas/Deployment'
+
+    post:
+      summary: Create a new alias or update an existing alias.
+      requestBody:
+        description: Request payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alias:
+                  type: string
+                target:
+                  type: string
+                override:
+                  type: boolean
+              required:
+                - alias
+                - target
+      responses:
+        '201':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alias'
+        '400':
+          $ref: '#/components/responses/InvalidParamsError'
 
   /deployments:
     get:

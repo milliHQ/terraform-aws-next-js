@@ -136,13 +136,20 @@ function mockCloudFormationService(): CloudFormationServiceType {
 type CreateAPIGatewayProxyEventV2Options = {
   uri: string;
   method?: 'GET' | 'POST' | 'DELETE' | string;
+  body?: any | undefined;
 };
 
 function createAPIGatewayProxyEventV2({
   uri,
   method = 'GET',
+  body,
 }: CreateAPIGatewayProxyEventV2Options): APIGatewayProxyEventV2 {
   const url = new URL(uri, 'http://n');
+  let requestBody: string | undefined;
+
+  if (body !== undefined) {
+    requestBody = JSON.stringify(body);
+  }
 
   return {
     version: '2.0',
@@ -170,7 +177,7 @@ function createAPIGatewayProxyEventV2({
       time: '12/Mar/2020:19:03:58 +0000',
       timeEpoch: 1583348638390,
     },
-    body: '',
+    body: requestBody,
     isBase64Encoded: false,
   };
 }

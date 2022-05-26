@@ -15,9 +15,10 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "*",
+    "@types/validator": "^13.0.0",
     "@vercel/ncc": "*",
-    "ncc-zip": "^2.0.0",
     "jest": "*",
+    "ncc-zip": "^2.0.0",
     "openapi-typescript": "^5.3.0",
     "ts-jest": "*",
     "typescript": "*"

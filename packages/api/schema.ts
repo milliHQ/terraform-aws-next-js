@@ -23,6 +23,27 @@ export interface paths {
         };
       };
     };
+    post: {
+      responses: {
+        /** Successful response. */
+        201: {
+          content: {
+            'application/json': components['schemas']['Alias'];
+          };
+        };
+        400: components['responses']['InvalidParamsError'];
+      };
+      /** Request payload. */
+      requestBody: {
+        content: {
+          'application/json': {
+            alias: string;
+            target: string;
+            override?: boolean;
+          };
+        };
+      };
+    };
   };
   '/deployments': {
     get: {
@@ -100,7 +121,8 @@ export interface components {
       next: string | null;
     };
     Alias: {
-      id?: string;
+      id: string;
+      deployment: string;
     };
     /** @enum {string} */
     DeploymentStatus:
