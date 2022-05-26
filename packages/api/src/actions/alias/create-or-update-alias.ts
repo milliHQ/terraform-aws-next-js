@@ -12,6 +12,7 @@ import Validator from 'validator';
 
 import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
+import { generateAliasId } from './alias-utils';
 
 type SuccessResponse =
   paths['/aliases']['post']['responses']['201']['content']['application/json'];
@@ -175,11 +176,9 @@ async function createOrUpdateAlias(
     routes: targetDeployment.Routes,
   });
 
-  const createdAliasHostname = reverseHostname(createdAlias.HostnameRev);
-
   res.status(201);
   return {
-    id: createdAliasHostname + createdAlias.BasePath,
+    id: generateAliasId(createdAlias),
     deployment: createdAlias.DeploymentId,
   };
 }

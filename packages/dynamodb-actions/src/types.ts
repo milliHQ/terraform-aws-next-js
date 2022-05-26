@@ -145,9 +145,11 @@ export type RouteItemDeploymentIdIndex = Pick<
   | 'SK'
   | 'GSI1PK'
   | 'GSI1SK'
+  | 'BasePath'
   | 'CreateDate'
   | 'DeploymentAlias'
   | 'DeploymentId'
+  | 'HostnameRev'
 >;
 
 export type PaginatedQuery<Item> = {

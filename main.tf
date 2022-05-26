@@ -35,11 +35,17 @@ resource "aws_dynamodb_table" "aliases" {
   }
 
   global_secondary_index {
-    name               = "DeploymentIdIndex"
-    hash_key           = "GSI1PK"
-    range_key          = "GSI1SK"
-    projection_type    = "INCLUDE"
-    non_key_attributes = ["CreateDate", "DeploymentId", "DeploymentAlias"]
+    name            = "DeploymentIdIndex"
+    hash_key        = "GSI1PK"
+    range_key       = "GSI1SK"
+    projection_type = "INCLUDE"
+    non_key_attributes = [
+      "BasePath",
+      "CreateDate",
+      "DeploymentId",
+      "DeploymentAlias",
+      "HostnameRev"
+    ]
   }
 
   tags = var.tags

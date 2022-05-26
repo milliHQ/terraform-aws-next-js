@@ -68,7 +68,13 @@ async function createAliasTestTable(dynamoDBClient: DynamoDB) {
           ],
           Projection: {
             ProjectionType: 'INCLUDE',
-            NonKeyAttributes: ['CreateDate', 'DeploymentAlias', 'DeploymentId'],
+            NonKeyAttributes: [
+              'BasePath',
+              'CreateDate',
+              'DeploymentAlias',
+              'DeploymentId',
+              'HostnameRev',
+            ],
           },
         },
       ],

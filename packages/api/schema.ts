@@ -18,9 +18,13 @@ export interface paths {
         /** Successful response. */
         200: {
           content: {
-            'application/json': components['schemas']['Deployment'][][];
+            'application/json': {
+              metadata: components['schemas']['Pagination'];
+              items: components['schemas']['Alias'][];
+            };
           };
         };
+        400: components['responses']['InvalidParamsError'];
       };
     };
     post: {

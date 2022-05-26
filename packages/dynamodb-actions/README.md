@@ -89,9 +89,11 @@ Only the listed attributes are available (ProjectionType: INCLUDE).
     <tr>
       <td><code>D#&lt;D-id&gt;</code></td>
       <td><code>&lt;CreateDate&gt;#R#&lt;hostnameRev&gt;#&lt;basePath&gt;</code></td>
+      <td>BasePath</td>
       <td>CreateDate</td>
       <td>DeploymentId</td>
       <td>DeploymentAlias</td>
+      <td>HostnameRev</td>
     </tr>
   </tbody>
 </table>

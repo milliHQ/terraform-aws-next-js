@@ -28,7 +28,7 @@ async function createDeployment(
   const s3Client = s3Service.getS3Client();
   const deploymentId = generateRandomDeploymentId();
 
-  await dynamoDBCreateDeployment({
+  const deployment = await dynamoDBCreateDeployment({
     deploymentId,
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     deploymentTableName: dynamoDB.getDeploymentTableName(),
@@ -51,7 +51,7 @@ async function createDeployment(
     id: deploymentId,
     uploadUrl: url,
     uploadAttributes: fields,
-    status: 'INITIALIZED',
+    status: deployment.Status,
   };
 }
 

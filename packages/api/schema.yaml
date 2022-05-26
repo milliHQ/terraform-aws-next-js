@@ -138,10 +138,15 @@ paths:
                 properties:
                   metadata:
                     $ref: '#/components/schemas/Pagination'
-                items:
-                  type: array
                   items:
-                    $ref: '#/components/schemas/Deployment'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alias'
+                required:
+                  - metadata
+                  - items
+        '400':
+          $ref: '#/components/responses/InvalidParamsError'
 
     post:
       summary: Create a new alias or update an existing alias.
@@ -195,7 +200,6 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Deployment'
-
                 required:
                   - metadata
                   - items
