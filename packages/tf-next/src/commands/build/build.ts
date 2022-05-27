@@ -16,8 +16,8 @@ import findWorkspaceRoot from 'find-yarn-workspace-root';
 import * as fs from 'fs-extra';
 import tmp from 'tmp';
 
-import { CommandDefaultOptions, ConfigOutput } from '../types';
-import { findEntryPoint } from '../utils';
+import { ConfigOutput, GlobalYargs, LogLevel } from '../../types';
+import { findEntryPoint } from '../../utils';
 
 // Config file version (For detecting incompatibility issues in Terraform)
 // See: https://github.com/dealmore/terraform-aws-next-js/issues/5
@@ -163,10 +163,12 @@ async function writeOutput(props: OutputProps) {
  * Build Command
  * ---------------------------------------------------------------------------*/
 
-type BuildCommandProps = CommandDefaultOptions & {
+type BuildCommandProps = {
   skipDownload?: boolean;
   deleteBuildCache?: boolean;
   target?: 'AWS';
+  logLevel: LogLevel;
+  cwd: string;
 };
 
 async function buildCommand({
@@ -295,4 +297,32 @@ async function buildCommand({
   return buildOutput;
 }
 
-export default buildCommand;
+/* -----------------------------------------------------------------------------
+ * createBuildCommand
+ * ---------------------------------------------------------------------------*/
+
+function createBuildCommand(yargs: GlobalYargs) {
+  yargs.command(
+    'build',
+    'Build the project for the Terraform Next.js environment.',
+    (yargs) => {
+      return yargs.options('skipDownload', {
+        type: 'boolean',
+        description: 'Runs the build in the current working directory.',
+      });
+    },
+    async ({ commandCwd, logLevel, skipDownload }) => {
+      await buildCommand({
+        cwd: commandCwd,
+        logLevel,
+        skipDownload,
+      });
+    }
+  );
+}
+
+function test() {
+  console.log(test);
+}
+
+export { createBuildCommand, test };

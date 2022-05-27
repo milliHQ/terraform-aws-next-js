@@ -6,11 +6,13 @@ import { FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
 
-import { CommandDefaultOptions } from '../types';
-import { createDeployment } from '../api/deployment/create-deployment';
-import { getDeploymentById } from '../api/deployment/get-deployment-by-id';
-import { FetchAWSSigV4Options } from '../utils/fetch-aws-sig-v4';
-import { createSpinner } from '../utils/create-spinner';
+import { GlobalYargs, LogLevel } from '../../types';
+import { createSpinner } from '../../utils/create-spinner';
+import {
+  apiMiddlewareOptions,
+  createApiMiddleware,
+} from '../../middleware/api';
+import { ApiService } from '../../api';
 
 function delay(t: number) {
   return new Promise(function (resolve) {
@@ -20,13 +22,13 @@ function delay(t: number) {
 
 function pollUntilDone(
   deploymentId: string,
-  fetchOptions: FetchAWSSigV4Options,
+  apiService: ApiService,
   interval: number,
   timeout: number
 ) {
   let start = Date.now();
   function run(): Promise<boolean | string> {
-    return getDeploymentById(deploymentId, fetchOptions).then((dataResult) => {
+    return apiService.getDeploymentById(deploymentId).then((dataResult) => {
       if (!dataResult) {
         throw new Error('Deployment failed.');
       }
@@ -55,36 +57,32 @@ function pollUntilDone(
  * deployCommand
  * ---------------------------------------------------------------------------*/
 
-type DeployCommandOptions = CommandDefaultOptions & {
-  /**
-   * Name of the AWS profile to use for authentication
-   */
-  profile?: string;
+type DeployCommandOptions = {
   /**
    * The api endpoint to use.
    */
-  apiEndpoint: string;
+  apiService: ApiService;
   /**
    * Path to the deployment package that should be uploaded.
    */
   deploymentPackagePath?: string;
+  cwd: string;
+  logLevel: LogLevel;
 };
 
 async function deployCommand({
-  apiEndpoint,
+  apiService,
   deploymentPackagePath = '.next-tf/deployment.zip',
-  profile,
   cwd,
 }: DeployCommandOptions) {
   const internalDeploymentPackagePath = resolve(cwd, deploymentPackagePath);
-  const fetchOptions: FetchAWSSigV4Options = { apiEndpoint, profile };
   let deploymentId: string;
 
   // Upload package
   const uploadSpinner = createSpinner('Uploading deployment package');
   try {
     uploadSpinner.start();
-    const response = await createDeployment(fetchOptions);
+    const response = await apiService.createDeployment();
 
     if (!response) {
       throw new Error('Deployment failed: Could not connect to API');
@@ -129,7 +127,7 @@ async function deployCommand({
     deploymentSpinner.start();
     const deploymentCreationResult = await pollUntilDone(
       deploymentId,
-      fetchOptions,
+      apiService,
       5000,
       2 * 60000
     );
@@ -146,4 +144,26 @@ async function deployCommand({
   }
 }
 
-export default deployCommand;
+/* -----------------------------------------------------------------------------
+ * createDeployCommand
+ * ---------------------------------------------------------------------------*/
+
+function createDeployCommand(yargs: GlobalYargs) {
+  yargs.command(
+    'deploy',
+    'Deploy the build output to Terraform Next.js',
+    (yargs) => {
+      yargs.options(apiMiddlewareOptions);
+    },
+    async ({ apiService, logLevel, commandCwd }) => {
+      await deployCommand({
+        apiService: apiService as ApiService,
+        logLevel,
+        cwd: commandCwd,
+      });
+    },
+    createApiMiddleware()
+  );
+}
+
+export { createDeployCommand };

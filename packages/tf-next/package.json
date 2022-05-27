@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^2.0.1",
-    "@aws-sdk/credential-providers": "^3.87.0",
+    "@aws-sdk/credential-provider-node": "3.100.0",
     "@aws-sdk/signature-v4": "^3.78.0",
     "@millihq/tf-next-runtime": "0.12.2",
     "@vercel/build-utils": "2.12.1",
@@ -35,22 +35,25 @@
     "node-fetch": "2.6.7",
     "ora": "^5.4.1",
     "tmp": "^0.2.1",
-    "yargs": "^15.3.1"
+    "yargs": "15.4.1"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.78.0",
     "@millihq/terraform-next-api": "*",
-    "@tsconfig/node12": "^1.0.9",
+    "@tsconfig/node14": "1.0.1",
     "@types/archiver": "^5.1.0",
     "@types/fs-extra": "^9.0.1",
     "@types/glob": "^7.1.2",
     "@types/node-fetch": "^2.0.0",
     "@types/tmp": "^0.2.0",
-    "@types/yargs": "^15.0.5",
+    "@types/yargs": "15.0.14",
     "typescript": "*"
   },
   "files": [
     "dist/**",
     "index.js"
-  ]
+  ],
+  "engines": {
+    "node": ">= 14"
+  }
 }
