@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - v[0-9]+.[0-9x]+.x
+      - v[0-9]+.[0-9x]
   pull_request:
 
 env:
@@ -13,9 +13,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -48,7 +51,7 @@ jobs:
   test-integration:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
     services:
       s3:
         image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
@@ -62,6 +65,9 @@ jobs:
       S3_ENDPOINT: s3:9000
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -87,8 +93,11 @@ jobs:
   test-e2e-prepare:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -183,7 +192,7 @@ jobs:
     name: Potentially publish release
     runs-on: ubuntu-latest
     needs: [build, test-integration, test-e2e]
-    if: github.ref == 'refs/heads/main'
+    if: ${{ (github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/v0.x') }}
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 

@@ -20,7 +20,7 @@ Some features are still under development, here is a list of features that are c
 
 The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and connects them to work as a single application:
 
-![Architecture overview diagram](https://github.com/milliHQ/terraform-aws-next-js/blob/main/docs/assets/architecture.png?raw=true)
+![Architecture overview diagram](https://github.com/milliHQ/terraform-aws-next-js/blob/v0.x/docs/assets/architecture.png?raw=true)
 
 - **`I.` CloudFront**
 
@@ -181,15 +181,15 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 ## Examples
 
-- [Complete](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete)  
+- [Complete](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/complete)  
   Complete example with SSR, API and static pages.
-- [Static](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static)  
+- [Static](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/static)  
   Example that uses static pages only (No SSR).
-- [Next Image](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image)  
+- [Next Image](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/next-image)  
   Images are optimized on the fly by AWS Lambda.
-- [Existing CloudFront](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront)  
+- [Existing CloudFront](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/with-existing-cloudfront)  
   Use the module together with an existing CloudFront distribution that can be fully customized.
-- [Custom Domain](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-custom-domain)  
+- [Custom Domain](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/with-custom-domain)  
   Use the module with your own domain from Route 53.
 
 <!-- prettier-ignore-start -->
@@ -199,13 +199,13 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | Name | Version |
 |------|---------|
 | terraform | >= 0.15 |
-| aws | >= 4.8 |
+| aws | >= 4.15.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| aws | >= 4.8 |
+| aws | >= 4.15.0 |
 
 ## Inputs
 
@@ -233,7 +233,7 @@ You can create a `.terraformignore` in the root of your project and add the foll
 | lambda\_memory\_size | Amount of memory in MB a Lambda Function can use at runtime. Valid value between 128 MB to 10,240 MB, in 1 MB increments. | `number` | `1024` | no |
 | lambda\_policy\_json | Additional policy document as JSON to attach to the Lambda Function role | `string` | `null` | no |
 | lambda\_role\_permissions\_boundary | ARN of IAM policy that scopes aws\_iam\_role access for the lambda | `string` | `null` | no |
-| lambda\_runtime | Lambda Function runtime | `string` | `"nodejs14.x"` | no |
+| lambda\_runtime | Lambda Function runtime | `string` | `"nodejs16.x"` | no |
 | lambda\_timeout | Max amount of time a Lambda Function has to return a response in seconds. Should not be more than 30 (Limited by API Gateway). | `number` | `10` | no |
 | next\_tf\_dir | Relative path to the .next-tf dir. | `string` | `"./.next-tf"` | no |
 | tags | Tag metadata to label AWS resources that support tags. | `map(string)` | `{}` | no |
@@ -281,9 +281,9 @@ So issues that exist on Vercel are likely to occur on this project too.
 
   **Workaround:**
 
-  You should be able to run`terraform apply` again and the stack creation would progreed without this error.
+  You should be able to run`terraform apply` again and the stack creation would proceed without this error.
 
-- [Function decreases account's UnreservedConcurrentExecution below its minimum value](https://github.com/milliHQ/terraform-aws-next-js/tree/main/docs/known-issues/0001_reserved-concurrent-executions.md)
+- [Function decreases account's UnreservedConcurrentExecution below its minimum value](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/docs/known-issues/0001_reserved-concurrent-executions.md)
 
 ## Contributing
 
