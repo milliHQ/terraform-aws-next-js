@@ -792,15 +792,15 @@
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
 
-"@millihq/sammy@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@millihq/sammy/-/sammy-2.0.1.tgz#3200fbdb58449fd50d5df394dd9f21741650af77"
-  integrity sha512-6j76MsB5cKWJrlRD4D2bGeI74N1IzeM5PJS4HJWHkZmnhVgkbMxuDOazyS+A0ps8+m8HQ+Wa3n8li5iVGcbjNQ==
+"@millihq/sammy@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@millihq/sammy/-/sammy-3.0.0.tgz#23030fc8168b440781af82777fd3a982993a87cf"
+  integrity sha512-uYq80ADPvkritON12svv9lIFjaKMH59yyYcdAYIvdQNHjMuH8VY/aGAVKoq3eJrjyG6bm1Ngq+K10CIWLlMHbQ==
   dependencies:
-    aws-sdk "^2.804.0"
+    aws-sdk "^2.1055.0"
     change-case "^4.1.2"
     get-port "^5.1.1"
-    node-fetch "^2.6.1"
+    node-fetch "^2.6.7"
     tmp "^0.2.1"
     unzipper "^0.10.11"
     yaml "^1.10.0"
@@ -1352,10 +1352,10 @@
   dependencies:
     "@types/node" "*"
 
-"@vercel/build-utils@2.12.1":
-  version "2.12.1"
-  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.12.1.tgz#479a7eb0111985ff437d77dd395bb9ba6d108c95"
-  integrity sha512-85FUGmNQWL+gWORGIfW2amNeDt3vBgliZ51j3D9s+2qcAv+Li+ghLfzjoP5w5E+DhO8OxHfy53WbqR5aprAWEA==
+"@vercel/build-utils@2.17.0":
+  version "2.17.0"
+  resolved "https://registry.yarnpkg.com/@vercel/build-utils/-/build-utils-2.17.0.tgz#18a24eeaf765fc97c7aed822a6ad83fa825f4c50"
+  integrity sha512-eKHx3nW5MJ21xQC9RQrm+OthmHiV0PHr6bRpJAhsXryE/H6fbNqr1ZxOAQJpq2MaoKzEA/6Lt7J4TjJLd4pkqA==
 
 "@vercel/frameworks@^0.0.15":
   version "0.0.15"
@@ -1650,10 +1650,10 @@ at-least-node@^1.0.0:
   resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
-aws-sdk@*, aws-sdk@2.1001.0, aws-sdk@^2.804.0:
-  version "2.1001.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1001.0.tgz#c4da256aa0058438ba611ae06fa850f4f7d63abc"
-  integrity sha512-DpmslPU8myCaaRUwMzB/SqAMtD2zQckxYwq3CguIv8BI+JHxDLeTdPCLfA5jffQ8k6dcvISOuiqdpwCZucU0BA==
+aws-sdk@*, aws-sdk@2.1055.0, aws-sdk@^2.1055.0:
+  version "2.1055.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1055.0.tgz#07beb86650d5a313f7c899807c51b12b5e2f4117"
+  integrity sha512-99drH3mvXakw9we8Rs2cDQmi2pS7PVAC9pvTlB7lHPUwLYftMlko5cFMceZxvTHeyLkdvg98iNIHI3hbnzitoQ==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
