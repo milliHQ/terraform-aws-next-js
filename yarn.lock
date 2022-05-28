@@ -4273,10 +4273,10 @@ natural-compare@^1.4.0:
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha1-Sr6/7tdUHywnrPspvbvRXI1bpPc=
 
-ncc-zip@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/ncc-zip/-/ncc-zip-2.0.0.tgz#1f524951cdffae04da62f52dfab494abd9ec3ac1"
-  integrity sha512-Ts8mbT2Ts0PeX/aRJ0eWqiEVA7+8ZF3A+D+s9h81d3pdjc/kHrcPoYSPQfvRCNoHObnREZjU27YaQVPv9HehLQ==
+ncc-zip@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/ncc-zip/-/ncc-zip-2.1.0.tgz#0d9bc7200daf52c207c801043ecc7dadc789f937"
+  integrity sha512-7jvfrb98nkbKOz2Uu0+rpc4Qi0/Rkx27aV4brhvvXuXHwY61kzmI0jCMDWy+Vw3MGjCBiXS1NLMI9JDEdTWCaA==
   dependencies:
     archiver "^5.3.1"
     arg "^5.0.0"
