@@ -13,9 +13,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -48,7 +51,7 @@ jobs:
   test-integration:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
     services:
       s3:
         image: registry.gitlab.com/dealmore/dealmore-build-images:s3-emulator
@@ -62,6 +65,9 @@ jobs:
       S3_ENDPOINT: s3:9000
 
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache
@@ -87,8 +93,11 @@ jobs:
   test-e2e-prepare:
     needs: build
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/dealmore/dealmore-build-images/lambda:nodejs14.x
+    container: public.ecr.aws/sam/build-nodejs16.x:latest
     steps:
+      - name: Install yarn
+        run: npm install --global yarn@1.22.18
+
       - uses: actions/checkout@v2
 
       - name: Cache

@@ -5,6 +5,7 @@ import {
   FileFsRef,
   Files,
   Lambda,
+  Meta,
   NowBuildError,
   PackageJson,
   PrepareCacheOptions,
@@ -72,17 +73,11 @@ const {
   getNodeBinPath,
 } = buildUtils;
 
-interface BuildParamsMeta {
-  isDev: boolean | undefined;
-  env?: EnvConfig;
-  buildEnv?: EnvConfig;
-}
-
 interface BuildParamsType extends BuildOptions {
   files: Files;
   entrypoint: string;
   workPath: string;
-  meta: BuildParamsMeta;
+  meta: Meta;
 }
 
 export const version = 2;
@@ -220,7 +215,7 @@ export async function build({
   repoRootPath,
   entrypoint,
   config = {} as Config,
-  meta = {} as BuildParamsMeta,
+  meta = {} as Meta,
 }: BuildParamsType): Promise<{
   routes: Route[];
   images?: {
