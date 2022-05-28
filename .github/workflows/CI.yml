@@ -192,7 +192,7 @@ jobs:
     name: Potentially publish release
     runs-on: ubuntu-latest
     needs: [build, test-integration, test-e2e]
-    if: github.ref == 'refs/heads/main'
+    if: ${{ (github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/v0.x') }}
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
