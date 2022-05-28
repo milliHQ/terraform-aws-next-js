@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Adds support for nodejs16.x runtime ([#318](https://github.com/milliHQ/terraform-aws-next-js/pull/318), [#316](https://github.com/milliHQ/terraform-aws-next-js/issues/316), [#315](https://github.com/milliHQ/terraform-aws-next-js/issues/315))
+- Increases minimum required Terraform AWS provider version from `4.8` to `4.15.0`
+
 ## [0.12.2] - 2022-04-16
 
 - Append querystring to redirects ([#296](https://github.com/milliHQ/terraform-aws-next-js/issues/296), [#304](https://github.com/milliHQ/terraform-aws-next-js/pull/304))
