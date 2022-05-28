@@ -20,7 +20,7 @@ Some features are still under development, here is a list of features that are c
 
 The Next.js Terraform module is designed as a full stack AWS app. It relies on multiple AWS services and connects them to work as a single application:
 
-![Architecture overview diagram](https://github.com/milliHQ/terraform-aws-next-js/blob/main/docs/assets/architecture.png?raw=true)
+![Architecture overview diagram](https://github.com/milliHQ/terraform-aws-next-js/blob/v0.x/docs/assets/architecture.png?raw=true)
 
 - **`I.` CloudFront**
 
@@ -181,15 +181,15 @@ You can create a `.terraformignore` in the root of your project and add the foll
 
 ## Examples
 
-- [Complete](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete)  
+- [Complete](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/complete)  
   Complete example with SSR, API and static pages.
-- [Static](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static)  
+- [Static](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/static)  
   Example that uses static pages only (No SSR).
-- [Next Image](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image)  
+- [Next Image](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/next-image)  
   Images are optimized on the fly by AWS Lambda.
-- [Existing CloudFront](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-existing-cloudfront)  
+- [Existing CloudFront](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/with-existing-cloudfront)  
   Use the module together with an existing CloudFront distribution that can be fully customized.
-- [Custom Domain](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/with-custom-domain)  
+- [Custom Domain](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/examples/with-custom-domain)  
   Use the module with your own domain from Route 53.
 
 <!-- prettier-ignore-start -->
@@ -281,9 +281,9 @@ So issues that exist on Vercel are likely to occur on this project too.
 
   **Workaround:**
 
-  You should be able to run`terraform apply` again and the stack creation would progreed without this error.
+  You should be able to run`terraform apply` again and the stack creation would proceed without this error.
 
-- [Function decreases account's UnreservedConcurrentExecution below its minimum value](https://github.com/milliHQ/terraform-aws-next-js/tree/main/docs/known-issues/0001_reserved-concurrent-executions.md)
+- [Function decreases account's UnreservedConcurrentExecution below its minimum value](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x/docs/known-issues/0001_reserved-concurrent-executions.md)
 
 ## Contributing
 
