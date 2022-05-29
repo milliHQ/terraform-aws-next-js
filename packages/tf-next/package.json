@@ -26,6 +26,7 @@
     "@vercel/build-utils": "2.12.1",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.10.1",
+    "ajv": "8.11.0",
     "archiver": "^5.3.0",
     "find-yarn-workspace-root": "^2.0.0",
     "form-data-encoder": "^1.7.2",
@@ -35,7 +36,7 @@
     "node-fetch": "2.6.7",
     "ora": "^5.4.1",
     "tmp": "^0.2.1",
-    "yargs": "15.4.1"
+    "yargs": "17.5.1"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.78.0",
@@ -46,7 +47,7 @@
     "@types/glob": "^7.1.2",
     "@types/node-fetch": "^2.0.0",
     "@types/tmp": "^0.2.0",
-    "@types/yargs": "15.0.14",
+    "@types/yargs": "17.0.10",
     "typescript": "*"
   },
   "files": [

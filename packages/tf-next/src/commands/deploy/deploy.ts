@@ -151,7 +151,7 @@ async function deployCommand({
 function createDeployCommand(yargs: GlobalYargs) {
   yargs.command(
     'deploy',
-    'Deploy the build output to Terraform Next.js',
+    'Deploy a project',
     (yargs) => {
       yargs.options(apiMiddlewareOptions);
     },

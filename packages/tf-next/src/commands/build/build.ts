@@ -304,7 +304,7 @@ async function buildCommand({
 function createBuildCommand(yargs: GlobalYargs) {
   yargs.command(
     'build',
-    'Build the project for the Terraform Next.js environment.',
+    'Build a project',
     (yargs) => {
       return yargs.options('skipDownload', {
         type: 'boolean',
@@ -321,8 +321,4 @@ function createBuildCommand(yargs: GlobalYargs) {
   );
 }
 
-function test() {
-  console.log(test);
-}
-
-export { createBuildCommand, test };
+export { createBuildCommand };

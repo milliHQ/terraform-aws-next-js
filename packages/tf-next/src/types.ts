@@ -42,4 +42,4 @@ export type GlobalOptions = {
   logLevel: LogLevel;
 };
 
-export type GlobalYargs = Argv<GlobalOptions>;
+export type GlobalYargs<T = unknown> = Argv<GlobalOptions & T>;

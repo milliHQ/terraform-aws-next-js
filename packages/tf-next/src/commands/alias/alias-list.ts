@@ -7,48 +7,58 @@ import {
 import { GlobalYargs } from '../../types';
 
 /* -----------------------------------------------------------------------------
- * deploymentListCommand
+ * aliasListCommand
  * ---------------------------------------------------------------------------*/
 
-type DeploymentListCommandOptions = {
+type AliasListCommandOptions = {
   /**
    * ApiService to use.
    */
   apiService: ApiService;
+  /**
+   * DeploymentId
+   */
+  deploymentId: string;
 };
 
 /**
  * Prints the latest 25 deployments to the console.
  */
-async function deploymentListCommand({
+async function aliasListCommand({
   apiService,
-}: DeploymentListCommandOptions) {
-  const items = await apiService.listDeployments();
+  deploymentId,
+}: AliasListCommandOptions) {
+  const items = await apiService.listAliases(deploymentId);
   console.table(items);
 }
 
 /* -----------------------------------------------------------------------------
- * createListDeploymentsCommand
+ * createAliasListCommand
  * ---------------------------------------------------------------------------*/
 
-type DeploymentListCommandArguments = ApiMiddlewareArguments;
+type AliasListCommandArguments = {
+  deploymentId: string;
+} & ApiMiddlewareArguments;
 
-function createDeploymentListCommand(
-  yargs: GlobalYargs<DeploymentListCommandArguments>
-) {
+function createAliasListCommand(yargs: GlobalYargs<AliasListCommandArguments>) {
   yargs.command(
-    'ls',
-    'List the latest deployments',
+    'ls <deployment-id>',
+    'List the aliases that are associated with a deployment',
     (yargs) => {
       yargs.options(apiMiddlewareOptions);
+      yargs.positional('deployment-id', {
+        describe: 'ID of the deployment.',
+        type: 'string',
+      });
     },
-    async ({ apiService }) => {
-      await deploymentListCommand({
+    async ({ apiService, deploymentId }: AliasListCommandArguments) => {
+      await aliasListCommand({
         apiService,
+        deploymentId,
       });
     },
     createApiMiddleware()
   );
 }
 
-export { createDeploymentListCommand };
+export { createAliasListCommand };

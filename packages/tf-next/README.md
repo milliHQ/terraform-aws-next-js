@@ -73,7 +73,7 @@ tf-next deploy --endpoint <api-endpoint>
 The following options can be passed when using the `tf-next deploy` command:
 
 - `--endpoint`
-- `--profile`
+- `--awsProfile`
 
 ### Deployment
 
@@ -106,7 +106,7 @@ tf-next deployment rm <deployment-id> --force
 The following options can be passed when using the `tf-next deployment` command:
 
 - `--endpoint`
-- `--profile`
+- `--awsProfile`
 
 ### Alias
 

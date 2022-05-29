@@ -21,15 +21,13 @@ type AWSProfileArguments = {
 const awsProfileMiddleware: MiddlewareFunction<AWSProfileArguments> = (
   argv
 ) => {
-  // If the --profile flag is provided load a named profile
+  // If the --awsProfile flag is provided load a named profile
   const profile =
-    typeof argv.profile === 'string' ? typeof argv.profile : undefined;
+    typeof argv.awsProfile === 'string' ? argv.awsProfile : undefined;
 
   argv.awsCredentialProvider = defaultProvider({
     profile,
   });
-
-  return argv;
 };
 
 /**

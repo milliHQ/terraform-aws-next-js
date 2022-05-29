@@ -6,6 +6,7 @@ import {
 } from '../middleware/global';
 import { GlobalOptions } from '../types';
 
+import { createAliasCommand } from './alias';
 import { createBuildCommand } from './build';
 import { createDeployCommand } from './deploy';
 import { createDeploymentCommand } from './deployment';
@@ -24,6 +25,7 @@ function createMainCommand(globalYargs: Argv) {
   const yargs = globalYargs as Argv<GlobalOptions>;
 
   // Register all subcommands
+  createAliasCommand(yargs);
   createBuildCommand(yargs);
   createDeployCommand(yargs);
   createDeploymentCommand(yargs);

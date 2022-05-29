@@ -1,4 +1,4 @@
-import { URL } from 'url';
+import { URL, URLSearchParams } from 'url';
 
 import { Sha256 } from '@aws-crypto/sha256-js';
 import { SignatureV4 } from '@aws-sdk/signature-v4';
@@ -8,6 +8,13 @@ import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
 
 type NodeFetch = typeof nodeFetch;
+type CreateAliasRequestBody =
+  paths['/aliases']['post']['requestBody']['content']['application/json'];
+type CreateAliasSuccessResponse =
+  paths['/aliases']['post']['responses']['201']['content']['application/json'];
+type ListAliasQueryParameters = paths['/aliases']['get']['parameters']['query'];
+type ListAliasSuccessResponse =
+  paths['/aliases']['get']['responses']['200']['content']['application/json'];
 type CreateDeploymentSuccessResponse =
   paths['/deployments']['post']['responses']['201']['content']['application/json'];
 type ListDeploymentsSuccessResponse =
@@ -114,6 +121,37 @@ class ApiService {
     });
   }
 
+  // Aliases
+  async createAlias(requestBody: CreateAliasRequestBody) {
+    const response = await this.fetchAWSSigV4('/aliases', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 201) {
+      return await (response.json() as Promise<CreateAliasSuccessResponse>);
+    }
+  }
+
+  async listAliases(deploymentId: string) {
+    const params: ListAliasQueryParameters = {
+      deploymentId,
+    };
+    const query = new URLSearchParams(params).toString();
+    const response = await this.fetchAWSSigV4(`/aliases?${query}`);
+
+    if (response.status === 200) {
+      const { items } =
+        await (response.json() as Promise<ListAliasSuccessResponse>);
+      return items;
+    }
+
+    return null;
+  }
+
   // Deployments
   async createDeployment() {
     const response = await this.fetchAWSSigV4('/deployments', {
@@ -144,6 +182,18 @@ class ApiService {
 
     if (response.status === 200) {
       return response.json() as Promise<GetDeploymentByIdSuccessResponse>;
+    }
+
+    return null;
+  }
+
+  async deleteDeploymentById(deploymentId: string) {
+    const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
+      method: 'DELETE',
+    });
+
+    if (response.status === 204) {
+      return true;
     }
 
     return null;

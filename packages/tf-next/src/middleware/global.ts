@@ -13,8 +13,6 @@ const globalMiddleware: MiddlewareFunction<GlobalOptions> = (argv) => {
 
   // Set cwd
   argv.commandCwd = process.cwd();
-
-  return argv;
 };
 
 /**

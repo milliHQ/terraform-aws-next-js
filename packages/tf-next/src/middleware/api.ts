@@ -1,6 +1,8 @@
 import { MiddlewareFunction, Options } from 'yargs';
 
 import { ApiService } from '../api';
+import { GlobalOptions } from '../types';
+import { readProjectConfig, writeProjectConfig } from '../utils/project-config';
 import { AWSProfileArguments, awsProfileMiddleware } from './aws-profile';
 
 /* -----------------------------------------------------------------------------
@@ -9,10 +11,22 @@ import { AWSProfileArguments, awsProfileMiddleware } from './aws-profile';
 
 type ApiMiddlewareArguments = {
   endpoint?: string;
-} & AWSProfileArguments;
+} & AWSProfileArguments &
+  GlobalOptions;
 
 const apiMiddleware: MiddlewareFunction<ApiMiddlewareArguments> = (argv) => {
-  if (typeof argv.endpoint !== 'string') {
+  // Check for project config
+  const projectConfig = readProjectConfig(argv.commandCwd);
+  let endpoint: string | undefined;
+
+  if (typeof argv.endpoint === 'string') {
+    endpoint = argv.endpoint;
+  } else if (projectConfig) {
+    endpoint = projectConfig.apiEndpoint;
+  }
+
+  if (endpoint === undefined) {
+    // TODO: Format this error
     throw new Error('API endpoint is not set.');
   }
 
@@ -22,23 +36,31 @@ const apiMiddleware: MiddlewareFunction<ApiMiddlewareArguments> = (argv) => {
 
   argv.apiService = new ApiService({
     awsCredentialProvider: argv.awsCredentialProvider,
-    apiEndpoint: argv.endpoint,
+    apiEndpoint: endpoint,
   });
 
-  return argv;
+  // Write projectConfig
+  if (!projectConfig || projectConfig.apiEndpoint !== endpoint) {
+    writeProjectConfig(argv.commandCwd, {
+      apiEndpoint: endpoint,
+    });
+  }
 };
 
 const apiMiddlewareOptions: Record<string, Options> = {
   endpoint: {
     type: 'string',
     description: 'API endpoint to use.',
-    demandOption: true,
   },
 };
 
 /* -----------------------------------------------------------------------------
  * createApiMiddleware
  * ---------------------------------------------------------------------------*/
+
+type AfterApiMiddlewareArguments = {
+  apiService: ApiService;
+};
 
 const composedApiMiddleware = [awsProfileMiddleware, apiMiddleware];
 
@@ -49,4 +71,5 @@ function createApiMiddleware(): MiddlewareFunction<any>[] {
   return composedApiMiddleware;
 }
 
+export type { AfterApiMiddlewareArguments as ApiMiddlewareArguments };
 export { createApiMiddleware, apiMiddlewareOptions };
