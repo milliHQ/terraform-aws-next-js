@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.1] - 2022-05-30
+
 - Update `@vercel/nft` from 0.10.0 to 0.19.1 ([#320](https://github.com/milliHQ/terraform-aws-next-js/pull/320))
 
 ## [0.13.0] - 2022-05-28
