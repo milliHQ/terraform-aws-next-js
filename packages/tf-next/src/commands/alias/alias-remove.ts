@@ -1,6 +1,5 @@
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
-import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
  * aliasRemoveCommand
@@ -24,17 +23,16 @@ async function aliasRemoveCommand({
   client,
   customDomain,
 }: AliasRemoveCommandOptions) {
-  const { apiService } = client;
+  const { apiService, output } = client;
 
-  const spinner = createSpinner('Removing alias');
-  spinner.start();
+  output.spinner('Removing alias');
   const success = await apiService.deleteAlias(customDomain);
-  spinner.stopAndPersist();
+  output.stopSpinner();
 
   if (success) {
-    console.log('Alias was successfully removed');
+    output.log('Alias was successfully removed');
   } else {
-    console.log('Could not create alias');
+    output.log('Could not create alias');
   }
 }
 

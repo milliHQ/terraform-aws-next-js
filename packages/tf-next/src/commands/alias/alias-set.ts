@@ -1,6 +1,5 @@
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
-import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
  * aliasSetCommand
@@ -34,22 +33,21 @@ async function aliasSetCommand({
   target,
   override,
 }: AliasSetCommandOptions) {
-  const { apiService } = client;
+  const { apiService, output } = client;
 
-  const spinner = createSpinner('Creating alias');
-  spinner.start();
+  output.spinner('Creating alias');
   const alias = await apiService.createAlias({
     alias: customDomain,
     target,
     override,
   });
 
-  spinner.stopAndPersist();
+  output.stopSpinner();
 
   if (alias) {
-    console.log('Alias created: ', alias?.id);
+    output.log(`Alias created: ${alias?.id}`);
   } else {
-    console.log('Could not create alias');
+    output.log('Could not create alias');
   }
 }
 

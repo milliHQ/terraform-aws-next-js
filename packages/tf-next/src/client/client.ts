@@ -4,17 +4,18 @@ import {
   BuilderCallback,
   MiddlewareFunction,
 } from 'yargs';
+
 import { GlobalOptions, LogLevel } from '../types';
 import {
   awsProfileMiddleware,
   awsProfileMiddlewareOptions,
 } from './aws-profile';
-
 import {
   ApiService,
   apiMiddlewareOptions,
   apiMiddleware,
 } from './services/api';
+import { OutputService } from './services/output';
 
 type ClientOptions = {
   logLevel: LogLevel;
@@ -23,12 +24,14 @@ type ClientOptions = {
 
 class Client {
   logLevel: LogLevel;
+  output: OutputService;
   // TODO: apiService is only present, when it is available from ClientOptions
   // Typing this correctly would take too long
   public apiService!: ApiService;
 
   constructor({ logLevel, apiService }: ClientOptions) {
     this.logLevel = logLevel;
+    this.output = new OutputService({ logLevel });
 
     if (apiService) {
       this.apiService = apiService;

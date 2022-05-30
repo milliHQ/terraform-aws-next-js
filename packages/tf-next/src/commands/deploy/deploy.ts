@@ -7,7 +7,6 @@ import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
 
 import { LogLevel } from '../../types';
-import { createSpinner } from '../../utils/create-spinner';
 import { ApiService, Client, withClient } from '../../client';
 
 function delay(t: number) {
@@ -71,14 +70,13 @@ async function deployCommand({
   deploymentPackagePath = '.next-tf/deployment.zip',
   cwd,
 }: DeployCommandOptions) {
-  const { apiService } = client;
+  const { apiService, output } = client;
   const internalDeploymentPackagePath = resolve(cwd, deploymentPackagePath);
   let deploymentId: string;
 
   // Upload package
-  const uploadSpinner = createSpinner('Uploading deployment package');
+  output.spinner('Uploading deployment package');
   try {
-    uploadSpinner.start();
     const response = await apiService.createDeployment();
 
     if (!response) {
@@ -109,19 +107,18 @@ async function deployCommand({
       throw new Error(parsedResponse);
     }
 
-    uploadSpinner.stopAndPersist({ prefixText: '✅ Upload complete.' });
+    output.stopSpinner();
 
     // Poll until the CloudFormation stack creation has finished
   } catch (error) {
-    uploadSpinner.stopAndPersist();
+    output.stopSpinner();
     console.log('Upload failed: ', error);
     return;
   }
 
   // Deployment
-  const deploymentSpinner = createSpinner('Wait for deployment to finish');
+  const deploymentSpinner = output.spinner('Wait for deployment to finish');
   try {
-    deploymentSpinner.start();
     const deploymentCreationResult = await pollUntilDone(
       deploymentId,
       apiService,
@@ -129,14 +126,12 @@ async function deployCommand({
       2 * 60000
     );
 
-    deploymentSpinner.stopAndPersist({
-      prefixText: '✅ deployment complete.',
-    });
+    output.stopSpinner();
     if (typeof deploymentCreationResult === 'string') {
       console.log('Available at: ', `https://${deploymentCreationResult}`);
     }
   } catch (error) {
-    deploymentSpinner.stopAndPersist();
+    output.stopSpinner();
     console.log('Deployment failed: ', error);
   }
 }

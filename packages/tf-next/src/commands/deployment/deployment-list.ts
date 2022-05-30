@@ -15,9 +15,11 @@ type DeploymentListCommandOptions = {
  * Prints the latest 25 deployments to the console.
  */
 async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
-  const { apiService } = client;
-
+  const { apiService, output } = client;
+  output.spinner('Requesting deployments from API');
   const items = await apiService.listDeployments();
+  output.stopSpinner();
+
   console.table(items);
 }
 
