@@ -136,6 +136,18 @@ class ApiService {
     }
   }
 
+  async deleteAlias(alias: string) {
+    const response = await this.fetchAWSSigV4(`/aliases/${alias}`, {
+      method: 'DELETE',
+    });
+
+    if (response.status === 204) {
+      return true;
+    }
+
+    return null;
+  }
+
   async listAliases(deploymentId: string) {
     const params: ListAliasQueryParameters = {
       deploymentId,

@@ -51,12 +51,11 @@ function createAliasListCommand(yargs: GlobalYargs<AliasListCommandArguments>) {
         type: 'string',
       });
     },
-    async ({ apiService, deploymentId }: AliasListCommandArguments) => {
-      await aliasListCommand({
+    ({ apiService, deploymentId }: AliasListCommandArguments) =>
+      aliasListCommand({
         apiService,
         deploymentId,
-      });
-    },
+      }),
     createApiMiddleware()
   );
 }

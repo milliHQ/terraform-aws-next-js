@@ -5,6 +5,7 @@ import {
   createApiMiddleware,
 } from '../../middleware/api';
 import { GlobalYargs } from '../../types';
+import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
  * aliasSetCommand
@@ -16,20 +17,43 @@ type AliasSetCommandOptions = {
    */
   apiService: ApiService;
   /**
-   * DeploymentId
+   * The domain name of the alias.
    */
-  deploymentId: string;
+  customDomain: string;
+  /**
+   * DeploymentId or alias where the alias should link to
+   */
+  target: string;
+  /**
+   * Override an existing alias.
+   */
+  override: boolean;
 };
 
 /**
- * Prints the latest 25 deployments to the console.
+ * Creates a new alias or overrides an existing one.
  */
 async function aliasSetCommand({
   apiService,
-  deploymentId,
+  customDomain,
+  target,
+  override,
 }: AliasSetCommandOptions) {
-  const items = await apiService.listAliases(deploymentId);
-  console.table(items);
+  const spinner = createSpinner('Creating alias');
+  spinner.start();
+  const alias = await apiService.createAlias({
+    alias: customDomain,
+    target,
+    override,
+  });
+
+  spinner.stopAndPersist();
+
+  if (alias) {
+    console.log('Alias created: ', alias?.id);
+  } else {
+    console.log('Could not create alias');
+  }
 }
 
 /* -----------------------------------------------------------------------------
@@ -37,31 +61,42 @@ async function aliasSetCommand({
  * ---------------------------------------------------------------------------*/
 
 type AliasSetCommandArguments = {
-  deploymentId: string;
+  // Positional arguments
+  customDomain: string;
+  target: string;
+  // Optional arguments
+  force?: boolean;
 } & ApiMiddlewareArguments;
 
 function createAliasSetCommand(yargs: GlobalYargs<AliasSetCommandArguments>) {
   yargs.command(
     'set <custom-domain> <target>',
-    'Links an alias to a deployment or another alias.',
+    'Links an alias to a deployment or another alias',
     (yargs) => {
-      yargs.options(apiMiddlewareOptions);
       yargs
         .positional('custom-domain', {
           describe: 'Domain of the alias',
           type: 'string',
         })
         .positional('target', {
-          describe: 'Target of the alias',
+          describe: 'deployment id or other alias',
           type: 'string',
         });
-    },
-    async ({ apiService, deploymentId }: AliasSetCommandArguments) => {
-      await aliasSetCommand({
-        apiService,
-        deploymentId,
+      yargs.options({
+        ...apiMiddlewareOptions,
+        force: {
+          type: 'boolean',
+          description: 'Override existing alias',
+        },
       });
     },
+    ({ apiService, customDomain, target, force }: AliasSetCommandArguments) =>
+      aliasSetCommand({
+        apiService,
+        customDomain,
+        target,
+        override: !!force,
+      }),
     createApiMiddleware()
   );
 }
