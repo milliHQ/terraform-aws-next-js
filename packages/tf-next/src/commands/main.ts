@@ -4,7 +4,6 @@ import {
   globalMiddleware,
   globalMiddlewareOptions,
 } from '../middleware/global';
-import { GlobalOptions } from '../types';
 
 import { createAliasCommand } from './alias';
 import { createBuildCommand } from './build';
@@ -22,12 +21,12 @@ function createMainCommand(globalYargs: Argv) {
     // @ts-ignore - Don't know how to fix this
     .middleware(globalMiddleware);
 
-  const yargs = globalYargs as Argv<GlobalOptions>;
+  const yargs = globalYargs as Argv<any>;
 
   // Register all subcommands
   createAliasCommand(yargs);
   createBuildCommand(yargs);
-  createDeployCommand(yargs);
+  // createDeployCommand(yargs);
   createDeploymentCommand(yargs);
 
   return yargs;

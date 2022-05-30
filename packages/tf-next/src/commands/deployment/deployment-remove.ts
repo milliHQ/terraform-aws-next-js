@@ -1,10 +1,5 @@
-import { ApiService } from '../../api';
-import {
-  ApiMiddlewareArguments,
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { GlobalYargs } from '../../types';
+import { Client, withClient } from '../../client';
+import { GlobalOptions } from '../../types';
 import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
@@ -13,9 +8,9 @@ import { createSpinner } from '../../utils/create-spinner';
 
 type DeploymentRemoveCommandOptions = {
   /**
-   * ApiService to use.
+   * Global client service.
    */
-  apiService: ApiService;
+  client: Client;
   /**
    * Deployment to remove.
    */
@@ -26,9 +21,11 @@ type DeploymentRemoveCommandOptions = {
  * Removes a single deployment.
  */
 async function deploymentRemoveCommand({
-  apiService,
+  client,
   deploymentId,
 }: DeploymentRemoveCommandOptions) {
+  const { apiService } = client;
+
   const spinner = createSpinner(`Removing deployment ${deploymentId}`);
   spinner.start();
   const success = await apiService.deleteDeploymentById(deploymentId);
@@ -47,29 +44,26 @@ async function deploymentRemoveCommand({
 
 type DeploymentRemoveCommandArguments = {
   deploymentId: string;
-} & ApiMiddlewareArguments;
+} & GlobalOptions;
 
-function createDeploymentRemoveCommand(
-  yargs: GlobalYargs<DeploymentRemoveCommandArguments>
-) {
-  yargs.command(
-    'rm <deployment-id>',
-    'Remove a deployment',
-    (yargs) => {
-      yargs.options(apiMiddlewareOptions);
-      yargs.positional('deployment-id', {
-        describe: 'ID of the deployment that should be removed.',
-        type: 'string',
-      });
-    },
-    async ({ apiService, deploymentId }) => {
-      await deploymentRemoveCommand({
-        apiService,
-        deploymentId,
-      });
-    },
-    createApiMiddleware()
+const createDeploymentRemoveCommand =
+  withClient<DeploymentRemoveCommandArguments>((yargs) =>
+    yargs.command(
+      'rm <deployment-id>',
+      'Remove a deployment',
+      (yargs) => {
+        yargs.positional('deployment-id', {
+          describe: 'ID of the deployment that should be removed.',
+          type: 'string',
+        });
+      },
+      async ({ client, deploymentId }) => {
+        await deploymentRemoveCommand({
+          client,
+          deploymentId,
+        });
+      }
+    )
   );
-}
 
 export { createDeploymentRemoveCommand };

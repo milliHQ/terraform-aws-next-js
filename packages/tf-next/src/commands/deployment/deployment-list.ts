@@ -1,10 +1,4 @@
-import { ApiService } from '../../api';
-import {
-  ApiMiddlewareArguments,
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { GlobalYargs } from '../../types';
+import { Client, withClient } from '../../client';
 
 /* -----------------------------------------------------------------------------
  * deploymentListCommand
@@ -12,17 +6,17 @@ import { GlobalYargs } from '../../types';
 
 type DeploymentListCommandOptions = {
   /**
-   * ApiService to use.
+   * Global client service.
    */
-  apiService: ApiService;
+  client: Client;
 };
 
 /**
  * Prints the latest 25 deployments to the console.
  */
-async function deploymentListCommand({
-  apiService,
-}: DeploymentListCommandOptions) {
+async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
+  const { apiService } = client;
+
   const items = await apiService.listDeployments();
   console.table(items);
 }
@@ -31,24 +25,17 @@ async function deploymentListCommand({
  * createListDeploymentsCommand
  * ---------------------------------------------------------------------------*/
 
-type DeploymentListCommandArguments = ApiMiddlewareArguments;
-
-function createDeploymentListCommand(
-  yargs: GlobalYargs<DeploymentListCommandArguments>
-) {
+const createDeploymentListCommand = withClient((yargs) =>
   yargs.command(
     'ls',
     'List the latest deployments',
-    (yargs) => {
-      yargs.options(apiMiddlewareOptions);
-    },
-    async ({ apiService }) => {
+    () => {},
+    async ({ client }) => {
       await deploymentListCommand({
-        apiService,
+        client,
       });
-    },
-    createApiMiddleware()
-  );
-}
+    }
+  )
+);
 
 export { createDeploymentListCommand };

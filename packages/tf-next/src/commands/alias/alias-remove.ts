@@ -1,10 +1,5 @@
-import { ApiService } from '../../api';
-import {
-  ApiMiddlewareArguments,
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { GlobalYargs } from '../../types';
+import { Client, withClient } from '../../client';
+import { GlobalOptions } from '../../types';
 import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
@@ -13,9 +8,9 @@ import { createSpinner } from '../../utils/create-spinner';
 
 type AliasRemoveCommandOptions = {
   /**
-   * ApiService to use.
+   * Global client service.
    */
-  apiService: ApiService;
+  client: Client;
   /**
    * The domain name of the alias.
    */
@@ -26,9 +21,11 @@ type AliasRemoveCommandOptions = {
  * Creates a new alias or overrides an existing one.
  */
 async function aliasRemoveCommand({
-  apiService,
+  client,
   customDomain,
 }: AliasRemoveCommandOptions) {
+  const { apiService } = client;
+
   const spinner = createSpinner('Removing alias');
   spinner.start();
   const success = await apiService.deleteAlias(customDomain);
@@ -48,28 +45,25 @@ async function aliasRemoveCommand({
 type AliasRemoveCommandArguments = {
   // Positional arguments
   customDomain: string;
-} & ApiMiddlewareArguments;
+} & GlobalOptions;
 
-function createAliasRemoveCommand(
-  yargs: GlobalYargs<AliasRemoveCommandArguments>
-) {
-  yargs.command(
-    'rm <custom-domain>',
-    'Remove an existing alias',
-    (yargs) => {
-      yargs.positional('custom-domain', {
-        describe: 'Domain of the alias',
-        type: 'string',
-      });
-      yargs.options(apiMiddlewareOptions);
-    },
-    ({ apiService, customDomain }: AliasRemoveCommandArguments) =>
-      aliasRemoveCommand({
-        apiService,
-        customDomain,
-      }),
-    createApiMiddleware()
-  );
-}
+const createAliasRemoveCommand = withClient<AliasRemoveCommandArguments>(
+  (yargs) =>
+    yargs.command(
+      'rm <custom-domain>',
+      'Remove an existing alias',
+      (yargs) => {
+        yargs.positional('custom-domain', {
+          describe: 'Domain of the alias',
+          type: 'string',
+        });
+      },
+      ({ client, customDomain }) =>
+        aliasRemoveCommand({
+          client,
+          customDomain,
+        })
+    )
+);
 
 export { createAliasRemoveCommand };

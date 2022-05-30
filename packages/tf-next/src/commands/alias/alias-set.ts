@@ -1,10 +1,5 @@
-import { ApiService } from '../../api';
-import {
-  ApiMiddlewareArguments,
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { GlobalYargs } from '../../types';
+import { Client, withClient } from '../../client';
+import { GlobalOptions } from '../../types';
 import { createSpinner } from '../../utils/create-spinner';
 
 /* -----------------------------------------------------------------------------
@@ -13,9 +8,9 @@ import { createSpinner } from '../../utils/create-spinner';
 
 type AliasSetCommandOptions = {
   /**
-   * ApiService to use.
+   * Global client.
    */
-  apiService: ApiService;
+  client: Client;
   /**
    * The domain name of the alias.
    */
@@ -34,11 +29,13 @@ type AliasSetCommandOptions = {
  * Creates a new alias or overrides an existing one.
  */
 async function aliasSetCommand({
-  apiService,
+  client,
   customDomain,
   target,
   override,
 }: AliasSetCommandOptions) {
+  const { apiService } = client;
+
   const spinner = createSpinner('Creating alias');
   spinner.start();
   const alias = await apiService.createAlias({
@@ -66,9 +63,9 @@ type AliasSetCommandArguments = {
   target: string;
   // Optional arguments
   force?: boolean;
-} & ApiMiddlewareArguments;
+} & GlobalOptions;
 
-function createAliasSetCommand(yargs: GlobalYargs<AliasSetCommandArguments>) {
+const createAliasSetCommand = withClient<AliasSetCommandArguments>((yargs) =>
   yargs.command(
     'set <custom-domain> <target>',
     'Links an alias to a deployment or another alias',
@@ -83,22 +80,20 @@ function createAliasSetCommand(yargs: GlobalYargs<AliasSetCommandArguments>) {
           type: 'string',
         });
       yargs.options({
-        ...apiMiddlewareOptions,
         force: {
           type: 'boolean',
           description: 'Override existing alias',
         },
       });
     },
-    ({ apiService, customDomain, target, force }: AliasSetCommandArguments) =>
+    ({ client, customDomain, target, force }) =>
       aliasSetCommand({
-        apiService,
+        client,
         customDomain,
         target,
         override: !!force,
-      }),
-    createApiMiddleware()
-  );
-}
+      })
+  )
+);
 
 export { createAliasSetCommand };

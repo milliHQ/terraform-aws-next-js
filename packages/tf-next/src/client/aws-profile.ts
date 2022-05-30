@@ -1,9 +1,11 @@
 import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { Credentials, MemoizedProvider } from '@aws-sdk/types';
-import { MiddlewareFunction, Options } from 'yargs';
+import { Options, Arguments } from 'yargs';
+
+type AwsCredentialProvider = MemoizedProvider<Credentials>;
 
 type AWSProfileArguments = {
-  awsCredentialProvider: MemoizedProvider<Credentials>;
+  awsCredentialProvider: AwsCredentialProvider;
 };
 
 /**
@@ -18,14 +20,12 @@ type AWSProfileArguments = {
  *
  * @see {@link https://www.npmjs.com/package/@aws-sdk/credential-provider-node}
  */
-const awsProfileMiddleware: MiddlewareFunction<AWSProfileArguments> = (
-  argv
-) => {
+const awsProfileMiddleware = (argv: Arguments): AwsCredentialProvider => {
   // If the --awsProfile flag is provided load a named profile
   const profile =
     typeof argv.awsProfile === 'string' ? argv.awsProfile : undefined;
 
-  argv.awsCredentialProvider = defaultProvider({
+  return defaultProvider({
     profile,
   });
 };
@@ -41,5 +41,5 @@ const awsProfileMiddlewareOptions: Record<string, Options> = {
   },
 };
 
-export type { AWSProfileArguments };
+export type { AWSProfileArguments, AwsCredentialProvider };
 export { awsProfileMiddleware, awsProfileMiddlewareOptions };

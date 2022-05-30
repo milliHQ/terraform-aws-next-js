@@ -1,10 +1,5 @@
-import { ApiService } from '../../api';
-import {
-  ApiMiddlewareArguments,
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { GlobalYargs } from '../../types';
+import { Client, withClient } from '../../client';
+import { GlobalOptions } from '../../types';
 
 /* -----------------------------------------------------------------------------
  * aliasListCommand
@@ -12,9 +7,9 @@ import { GlobalYargs } from '../../types';
 
 type AliasListCommandOptions = {
   /**
-   * ApiService to use.
+   * Global client service.
    */
-  apiService: ApiService;
+  client: Client;
   /**
    * DeploymentId
    */
@@ -25,9 +20,11 @@ type AliasListCommandOptions = {
  * Prints the latest 25 deployments to the console.
  */
 async function aliasListCommand({
-  apiService,
+  client,
   deploymentId,
 }: AliasListCommandOptions) {
+  const { apiService } = client;
+
   const items = await apiService.listAliases(deploymentId);
   console.table(items);
 }
@@ -38,26 +35,24 @@ async function aliasListCommand({
 
 type AliasListCommandArguments = {
   deploymentId: string;
-} & ApiMiddlewareArguments;
+} & GlobalOptions;
 
-function createAliasListCommand(yargs: GlobalYargs<AliasListCommandArguments>) {
+const createAliasListCommand = withClient<AliasListCommandArguments>((yargs) =>
   yargs.command(
     'ls <deployment-id>',
     'List the aliases that are associated with a deployment',
     (yargs) => {
-      yargs.options(apiMiddlewareOptions);
       yargs.positional('deployment-id', {
         describe: 'ID of the deployment.',
         type: 'string',
       });
     },
-    ({ apiService, deploymentId }: AliasListCommandArguments) =>
+    ({ client, deploymentId }) =>
       aliasListCommand({
-        apiService,
+        client,
         deploymentId,
-      }),
-    createApiMiddleware()
-  );
-}
+      })
+  )
+);
 
 export { createAliasListCommand };

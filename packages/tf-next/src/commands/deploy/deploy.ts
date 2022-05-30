@@ -6,13 +6,9 @@ import { FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
 
-import { GlobalYargs, LogLevel } from '../../types';
+import { LogLevel } from '../../types';
 import { createSpinner } from '../../utils/create-spinner';
-import {
-  apiMiddlewareOptions,
-  createApiMiddleware,
-} from '../../middleware/api';
-import { ApiService } from '../../api';
+import { ApiService, Client, withClient } from '../../client';
 
 function delay(t: number) {
   return new Promise(function (resolve) {
@@ -59,9 +55,9 @@ function pollUntilDone(
 
 type DeployCommandOptions = {
   /**
-   * The api endpoint to use.
+   * Client Service.
    */
-  apiService: ApiService;
+  client: Client;
   /**
    * Path to the deployment package that should be uploaded.
    */
@@ -71,10 +67,11 @@ type DeployCommandOptions = {
 };
 
 async function deployCommand({
-  apiService,
+  client,
   deploymentPackagePath = '.next-tf/deployment.zip',
   cwd,
 }: DeployCommandOptions) {
+  const { apiService } = client;
   const internalDeploymentPackagePath = resolve(cwd, deploymentPackagePath);
   let deploymentId: string;
 
@@ -148,22 +145,19 @@ async function deployCommand({
  * createDeployCommand
  * ---------------------------------------------------------------------------*/
 
-function createDeployCommand(yargs: GlobalYargs) {
+const createDeployCommand = withClient((yargs) =>
   yargs.command(
     'deploy',
     'Deploy a project',
-    (yargs) => {
-      yargs.options(apiMiddlewareOptions);
-    },
-    async ({ apiService, logLevel, commandCwd }) => {
-      await deployCommand({
-        apiService: apiService as ApiService,
+    () => {},
+    ({ client, logLevel, commandCwd }) => {
+      deployCommand({
+        client,
         logLevel,
         cwd: commandCwd,
       });
-    },
-    createApiMiddleware()
-  );
-}
+    }
+  )
+);
 
 export { createDeployCommand };
