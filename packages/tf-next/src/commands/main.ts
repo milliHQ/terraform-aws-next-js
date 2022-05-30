@@ -26,7 +26,7 @@ function createMainCommand(globalYargs: Argv) {
   // Register all subcommands
   createAliasCommand(yargs);
   createBuildCommand(yargs);
-  // createDeployCommand(yargs);
+  createDeployCommand(yargs);
   createDeploymentCommand(yargs);
 
   return yargs;

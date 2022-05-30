@@ -307,24 +307,21 @@ type BuildCommandArguments = {
 } & GlobalOptions;
 
 const createBuildCommand = withClient<BuildCommandArguments>(
-  (yargs) =>
-    yargs.command(
-      'build',
-      'Build a project',
-      (yargs) => {
-        yargs.option('skip-download', {
-          type: 'boolean',
-          description: 'Runs the build in the current working directory.',
-        });
-      },
-      async ({ commandCwd, logLevel, skipDownload }) => {
-        await buildCommand({
-          cwd: commandCwd,
-          logLevel,
-          skipDownload,
-        });
-      }
-    ),
+  'build',
+  'Build a project',
+  (yargs) => {
+    yargs.option('skip-download', {
+      type: 'boolean',
+      description: 'Runs the build in the current working directory.',
+    });
+  },
+  async ({ commandCwd, logLevel, skipDownload }) => {
+    await buildCommand({
+      cwd: commandCwd,
+      logLevel,
+      skipDownload,
+    });
+  },
   {
     // No API communication needed
     withApiService: false,

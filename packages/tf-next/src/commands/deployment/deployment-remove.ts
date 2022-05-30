@@ -47,23 +47,21 @@ type DeploymentRemoveCommandArguments = {
 } & GlobalOptions;
 
 const createDeploymentRemoveCommand =
-  withClient<DeploymentRemoveCommandArguments>((yargs) =>
-    yargs.command(
-      'rm <deployment-id>',
-      'Remove a deployment',
-      (yargs) => {
-        yargs.positional('deployment-id', {
-          describe: 'ID of the deployment that should be removed.',
-          type: 'string',
-        });
-      },
-      async ({ client, deploymentId }) => {
-        await deploymentRemoveCommand({
-          client,
-          deploymentId,
-        });
-      }
-    )
+  withClient<DeploymentRemoveCommandArguments>(
+    'rm <deployment-id>',
+    'Remove a deployment',
+    (yargs) => {
+      yargs.positional('deployment-id', {
+        describe: 'ID of the deployment that should be removed.',
+        type: 'string',
+      });
+    },
+    async ({ client, deploymentId }) => {
+      await deploymentRemoveCommand({
+        client,
+        deploymentId,
+      });
+    }
   );
 
 export { createDeploymentRemoveCommand };

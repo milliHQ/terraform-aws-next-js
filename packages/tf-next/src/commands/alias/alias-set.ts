@@ -65,35 +65,33 @@ type AliasSetCommandArguments = {
   force?: boolean;
 } & GlobalOptions;
 
-const createAliasSetCommand = withClient<AliasSetCommandArguments>((yargs) =>
-  yargs.command(
-    'set <custom-domain> <target>',
-    'Links an alias to a deployment or another alias',
-    (yargs) => {
-      yargs
-        .positional('custom-domain', {
-          describe: 'Domain of the alias',
-          type: 'string',
-        })
-        .positional('target', {
-          describe: 'deployment id or other alias',
-          type: 'string',
-        });
-      yargs.options({
-        force: {
-          type: 'boolean',
-          description: 'Override existing alias',
-        },
-      });
-    },
-    ({ client, customDomain, target, force }) =>
-      aliasSetCommand({
-        client,
-        customDomain,
-        target,
-        override: !!force,
+const createAliasSetCommand = withClient<AliasSetCommandArguments>(
+  'set <custom-domain> <target>',
+  'Links an alias to a deployment or another alias',
+  (yargs) => {
+    yargs
+      .positional('custom-domain', {
+        describe: 'Domain of the alias',
+        type: 'string',
       })
-  )
+      .positional('target', {
+        describe: 'deployment id or other alias',
+        type: 'string',
+      });
+    yargs.options({
+      force: {
+        type: 'boolean',
+        description: 'Override existing alias',
+      },
+    });
+  },
+  ({ client, customDomain, target, force }) =>
+    aliasSetCommand({
+      client,
+      customDomain,
+      target,
+      override: !!force,
+    })
 );
 
 export { createAliasSetCommand };

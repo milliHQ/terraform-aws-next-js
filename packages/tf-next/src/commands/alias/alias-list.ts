@@ -37,22 +37,20 @@ type AliasListCommandArguments = {
   deploymentId: string;
 } & GlobalOptions;
 
-const createAliasListCommand = withClient<AliasListCommandArguments>((yargs) =>
-  yargs.command(
-    'ls <deployment-id>',
-    'List the aliases that are associated with a deployment',
-    (yargs) => {
-      yargs.positional('deployment-id', {
-        describe: 'ID of the deployment.',
-        type: 'string',
-      });
-    },
-    ({ client, deploymentId }) =>
-      aliasListCommand({
-        client,
-        deploymentId,
-      })
-  )
+const createAliasListCommand = withClient<AliasListCommandArguments>(
+  'ls <deployment-id>',
+  'List the aliases that are associated with a deployment',
+  (yargs) => {
+    return yargs.positional('deployment-id', {
+      describe: 'ID of the deployment.',
+      type: 'string',
+    });
+  },
+  ({ client, deploymentId }) =>
+    aliasListCommand({
+      client,
+      deploymentId,
+    })
 );
 
 export { createAliasListCommand };

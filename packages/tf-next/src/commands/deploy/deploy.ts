@@ -145,19 +145,17 @@ async function deployCommand({
  * createDeployCommand
  * ---------------------------------------------------------------------------*/
 
-const createDeployCommand = withClient((yargs) =>
-  yargs.command(
-    'deploy',
-    'Deploy a project',
-    () => {},
-    ({ client, logLevel, commandCwd }) => {
-      deployCommand({
-        client,
-        logLevel,
-        cwd: commandCwd,
-      });
-    }
-  )
+const createDeployCommand = withClient(
+  'deploy',
+  'Deploy a project',
+  () => {},
+  ({ client, logLevel, commandCwd }) => {
+    deployCommand({
+      client,
+      logLevel,
+      cwd: commandCwd,
+    });
+  }
 );
 
 export { createDeployCommand };

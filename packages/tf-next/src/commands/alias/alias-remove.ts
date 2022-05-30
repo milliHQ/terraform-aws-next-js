@@ -48,22 +48,19 @@ type AliasRemoveCommandArguments = {
 } & GlobalOptions;
 
 const createAliasRemoveCommand = withClient<AliasRemoveCommandArguments>(
-  (yargs) =>
-    yargs.command(
-      'rm <custom-domain>',
-      'Remove an existing alias',
-      (yargs) => {
-        yargs.positional('custom-domain', {
-          describe: 'Domain of the alias',
-          type: 'string',
-        });
-      },
-      ({ client, customDomain }) =>
-        aliasRemoveCommand({
-          client,
-          customDomain,
-        })
-    )
+  'rm <custom-domain>',
+  'Remove an existing alias',
+  (yargs) => {
+    yargs.positional('custom-domain', {
+      describe: 'Domain of the alias',
+      type: 'string',
+    });
+  },
+  ({ client, customDomain }) =>
+    aliasRemoveCommand({
+      client,
+      customDomain,
+    })
 );
 
 export { createAliasRemoveCommand };

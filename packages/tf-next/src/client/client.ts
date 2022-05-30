@@ -1,4 +1,9 @@
-import { Argv, MiddlewareFunction } from 'yargs';
+import {
+  ArgumentsCamelCase,
+  Argv,
+  BuilderCallback,
+  MiddlewareFunction,
+} from 'yargs';
 import { GlobalOptions, LogLevel } from '../types';
 import {
   awsProfileMiddleware,
@@ -44,7 +49,7 @@ type CreateClientMiddlewareOptions = {
 };
 
 const createClientMiddleware =
-  (options: CreateClientMiddlewareOptions): MiddlewareFunction<GlobalOptions> =>
+  (options: CreateClientMiddlewareOptions): MiddlewareFunction<any> =>
   (argv) => {
     let apiService: ApiService | undefined;
 
@@ -68,29 +73,34 @@ type WithClientOptions = {
   withApiService?: boolean;
 };
 
-function withClient<Args extends GlobalOptions>(
-  commandInitializer: (
-    yargs: Argv<Args & ClientMiddlewareArguments>
-  ) => Argv<any>,
+function withClient<
+  Args extends GlobalOptions,
+  U = Args & ClientMiddlewareArguments
+>(
+  command: string | ReadonlyArray<string>,
+  description: string,
+  builder: BuilderCallback<Args, U>,
+  handler: (args: ArgumentsCamelCase<U>) => void | Promise<void>,
   options: WithClientOptions = {}
 ) {
   const { withApiService = true } = options;
 
-  return (yargs: Argv<Args & ClientMiddlewareArguments>) => {
-    const localYargs = commandInitializer(yargs);
+  return (yargs: Argv<Args>) => {
+    const middleware = createClientMiddleware({
+      withApiService,
+    });
+    const localBuilder: BuilderCallback<Args, U> = (localYargs) => {
+      if (withApiService) {
+        localYargs.options({
+          ...awsProfileMiddlewareOptions,
+          ...apiMiddlewareOptions,
+        });
+      }
 
-    if (withApiService) {
-      localYargs.options({
-        ...awsProfileMiddlewareOptions,
-        ...apiMiddlewareOptions,
-      });
-    }
+      return builder(localYargs);
+    };
 
-    localYargs.middleware(
-      createClientMiddleware({
-        withApiService,
-      })
-    );
+    yargs.command(command, description, localBuilder, handler, [middleware]);
   };
 }
 

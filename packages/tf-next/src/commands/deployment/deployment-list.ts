@@ -25,17 +25,15 @@ async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
  * createListDeploymentsCommand
  * ---------------------------------------------------------------------------*/
 
-const createDeploymentListCommand = withClient((yargs) =>
-  yargs.command(
-    'ls',
-    'List the latest deployments',
-    () => {},
-    async ({ client }) => {
-      await deploymentListCommand({
-        client,
-      });
-    }
-  )
+const createDeploymentListCommand = withClient(
+  'ls',
+  'List the latest deployments',
+  () => {},
+  async ({ client }) => {
+    await deploymentListCommand({
+      client,
+    });
+  }
 );
 
 export { createDeploymentListCommand };
