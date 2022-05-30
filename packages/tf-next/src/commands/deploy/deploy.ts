@@ -6,11 +6,8 @@ import { FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
 
-import { CommandDefaultOptions } from '../types';
-import { createDeployment } from '../api/deployment/create-deployment';
-import { getDeploymentById } from '../api/deployment/get-deployment-by-id';
-import { FetchAWSSigV4Options } from '../utils/fetch-aws-sig-v4';
-import { createSpinner } from '../utils/create-spinner';
+import { LogLevel } from '../../types';
+import { ApiService, Client, withClient } from '../../client';
 
 function delay(t: number) {
   return new Promise(function (resolve) {
@@ -20,13 +17,13 @@ function delay(t: number) {
 
 function pollUntilDone(
   deploymentId: string,
-  fetchOptions: FetchAWSSigV4Options,
+  apiService: ApiService,
   interval: number,
   timeout: number
 ) {
   let start = Date.now();
   function run(): Promise<boolean | string> {
-    return getDeploymentById(deploymentId, fetchOptions).then((dataResult) => {
+    return apiService.getDeploymentById(deploymentId).then((dataResult) => {
       if (!dataResult) {
         throw new Error('Deployment failed.');
       }
@@ -55,36 +52,32 @@ function pollUntilDone(
  * deployCommand
  * ---------------------------------------------------------------------------*/
 
-type DeployCommandOptions = CommandDefaultOptions & {
+type DeployCommandOptions = {
   /**
-   * Name of the AWS profile to use for authentication
+   * Client Service.
    */
-  profile?: string;
-  /**
-   * The api endpoint to use.
-   */
-  apiEndpoint: string;
+  client: Client;
   /**
    * Path to the deployment package that should be uploaded.
    */
   deploymentPackagePath?: string;
+  cwd: string;
+  logLevel: LogLevel;
 };
 
 async function deployCommand({
-  apiEndpoint,
+  client,
   deploymentPackagePath = '.next-tf/deployment.zip',
-  profile,
   cwd,
 }: DeployCommandOptions) {
+  const { apiService, output } = client;
   const internalDeploymentPackagePath = resolve(cwd, deploymentPackagePath);
-  const fetchOptions: FetchAWSSigV4Options = { apiEndpoint, profile };
   let deploymentId: string;
 
   // Upload package
-  const uploadSpinner = createSpinner('Uploading deployment package');
+  output.spinner('Uploading deployment package');
   try {
-    uploadSpinner.start();
-    const response = await createDeployment(fetchOptions);
+    const response = await apiService.createDeployment();
 
     if (!response) {
       throw new Error('Deployment failed: Could not connect to API');
@@ -114,36 +107,50 @@ async function deployCommand({
       throw new Error(parsedResponse);
     }
 
-    uploadSpinner.stopAndPersist({ prefixText: '✅ Upload complete.' });
+    output.stopSpinner();
 
     // Poll until the CloudFormation stack creation has finished
   } catch (error) {
-    uploadSpinner.stopAndPersist();
+    output.stopSpinner();
     console.log('Upload failed: ', error);
     return;
   }
 
   // Deployment
-  const deploymentSpinner = createSpinner('Wait for deployment to finish');
+  const deploymentSpinner = output.spinner('Wait for deployment to finish');
   try {
-    deploymentSpinner.start();
     const deploymentCreationResult = await pollUntilDone(
       deploymentId,
-      fetchOptions,
+      apiService,
       5000,
       2 * 60000
     );
 
-    deploymentSpinner.stopAndPersist({
-      prefixText: '✅ deployment complete.',
-    });
+    output.stopSpinner();
     if (typeof deploymentCreationResult === 'string') {
       console.log('Available at: ', `https://${deploymentCreationResult}`);
     }
   } catch (error) {
-    deploymentSpinner.stopAndPersist();
+    output.stopSpinner();
     console.log('Deployment failed: ', error);
   }
 }
 
-export default deployCommand;
+/* -----------------------------------------------------------------------------
+ * createDeployCommand
+ * ---------------------------------------------------------------------------*/
+
+const createDeployCommand = withClient(
+  'deploy',
+  'Deploy a project',
+  () => {},
+  ({ client, logLevel, commandCwd }) => {
+    deployCommand({
+      client,
+      logLevel,
+      cwd: commandCwd,
+    });
+  }
+);
+
+export { createDeployCommand };

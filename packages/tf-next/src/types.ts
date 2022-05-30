@@ -1,4 +1,5 @@
 import { Route } from '@vercel/routing-utils';
+import { Argv } from 'yargs';
 
 export interface ConfigOutput {
   buildId: string;
@@ -28,13 +29,17 @@ export interface ConfigOutput {
   version: number;
 }
 
-export type CommandDefaultOptions = {
+export type LogLevel = 'verbose' | 'none';
+
+export type GlobalOptions = {
   /**
-   * The current working directory where the command is executed from
+   * The current working directory where the command is executed from.
    */
-  cwd: string;
+  commandCwd: string;
   /**
    * LogLevel of the command
    */
-  logLevel?: 'verbose' | 'none';
+  logLevel: LogLevel;
 };
+
+export type GlobalYargs<T = unknown> = Argv<GlobalOptions & T>;

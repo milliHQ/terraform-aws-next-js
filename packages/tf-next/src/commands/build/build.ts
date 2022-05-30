@@ -16,8 +16,9 @@ import findWorkspaceRoot from 'find-yarn-workspace-root';
 import * as fs from 'fs-extra';
 import tmp from 'tmp';
 
-import { CommandDefaultOptions, ConfigOutput } from '../types';
-import { findEntryPoint } from '../utils';
+import { ConfigOutput, GlobalOptions, LogLevel } from '../../types';
+import { findEntryPoint } from '../../utils';
+import { withClient } from '../../client';
 
 // Config file version (For detecting incompatibility issues in Terraform)
 // See: https://github.com/dealmore/terraform-aws-next-js/issues/5
@@ -163,10 +164,12 @@ async function writeOutput(props: OutputProps) {
  * Build Command
  * ---------------------------------------------------------------------------*/
 
-type BuildCommandProps = CommandDefaultOptions & {
+type BuildCommandProps = {
   skipDownload?: boolean;
   deleteBuildCache?: boolean;
   target?: 'AWS';
+  logLevel: LogLevel;
+  cwd: string;
 };
 
 async function buildCommand({
@@ -295,4 +298,34 @@ async function buildCommand({
   return buildOutput;
 }
 
-export default buildCommand;
+/* -----------------------------------------------------------------------------
+ * createBuildCommand
+ * ---------------------------------------------------------------------------*/
+
+type BuildCommandArguments = {
+  skipDownload?: boolean;
+} & GlobalOptions;
+
+const createBuildCommand = withClient<BuildCommandArguments>(
+  'build',
+  'Build a project',
+  (yargs) => {
+    yargs.option('skip-download', {
+      type: 'boolean',
+      description: 'Runs the build in the current working directory.',
+    });
+  },
+  async ({ commandCwd, logLevel, skipDownload }) => {
+    await buildCommand({
+      cwd: commandCwd,
+      logLevel,
+      skipDownload,
+    });
+  },
+  {
+    // No API communication needed
+    withApiService: false,
+  }
+);
+
+export { createBuildCommand };

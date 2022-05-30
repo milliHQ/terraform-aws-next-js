@@ -1,27 +1,27 @@
-# Terraform Next Build
+# Terraform Next.js CLI
 
-Command-line interface (CLI) tool for [Terraform Next.js module for AWS](https://github.com/milliHQ/terraform-aws-next-js).  
+Command-line interface (CLI) companion tool for [Terraform Next.js module for AWS](https://github.com/milliHQ/terraform-aws-next-js).  
 It is used for [building](#build) Next.js apps, deployment and management of deployments.
 
 ## Getting Started
 
 This covers only the CLI part of the tool, for a full step-by-step tutorial please see our [examples](https://github.com/milliHQ/terraform-aws-next-js#examples).
 
-1. Install the CLI tool:
+1. Install the CLI tool
 
-   ```sh
+   ```plain
    npm i -g tf-next
    ```
 
-2. Build the project:
+2. Build the project
 
-   ```sh
+   ```plain
    tf-next build
    ```
 
-3. Deploy the app:
+3. Deploy the app
 
-   ```sh
+   ```plain
    tf-next deploy --endpoint https://<api-id>.execute-api.<region>.amazonaws.com
 
    > ✅ Upload complete.
@@ -40,7 +40,7 @@ The app is then checked out into a temporary folder and build from there.
 Once the build process is finished, a new folder `.next-tf` is added to your current working directory.
 The `.next-tf` folder contains a deployment package that can be used together with the [deploy command](#deploy) to deploy your application.
 
-```sh
+```plain
 tf-next build
 ```
 
@@ -48,7 +48,7 @@ tf-next build
 
 The `--skipDownload` flag can be used to prevent the checkout into a temporary folder (builds in the current working directory instead):
 
-```sh
+```plain
 tf-next build --skipDownload
 ```
 
@@ -64,7 +64,7 @@ To publish an previously built Next.js app to the system, run `tf-next deploy` f
 
 #### Basic Usage
 
-```sh
+```plain
 tf-next deploy --endpoint <api-endpoint>
 ```
 
@@ -73,7 +73,44 @@ tf-next deploy --endpoint <api-endpoint>
 The following options can be passed when using the `tf-next deploy` command:
 
 - `--endpoint`
-- `--profile`
+- `--awsProfile`
+
+### Deployment
+
+To manage the deployments that are published to the system.
+
+#### Basic Usage
+
+To show the most recent (25) deployments:
+
+```plain
+tf-next deployment ls
+```
+
+To remove (delete) an existing deployment from the system:
+
+```plain
+tf-next deployment rm <deployment-id>
+```
+
+#### Extended Usage
+
+To delete an existing deployment including all of the aliases that are associated with it.
+
+```plain
+tf-next deployment rm <deployment-id> --force
+```
+
+#### Global Options
+
+The following options can be passed when using the `tf-next deployment` command:
+
+- `--endpoint`
+- `--awsProfile`
+
+### Alias
+
+To managed the aliases that are deployed to the system
 
 ## License
 
