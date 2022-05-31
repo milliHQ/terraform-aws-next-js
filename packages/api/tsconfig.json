@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false
+  },
+  "include": ["schema.ts", "./src/**/*", "./test/**/*"]
+}

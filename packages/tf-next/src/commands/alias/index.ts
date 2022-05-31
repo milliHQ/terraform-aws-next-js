@@ -1,0 +1,1 @@
+export { createAliasCommand } from './alias';
