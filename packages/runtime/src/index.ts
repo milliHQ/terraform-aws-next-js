@@ -4,6 +4,7 @@ import {
   FileBlob,
   FileFsRef,
   Files,
+  Meta,
   Lambda,
   NowBuildError,
   PackageJson,
@@ -82,7 +83,7 @@ interface BuildParamsType extends BuildOptions {
   files: Files;
   entrypoint: string;
   workPath: string;
-  meta: BuildParamsMeta;
+  meta: Meta;
 }
 
 export const version = 2;
@@ -220,7 +221,7 @@ export async function build({
   repoRootPath,
   entrypoint,
   config = {} as Config,
-  meta = {} as BuildParamsMeta,
+  meta = {} as Meta,
 }: BuildParamsType): Promise<{
   routes: Route[];
   images?: {
@@ -1158,7 +1159,7 @@ export async function build({
       debug(`node-file-trace result for pages: ${fileList}`);
 
       const lstatSema = new Sema(25, {
-        capacity: fileList.length + apiFileList.length,
+        capacity: fileList.size + apiFileList.size,
       });
       const lstatResults: { [key: string]: ReturnType<typeof lstat> } = {};
 
@@ -1166,8 +1167,8 @@ export async function build({
         reasons: NodeFileTraceReasons,
         files: { [filePath: string]: FileFsRef }
       ) => async (file: string) => {
-        const reason = reasons[file];
-        if (reason && reason.type === 'initial') {
+        const reason = reasons.get(file);
+        if (reason && reason.type.indexOf('initial') !== -1) {
           // Initial files are manually added to the lambda later
           return;
         }
@@ -1188,10 +1189,12 @@ export async function build({
       };
 
       await Promise.all(
-        fileList.map(collectTracedFiles(nonApiReasons, tracedFiles))
+        Array.from(fileList).map(collectTracedFiles(nonApiReasons, tracedFiles))
       );
       await Promise.all(
-        apiFileList.map(collectTracedFiles(apiReasons, apiTracedFiles))
+        Array.from(apiFileList).map(
+          collectTracedFiles(apiReasons, apiTracedFiles)
+        )
       );
 
       if (hasLambdas) {

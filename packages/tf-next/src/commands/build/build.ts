@@ -135,7 +135,7 @@ async function writeOutput(props: OutputProps) {
 
       config.lambdas[key] = {
         handler: lambda.handler,
-        runtime: lambda.runtime as 'nodejs12.x' | 'nodejs14.x',
+        runtime: lambda.runtime as 'nodejs12.x' | 'nodejs14.x' | 'nodejs16.x',
         filename: zipFilename,
         route: normalizeRoute(route),
       };
@@ -235,10 +235,12 @@ async function buildCommand({
 
     for (const [key, file] of Object.entries(buildResult.output)) {
       switch (file.type) {
+        // @ts-ignore
         case 'Lambda': {
           lambdas[key] = file as unknown as Lambda;
           break;
         }
+          // @ts-ignore
         case 'Prerender': {
           prerenders[key] = file as unknown as Prerender;
           break;

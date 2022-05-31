@@ -11,7 +11,7 @@ export interface ConfigOutput {
     string,
     {
       handler: string;
-      runtime: 'nodejs12.x' | 'nodejs14.x';
+      runtime: 'nodejs12.x' | 'nodejs14.x' | 'nodejs16.x';
       filename: string;
       route: string;
     }
