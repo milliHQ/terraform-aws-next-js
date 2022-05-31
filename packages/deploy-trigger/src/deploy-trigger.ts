@@ -88,7 +88,16 @@ async function deployTrigger({
    * |   └── prerendered-site
    * └── config.json
    *
-   * And uploads it to the bucket in the following way
+   * And uploads it to the bucket in the following way:
+   *
+   * <deployment-id>/
+   * ├── lambdas/
+   * |   ├── lambda1.zip
+   * |   └── lambda2.zip
+   * ├── static/
+   * |   ├── _next/...
+   * |   └── prerendered-site
+   * └── manifest.json (contains the inventory of the `<deployment-id>/` path)
    */
   for await (const e of zip) {
     const entry = e as unzipper.Entry;
@@ -106,7 +115,7 @@ async function deployTrigger({
         continue;
       } else if (filePath.startsWith('lambdas')) {
         contentType = 'application/zip';
-        targetKey = `${deploymentId}/_tf_next/${filePath}`;
+        targetKey = `${deploymentId}/lambdas/${filePath}`;
 
         lambdaUploads.push(
           s3
@@ -120,7 +129,7 @@ async function deployTrigger({
         );
       } else {
         const filePathWithoutPrefix = filePath.substring('static/'.length);
-        targetKey = `${deploymentId}/${filePathWithoutPrefix}`;
+        targetKey = `${deploymentId}/static/${filePathWithoutPrefix}`;
 
         // Get ContentType
         // Static pre-rendered pages have no file extension,

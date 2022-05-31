@@ -141,7 +141,7 @@ function serveRequestFromS3Origin(
   });
 
   if (typeof uri === 'string') {
-    request.uri = `/${deploymentId}${uri}`;
+    request.uri = `/${deploymentId}/static${uri}`;
   }
 
   // Querystring is not supported by S3 origin

@@ -302,7 +302,7 @@ describe('[proxy] Handler', () => {
       })
     );
     // deploymentId + path
-    expect(result.uri).toBe('/abc/en');
+    expect(result.uri).toBe('/abc/static/en');
   });
 
   test('Correctly request /index object from S3 when requesting /', async () => {
@@ -372,7 +372,7 @@ describe('[proxy] Handler', () => {
         path: '',
       })
     );
-    expect(result.uri).toBe('/abc/index');
+    expect(result.uri).toBe('/abc/static/index');
   });
 
   test('Add x-forwarded-host header to API-Gateway requests', async () => {
@@ -636,7 +636,7 @@ describe('[proxy] Handler', () => {
         path: '',
       })
     );
-    expect(result.uri).toBe('/abc/users/[user_id]');
+    expect(result.uri).toBe('/abc/static/users/[user_id]');
   });
 
   test('Redirects with querystring', async () => {

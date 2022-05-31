@@ -36,7 +36,7 @@ async function deploymentFileExists({
     const result = await s3Client
       .headObject({
         Bucket: s3BucketId,
-        Key: deploymentId + '/' + decodedKey,
+        Key: deploymentId + '/static/' + decodedKey,
       })
       .promise();
 
