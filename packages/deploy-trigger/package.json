@@ -33,7 +33,7 @@
     "archiver": "^5.3.0",
     "aws-sdk": "*",
     "jest": "*",
-    "ncc-zip": "^2.0.0",
+    "ncc-zip": "^2.1.0",
     "patch-package": "^6.4.7",
     "tmp": "^0.2.1",
     "ts-jest": "*",

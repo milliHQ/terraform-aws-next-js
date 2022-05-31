@@ -27,7 +27,7 @@
     "@vercel/ncc": "*",
     "get-port": "^5.1.1",
     "jest": "*",
-    "ncc-zip": "^2.0.0",
+    "ncc-zip": "^2.1.0",
     "ts-jest": "*",
     "typescript": "*"
   },
