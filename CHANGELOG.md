@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.0-canary.2] - 2022-05-31
+
 - Adds static prefix to files served from S3 ([#321](https://github.com/milliHQ/terraform-aws-next-js/pull/321))
 - Add CLI commands ([#317](https://github.com/milliHQ/terraform-aws-next-js/pull/317))
 - No longer require reserved concurrency ([#319](https://github.com/milliHQ/terraform-aws-next-js/pull/319), [#251](https://github.com/milliHQ/terraform-aws-next-js/issues/251))

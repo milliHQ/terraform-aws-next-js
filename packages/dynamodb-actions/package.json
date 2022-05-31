@@ -1,6 +1,6 @@
 {
   "name": "@millihq/tfn-dynamodb-actions",
-  "version": "0.0.0",
+  "version": "1.0.0-canary.2",
   "private": true,
   "main": "src/index.ts",
   "dependencies": {
