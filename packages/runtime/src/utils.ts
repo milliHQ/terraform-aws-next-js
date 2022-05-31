@@ -1,4 +1,11 @@
-import { FileFsRef, Files } from '@vercel/build-utils';
+import {
+  FileFsRef,
+  Files,
+  isSymbolicLink,
+  Lambda,
+  NowBuildError,
+  streamToBuffer,
+} from '@vercel/build-utils';
 import { NowHeader, NowRewrite, Route, Source } from '@vercel/routing-utils';
 import { Sema } from 'async-sema';
 import crc32 from 'buffer-crc32';
@@ -8,8 +15,6 @@ import resolveFrom from 'resolve-from';
 import semver from 'semver';
 import { ZipFile } from 'yazl';
 import zlib from 'zlib';
-import buildUtils from './build-utils';
-const { streamToBuffer, Lambda, NowBuildError, isSymbolicLink } = buildUtils;
 
 type stringMap = { [key: string]: string };
 
