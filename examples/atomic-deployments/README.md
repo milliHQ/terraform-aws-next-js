@@ -68,7 +68,7 @@ After the deployment was successful, you should see the following output:
 > Outputs:
 >
 > api_endpoint = "https://<api-id>.execute-api.<region>.amazonaws.com"
-> api_endpoint_access_policy_arn = "arn:aws:..."
+> api_endpoint_access_policy_arn = "arn:aws:iam::123456789012:policy/access-api"
 ```
 
 ## Build

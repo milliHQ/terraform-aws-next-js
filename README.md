@@ -27,92 +27,29 @@ The Next.js Terraform module is designed as a full stack AWS app. It relies on m
 
 ![Architecture overview diagram](https://github.com/milliHQ/terraform-aws-next-js/blob/main/docs/assets/architecture.png?raw=true)
 
-- **`I.` CloudFront**
-
-  This is the main CloudFront distribution which handles all incoming traffic to the Next.js application.
-  Static assets with the prefix `/_next/static/*` (e.g. JavaScript, CSS, images) are identified here and served directly from a static content S3 bucket ([`II`](#II-s3-static-content)).
-  Other requests are delegated to the proxy handler Lambda@Edge function ([`III`](#III-lambda-edge-proxy)).
-
-- **`II.` S3 bucket for static content**<a id="II-s3-static-content"></a>
-
-  This bucket contains the pre-rendered static HTML sites from the Next.js build and the static assets (JavaScript, CSS, images, etc.).
-
-- **`III.` Lambda@Edge proxy handler**<a id="III-lambda-edge-proxy"></a>
-
-  The proxy handler analyzes the incoming requests and determines from which source a request should be served.
-  Static generated sites are fetched from the S3 bucket ([`II`](#II-s3-static-content)) and dynamic content is served from the Next.js Lambdas ([`V`](#V-next-js-lambdas)).
-
-- **`IV.` API Gateway**<a id="IV-api-gateway"></a>
-
-  The [HTTP API Gateway](https://aws.amazon.com/api-gateway/) distributes the incoming traffic on the existing Next.js Lambdas ([`V`](#V-next-js-lambdas)). It uses a cost efficient HTTP API for this.
-
-- **`V.` Shared Next.js Lambda functions**<a id="V-next-js-lambdas"></a>
-
-  These are the Next.js Lambdas which are doing the server-side rendering. They are composed, so a single lambda can serve multiple SSR-pages.
-
-- **Terraform Next.js Image Optimization**
-
-  The [image optimization](https://nextjs.org/docs/basic-features/image-optimization) is triggered by routes with the prefix `/_next/image/*`.
-  It is a serverless task provided by our [Terraform Next.js Image Optimization module for AWS](https://registry.terraform.io/modules/milliHQ/next-js-image-optimization/aws).
-
-- **Static Content Deployment**
-
-  This flow is only triggered when a Terraform apply runs to update the application.
-  It consists of a dedicated S3 bucket and a single Lambda function.
-  The bucket is only used by Terraform to upload the static content from the `tf-next build` command as a zip archive.
-  The upload then triggers the Lambda which unzips the content and deploys it to the static content S3 bucket ([`II`](#II-s3-static-content)).
-  After the successful deployment a CloudFront [invalidation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html) is created to propagate the route changes to every edge location.
-
-- **Proxy Config Distribution**
-
-  This is a second CloudFront distribution that serves a special JSON file that the Proxy ([`III`](#III-lambda-edge-proxy)) fetches as configuration (Contains information about routes).
-
-- **CloudFront Invalidation Queue**
-
-  When updating the app, not the whole CloudFront cache gets invalidated to keep response times low for your customers.
-  Instead the paths that should be invalidated are calculated from the updated content.
-  Depending on the size of the application the paths to invalidate could exceed the [CloudFront limits](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Invalidation.html#invalidation-specifying-objects%23InvalidationLimits) for one invalidation.
-  Therefore invalidations get splitted into chunks and then queued in SQS from where they are sequentially sent to CloudFront.
-
 ## Usage
 
-### Add to your Next.js project
+### Prerequisites
 
-First add our custom builder to your Next.js project. It uses the same builder under the hood as Vercel does:
+You should have the following tools installed:
 
-```sh
-npm i -D tf-next     # npm or
-yarn add -D tf-next  # yarn
-```
+- [Terraform](https://www.terraform.io/downloads)
+- [Node.js](https://nodejs.org)
+- [Bash](https://www.gnu.org/software/bash/) & [curl](https://curl.se/) (Should be available by default on many Linux based images or macOS)
 
-Then you should add a new script to your package.json (Make sure it is not named `build`):
-
-```diff
-{
-  ...
-  "scripts": {
-    "dev": "next",
-    "build": "next build",
-    "start": "next start",
-+   "tf-next": "tf-next build"
-  }
-  ...
-}
-```
-
-`tf-next build` runs in a temporary directory and puts its output in a `.next-tf` directory in the same directory where your `package.json` is.
-The output in the `.next-tf` directory is all what the Terraform module needs in the next step.
+> Additionally we assume here that you already have a public [Route53 Hosted Zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html) associated with your AWS account.
+>
+> This is currently a requirement in the preview phase of atomic deployments to enable preview deployments, where each deployment gets a unique subdomain assigned.
+> This will change once atomic deployments become generally available.
 
 ### Setup the Next.js Terraform module
 
-> **Note:** Make sure that the `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` environment variables are set when running the Terraform commands. [How to create AWS Access Keys?](https://docs.aws.amazon.com/powershell/latest/userguide/pstools-appendix-sign-up.html)
+The Terraform module contains the system that is later used for creating new deployments and managing the aliases (domains) for your Next.js app(s).
+Creating the Terraform stack is only required on initial setup and creates the global resources (CloudFront distributions, DynamoDB tables, S3 storage) that is used for handling incoming requests to your website.
 
-Adding Terraform to your existing Next.js installation is easy.
-Simply create a new `main.tf` file in the root of your Next.js project and add the following content:
+Create a new `main.tf` file in an empty folder (or add it to your existing Terraform stack) and add the following content:
 
 ```tf
-# main.tf
-
 terraform {
   required_providers {
     aws = {
@@ -123,7 +60,7 @@ terraform {
 }
 
 # Main region where the resources should be created in
-# (Should be close to the location of your viewers)
+# Should be close to the location of your viewers
 provider "aws" {
   region = "us-west-2"
 }
@@ -135,56 +72,191 @@ provider "aws" {
   region = "us-east-1"
 }
 
+###########
+# Variables
+###########
+
+variable "custom_domain" {
+  description = "Your custom domain"
+  type        = string
+  default     = "example.com"
+}
+
+# Assuming that the ZONE of your domain is already available in your AWS account (Route 53)
+# https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html
+variable "custom_domain_zone_name" {
+  description = "The Route53 zone name of the custom domain"
+  type        = string
+  default     = "example.com."
+}
+
+########
+# Locals
+########
+
+locals {
+  # A wildcard domain(ex: *.example.com) has to be added when using atomic deployments:
+  aliases = [var.custom_domain, "*.${var.custom_domain}"]
+}
+
+#######################
+# Route53 Domain record
+#######################
+
+# Get the hosted zone for the custom domain
+data "aws_route53_zone" "custom_domain_zone" {
+  name = var.custom_domain_zone_name
+}
+
+# Create a new record in Route 53 for the domain
+resource "aws_route53_record" "cloudfront_alias_domain" {
+  for_each = toset(local.aliases)
+
+  zone_id = data.aws_route53_zone.custom_domain_zone.zone_id
+  name    = each.key
+  type    = "A"
+
+  alias {
+    name                   = module.tf_next.cloudfront_domain_name
+    zone_id                = module.tf_next.cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+##########
+# SSL Cert
+##########
+
+# Creates a free SSL certificate for CloudFront distribution
+# For more options (e.g. multiple domains) see:
+# https://registry.terraform.io/modules/terraform-aws-modules/acm/aws/
+module "cloudfront_cert" {
+  source  = "terraform-aws-modules/acm/aws"
+  version = "~> 3.0"
+
+  domain_name               = var.custom_domain
+  zone_id                   = data.aws_route53_zone.custom_domain_zone.zone_id
+  subject_alternative_names = slice(local.aliases, 1, length(local.aliases))
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "CloudFront ${var.custom_domain}"
+  }
+
+  # CloudFront works only with certs stored in us-east-1
+  providers = {
+    aws = aws.global_region
+  }
+}
+
+##########################
+# Terraform Next.js Module
+##########################
+
 module "tf_next" {
-  source = "milliHQ/next-js/aws"
+  source  = "milliHQ/next-js/aws"
+  version = "1.0.0-canary.2"
+
+  cloudfront_aliases             = local.aliases
+  cloudfront_acm_certificate_arn = module.cloudfront_cert.acm_certificate_arn
+
+  deployment_name = "atomic-deployments"
+
+  enable_multiple_deployments      = true
+  multiple_deployments_base_domain = "*.${var.custom_domain}"
 
   providers = {
     aws.global_region = aws.global_region
   }
+
+  # Uncomment when using in the cloned monorepo for tf-next development
+  # source = "../.."
+  debug_use_local_packages = true
 }
 
-output "cloudfront_domain_name" {
-  value = module.tf_next.cloudfront_domain_name
+#########
+# Outputs
+#########
+
+output "api_endpoint" {
+  value = module.tf_next.api_endpoint
+}
+
+output "api_endpoint_access_policy_arn" {
+  value = module.tf_next.api_endpoint_access_policy_arn
 }
 ```
 
-To deploy your app to AWS simply run the following commands:
+To create the resources in your AWS account, run the following commands:
 
 ```sh
-npm run tf-next   # Build the Next.js app
-yarn tf-next      # Same command when using yarn
-
-# Expose your AWS Access Keys to the current terminal session
-# Only needed when running Terraform commands
-export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-
 terraform init    # Only needed on the first time running Terraform
 
 terraform plan    # (Optional) See what resources Terraform will create
-terraform apply   # Deploy the Next.js app to your AWS account
+terraform apply   # Create the resources in your AWS account
 
 > Apply complete!
 >
 > Outputs:
 >
-> cloudfront_domain_name = "xxxxxxxxxxxxxx.cloudfront.net"
+> api_endpoint = "https://<api-id>.execute-api.us-west-2.amazonaws.com"
+> api_endpoint_access_policy_arn = "arn:aws:iam::123456789012:policy/access-api"
 ```
+
+The `api_endpoint` is later used by the CLI tool to create new deployments.
+
+With the `api_endpoint_access_policy_arn` AWS policy you can create new users (and assign that policy) that only can use the CLI tool `tf-next` but cannot access other resources inside of your AWS account.
 
 After the successful deployment your Next.js app is publicly available at the CloudFront subdomain from the `cloudfront_domain_name` output.
 
-### Deployment with Terraform Cloud
+### Deploy a Next.js App
 
-When using this module together with [Terraform Cloud](https://www.terraform.io/) make sure that you also upload the build output from the [`tf-next`](https://www.npmjs.com/package/tf-next) task.
-You can create a `.terraformignore` in the root of your project and add the following line:
+For building and deploying Next.js apps to the system we created a CLI tool called [`tf-next`](https://www.npmjs.com/package/tf-next).
 
-```diff
-# .terraformignore
-+  !**/.next-tf/**
+It is a npm package that can be installed with:
+
+```sh
+npm i -g tf-next
 ```
+
+Next, we need to build the Next.js so that it can run in a serverless environment (with AWS Lambda).
+This is archived by running `tf-next build` in the same directory where your Next.js app is located (Right where your `package.json` or `next.config.js` files are located):
+
+```
+tf-next build
+
+> All serverless functions created in: 20.791ms
+> 1752924 total bytes
+> Build successful!
+```
+
+Now deploy the Next.js app by running `tf-next deploy` from the same directory.
+The deploy command communicates through a secured (and authenticated with your AWS credentials) API with the Terraform module.
+
+To tell the command where to deploy the app, an additional `--endpoint` flag must be provided, which should use the value from the `api_endpoint` output from the `terraform apply` step:
+
+```
+tf-next deploy --endpoint https://<api-id>.execute-api.us-west-2.amazonaws.com
+
+> Available at: https://3edade7a2bf7bb0343699af6b851bbfa.example.com/
+```
+
+The preview deployment can now be accessed by the displayed url.  
+To make the deployment available from a more readable url, you can use the `tf-next alias` subcommand:
+
+```
+tf-next alias set my-app.example.com 3edade7a2bf7bb0343699af6b851bbfa.example.com
+
+> Available at: https://my-app.example.com/
+```
+
+For a full list of available commands that can be used with `tf-next`, check the [command reference](https://github.com/milliHQ/terraform-aws-next-js/blob/main/packages/tf-next/README.md).
 
 ## Examples
 
+- [Atomic Deployments](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/atomic-deployments)  
+  Each deployment gets a unique url from where it can be previewed.
 - [Complete](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete)  
   Complete example with SSR, API and static pages.
 - [Static](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static)  
