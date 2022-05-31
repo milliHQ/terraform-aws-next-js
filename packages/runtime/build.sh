@@ -15,6 +15,6 @@ tsc
 # mv dist/dev/index.js dist/dev-server.js
 # rm -rf dist/dev
 
-# ncc build src/index.ts -e @vercel/build-utils -e @now/build-utils -o dist/main
-# mv dist/main/index.js dist/index.js
-# rm -rf dist/main
+ncc build src/index.ts --minify -e @vercel/build-utils -e @now/build-utils -o dist/main
+mv dist/main/index.js dist/index.js
+rm -rf dist/main

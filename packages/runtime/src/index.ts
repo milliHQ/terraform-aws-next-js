@@ -1,15 +1,27 @@
 import {
   BuildOptions,
   Config,
+  createLambda,
+  debug,
+  download,
+  execCommand,
   FileBlob,
   FileFsRef,
   Files,
+  getLambdaOptionsFromFunction,
+  getNodeBinPath,
+  getNodeVersion,
+  getScriptName,
+  getSpawnOptions,
+  glob,
   Meta,
   Lambda,
   NowBuildError,
   PackageJson,
   PrepareCacheOptions,
   Prerender,
+  runNpmInstall,
+  runPackageJsonScript,
 } from '@vercel/build-utils';
 import { Handler, Route, Source } from '@vercel/routing-utils';
 import {
@@ -29,7 +41,6 @@ import path from 'path';
 import resolveFrom from 'resolve-from';
 import semver from 'semver';
 import url from 'url';
-import buildUtils from './build-utils';
 import createServerlessConfig from './create-serverless-config';
 import nextLegacyVersions from './legacy-versions';
 import {
@@ -58,20 +69,6 @@ import {
   syncEnvVars,
   validateEntrypoint,
 } from './utils';
-const {
-  createLambda,
-  debug,
-  download,
-  getLambdaOptionsFromFunction,
-  getNodeVersion,
-  getSpawnOptions,
-  getScriptName,
-  glob,
-  runNpmInstall,
-  runPackageJsonScript,
-  execCommand,
-  getNodeBinPath,
-} = buildUtils;
 
 interface BuildParamsMeta {
   isDev: boolean | undefined;
