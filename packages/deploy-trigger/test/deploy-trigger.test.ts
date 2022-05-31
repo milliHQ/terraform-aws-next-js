@@ -102,7 +102,7 @@ describe('deploy-trigger', () => {
         expect(Contents).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
-              Key: `${deploymentId}/${fileKey}`,
+              Key: `${deploymentId}/static/${fileKey}`,
             }),
           ])
         );
@@ -112,7 +112,7 @@ describe('deploy-trigger', () => {
       const localeStaticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${deploymentId}/${localeStaticRouteKey}`,
+          Key: `${deploymentId}/static/${localeStaticRouteKey}`,
         })
         .promise();
 
@@ -127,7 +127,7 @@ describe('deploy-trigger', () => {
       const staticRouteObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${deploymentId}/${staticRouteKey}`,
+          Key: `${deploymentId}/static/${staticRouteKey}`,
         })
         .promise();
 
@@ -139,7 +139,7 @@ describe('deploy-trigger', () => {
       const staticAssetObject = await s3
         .getObject({
           Bucket: targetBucket.bucketName,
-          Key: `${deploymentId}/${staticAssetKey}`,
+          Key: `${deploymentId}/static/${staticAssetKey}`,
         })
         .promise();
       expect(staticAssetObject.ContentType).toBe(
