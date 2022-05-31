@@ -40,12 +40,18 @@ jobs:
         with:
           name: dist
           path: |
-            packages/runtime/dist/
-            packages/tf-next/dist/
-            packages/proxy/dist/
-            packages/proxy/dist.zip
+            packages/api/dist/
+            packages/api/dist.zip
+            packages/deploy-controller/dist/
+            packages/deploy-controller/dist.zip
             packages/deploy-trigger/dist/
             packages/deploy-trigger/dist.zip
+            packages/proxy/dist/
+            packages/proxy/dist.zip
+            packages/proxy-config/dist/
+            packages/proxy-config/dist.zip
+            packages/runtime/dist/
+            packages/tf-next/dist/
           if-no-files-found: error
 
   test-integration:
