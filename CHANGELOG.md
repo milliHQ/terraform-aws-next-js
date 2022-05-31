@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.2] - 2022-05-31
+
 - Fixes a regression from the `0.13.1` release, where the `@vercel/nft` was not available ([#322](https://github.com/milliHQ/terraform-aws-next-js/pull/322))
 
 ## [0.13.1] - 2022-05-30
