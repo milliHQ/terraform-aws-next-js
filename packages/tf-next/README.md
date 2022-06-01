@@ -10,7 +10,7 @@ This covers only the CLI part of the tool, for a full step-by-step tutorial plea
 1. Install the CLI tool
 
    ```plain
-   npm i -g tf-next
+   npm i -g tf-next@canary
    ```
 
 2. Build the project
@@ -24,9 +24,9 @@ This covers only the CLI part of the tool, for a full step-by-step tutorial plea
    ```plain
    tf-next deploy --endpoint https://<api-id>.execute-api.<region>.amazonaws.com
 
-   > ✅ Upload complete.
-   > ✅ Deployment complete.
-   > Available at: https://1e02d46975338b63651b8587ea6a8475.example.com
+   > success Deployment package uploaded
+   > success Deployment ready
+   > Available at: https://1e02d46975338b63651b8587ea6a8475.example.com/
    ```
 
 ## Commands

@@ -1,52 +1,15 @@
 import { resolve } from 'path';
 import { Readable } from 'stream';
 
+import chalk from 'chalk';
+import { writeSync as copy } from 'clipboardy';
 import { FormDataEncoder } from 'form-data-encoder';
 import { FormData } from 'formdata-node';
 import { fileFromPath } from 'formdata-node/file-from-path';
 import nodeFetch from 'node-fetch';
 
-import { LogLevel } from '../../types';
-import { ApiService, Client, withClient } from '../../client';
-
-function delay(t: number) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, t);
-  });
-}
-
-function pollUntilDone(
-  deploymentId: string,
-  apiService: ApiService,
-  interval: number,
-  timeout: number
-) {
-  let start = Date.now();
-  function run(): Promise<boolean | string> {
-    return apiService.getDeploymentById(deploymentId).then((dataResult) => {
-      if (!dataResult) {
-        throw new Error('Deployment failed.');
-      }
-
-      if (dataResult.status === 'FINISHED') {
-        if (dataResult.deploymentAlias) {
-          return dataResult.deploymentAlias;
-        }
-        return true;
-      } else if (dataResult.status === 'CREATE_FAILED') {
-        return false;
-      } else {
-        if (timeout !== 0 && Date.now() - start > timeout) {
-          throw new Error('timeout error on pollUntilDone');
-        } else {
-          // run again with a short delay
-          return delay(interval).then(run);
-        }
-      }
-    });
-  }
-  return run();
-}
+import { Client, withClient } from '../../client';
+import { GlobalOptions } from '../../types';
 
 /* -----------------------------------------------------------------------------
  * deployCommand
@@ -61,13 +24,20 @@ type DeployCommandOptions = {
    * Path to the deployment package that should be uploaded.
    */
   deploymentPackagePath?: string;
+  /**
+   * Wether to copy the URL of the finished deployment to the clipboard.
+   */
+  noClipboard: boolean;
+  /**
+   * The working directory where the command should run.
+   */
   cwd: string;
-  logLevel: LogLevel;
 };
 
 async function deployCommand({
   client,
   deploymentPackagePath = '.next-tf/deployment.zip',
+  noClipboard,
   cwd,
 }: DeployCommandOptions) {
   const { apiService, output } = client;
@@ -108,6 +78,7 @@ async function deployCommand({
     }
 
     output.stopSpinner();
+    output.success('Deployment package uploaded');
 
     // Poll until the CloudFormation stack creation has finished
   } catch (error) {
@@ -117,18 +88,34 @@ async function deployCommand({
   }
 
   // Deployment
-  const deploymentSpinner = output.spinner('Wait for deployment to finish');
+  output.spinner('Waiting for deployment');
   try {
-    const deploymentCreationResult = await pollUntilDone(
+    const deploymentCreationResult = await apiService.pollForDeploymentStatus(
       deploymentId,
-      apiService,
-      5000,
-      2 * 60000
+      'FINISHED'
     );
-
     output.stopSpinner();
-    if (typeof deploymentCreationResult === 'string') {
-      console.log('Available at: ', `https://${deploymentCreationResult}`);
+    output.success('Deployment ready');
+
+    // If we have a preview deployment, display the URL
+    if (deploymentCreationResult.deploymentAlias) {
+      const previewUrl = `https://${deploymentCreationResult.deploymentAlias}`;
+
+      let urlCopiedToClipboard = false;
+      try {
+        if (!noClipboard) {
+          copy(previewUrl);
+          urlCopiedToClipboard = true;
+        }
+      } catch (_ignoredError) {}
+
+      output.log(
+        `Available at: ${previewUrl}${
+          urlCopiedToClipboard ? chalk.gray` (copied to clipboard)` : ''
+        } `
+      );
+    } else {
+      output.log(`Deployment Id: ${deploymentCreationResult.id}`);
     }
   } catch (error) {
     output.stopSpinner();
@@ -140,15 +127,25 @@ async function deployCommand({
  * createDeployCommand
  * ---------------------------------------------------------------------------*/
 
-const createDeployCommand = withClient(
+type DeployCommandArguments = {
+  noClipboard?: boolean;
+} & GlobalOptions;
+
+const createDeployCommand = withClient<DeployCommandArguments>(
   'deploy',
   'Deploy a project',
-  () => {},
-  ({ client, logLevel, commandCwd }) => {
+  (yargs) => {
+    yargs.option('no-clipboard', {
+      type: 'boolean',
+      description:
+        'Do not copy the url to clipboard after a successful deployment',
+    });
+  },
+  ({ client, commandCwd, noClipboard }) => {
     deployCommand({
       client,
-      logLevel,
       cwd: commandCwd,
+      noClipboard: !!noClipboard,
     });
   }
 );

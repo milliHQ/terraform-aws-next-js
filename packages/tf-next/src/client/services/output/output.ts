@@ -18,8 +18,21 @@ class OutputService {
     this._spinner = null;
   }
 
+  print(message: string) {
+    this.stopSpinner();
+    console.log(message);
+  }
+
   log = (message: string, color = chalk.grey) => {
-    console.log(color(message));
+    this.print(`${color('>')} ${message}`);
+  };
+
+  error = (message: string) => {
+    this.print(`${chalk.red('Error:')} ${message}`);
+  };
+
+  success = (message: string) => {
+    this.print(`${chalk.green('success')} ${message}`);
   };
 
   spinner = (message: string, delay = 300): void => {

@@ -217,7 +217,7 @@ For building and deploying Next.js apps to the system we created a CLI tool call
 It is a npm package that can be installed with:
 
 ```sh
-npm i -g tf-next
+npm i -g tf-next@canary
 ```
 
 Next, we need to build the Next.js so that it can run in a serverless environment (with AWS Lambda).

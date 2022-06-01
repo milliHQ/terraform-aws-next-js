@@ -2,10 +2,11 @@ import { URL, URLSearchParams } from 'url';
 
 import { Sha256 } from '@aws-crypto/sha256-js';
 import { SignatureV4 } from '@aws-sdk/signature-v4';
-import { HeaderBag, MemoizedProvider } from '@aws-sdk/types';
+import { HeaderBag, MemoizedProvider, QueryParameterBag } from '@aws-sdk/types';
 import { paths } from '@millihq/terraform-next-api/schema';
 import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
+import pWaitFor from 'p-wait-for';
 
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
@@ -21,6 +22,9 @@ type ListDeploymentsSuccessResponse =
   paths['/deployments']['get']['responses']['200']['content']['application/json'];
 type GetDeploymentByIdSuccessResponse =
   paths['/deployments/{deploymentId}']['get']['responses']['200']['content']['application/json'];
+
+const POLLING_DEFAULT_INTERVAL_MS = 5_000;
+const POLLING_DEFAULT_TIMEOUT_MS = 5 * 60_000;
 
 /**
  * API Gateway endpoints use a regional API endpoint which includes the AWS
@@ -52,6 +56,16 @@ function convertFetchHeaders(
   }
 
   return result;
+}
+
+function convertURLSearchParamsToQueryBag(
+  searchParams: URLSearchParams
+): QueryParameterBag {
+  let queryBag: QueryParameterBag = {};
+  for (const [key, value] of searchParams.entries()) {
+    queryBag[key] = value;
+  }
+  return queryBag;
 }
 
 /* -----------------------------------------------------------------------------
@@ -114,6 +128,7 @@ class ApiService {
         accept: 'application/json',
       }),
       method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
+      query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
     });
     return nodeFetch(parsedUrl.href, {
       ...fetchArgs[1],
@@ -198,6 +213,63 @@ class ApiService {
 
     return null;
   }
+
+  /**
+   * Polls the getDeploymentById endpoint until the status meets the desired
+   * status.
+   *
+   * @param deploymentId - Id of the deployment that should be polled.
+   * @param status - Status to wait for until polling finishes.
+   * @param options - Polling options.
+   */
+  pollForDeploymentStatus = async (
+    deploymentId: string,
+    status: GetDeploymentByIdSuccessResponse['status'],
+    options: {
+      interval?: number;
+      timeout?: number;
+    } = {}
+  ): Promise<GetDeploymentByIdSuccessResponse> => {
+    // Status where we should stop since something bad has happened
+    const failureStatus: GetDeploymentByIdSuccessResponse['status'][] = [
+      'CREATE_FAILED',
+      'DESTROY_FAILED',
+    ];
+    const {
+      interval = POLLING_DEFAULT_INTERVAL_MS,
+      timeout = POLLING_DEFAULT_TIMEOUT_MS,
+    } = options;
+
+    let result: GetDeploymentByIdSuccessResponse | null = null;
+    await pWaitFor(
+      async () => {
+        const response = await this.getDeploymentById(deploymentId);
+
+        if (response) {
+          if (failureStatus.indexOf(response.status) !== -1) {
+            throw new Error('Deployment failed.');
+          }
+
+          if (response.status === status) {
+            result = response;
+            return true;
+          }
+        }
+        return false;
+      },
+      {
+        interval,
+        timeout,
+        leadingCheck: false,
+      }
+    );
+
+    if (!result) {
+      throw new Error('Could not get deployment status.');
+    }
+
+    return result;
+  };
 
   async deleteDeploymentById(deploymentId: string) {
     const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`, {

@@ -5,7 +5,7 @@ import { createAliasSetCommand } from './alias-set';
 
 function createAliasCommand(yargs: GlobalYargs) {
   yargs.command(
-    'alias [action]',
+    'alias [command]',
     'Manage aliases',
     (yargs: GlobalYargs<any>) => {
       createAliasListCommand(yargs);
