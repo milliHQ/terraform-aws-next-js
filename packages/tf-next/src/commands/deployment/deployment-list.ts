@@ -5,6 +5,17 @@ import table from 'text-table';
 import { Client, withClient } from '../../client';
 import { strlen } from '../../utils/strlen';
 
+function renderStatus(status: string) {
+  switch (status) {
+    case 'FINISHED':
+      return chalk.green`ready`;
+    case 'INITIALIZED':
+      return chalk.gray`init`;
+  }
+
+  return status;
+}
+
 /* -----------------------------------------------------------------------------
  * deploymentListCommand
  * ---------------------------------------------------------------------------*/
@@ -34,12 +45,12 @@ async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
     table(
       [
         // Header
-        ['id', 'age', 'status'].map((header) => chalk.dim(header)),
+        ['age', 'deployment-id', 'status'].map((header) => chalk.dim(header)),
         // Data
         ...deployments.map((deployment) => [
-          deployment.id,
           ms(todayMillis - new Date(deployment.createDate).getTime()),
-          deployment.status,
+          deployment.id,
+          renderStatus(deployment.status),
         ]),
       ],
       {

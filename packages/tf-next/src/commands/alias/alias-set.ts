@@ -45,7 +45,7 @@ async function aliasSetCommand({
   output.stopSpinner();
 
   if (alias) {
-    output.log(`Alias created: ${alias?.id}`);
+    output.success(`Alias created: ${alias.id}`);
   } else {
     output.log('Could not create alias');
   }
@@ -73,7 +73,7 @@ const createAliasSetCommand = withClient<AliasSetCommandArguments>(
         type: 'string',
       })
       .positional('target', {
-        describe: 'deployment id or other alias',
+        describe: 'deployment-id or other alias',
         type: 'string',
       });
     yargs.options({

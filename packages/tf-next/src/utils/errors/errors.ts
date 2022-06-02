@@ -9,3 +9,13 @@ export class MissingApiEndpoint extends CliError<'MISSING_API_ENDPOINT'> {
     });
   }
 }
+
+export class PermissionDenied extends CliError<'PERMISSION_ERROR'> {
+  constructor() {
+    super({
+      code: 'PERMISSION_ERROR',
+      message:
+        'Authentication failed. Make sure that the AWS profile is set correctly.',
+    });
+  }
+}

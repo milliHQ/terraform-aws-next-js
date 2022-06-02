@@ -8,6 +8,8 @@ import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
 import pWaitFor from 'p-wait-for';
 
+import { createResponseError } from '../../../utils/errors/response-error';
+
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
   paths['/aliases']['post']['requestBody']['content']['application/json'];
@@ -100,7 +102,9 @@ class ApiService {
    * @param fetchArgs
    * @returns
    */
-  private async fetchAWSSigV4(...fetchArgs: Parameters<NodeFetch>) {
+  private async fetchAWSSigV4<T = {}>(
+    ...fetchArgs: Parameters<NodeFetch>
+  ): Promise<T> {
     const signature = new SignatureV4({
       region: this.awsRegion,
       service: 'execute-api',
@@ -130,37 +134,43 @@ class ApiService {
       method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
       query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
     });
-    return nodeFetch(parsedUrl.href, {
+    const response = await nodeFetch(parsedUrl.href, {
       ...fetchArgs[1],
       headers: signedRequest.headers,
     });
+
+    if (!response.ok) {
+      throw createResponseError(response);
+    }
+
+    // OK - parse the response
+    if (response.headers.get('content-type') === 'application/json') {
+      try {
+        return (await response.json()) as Promise<T>;
+      } catch (_ignoredError) {
+        return {} as T;
+      }
+    }
+
+    // Response from API is not OK, should never happen
+    throw new Error('Invalid response from API');
   }
 
   // Aliases
-  async createAlias(requestBody: CreateAliasRequestBody) {
-    const response = await this.fetchAWSSigV4('/aliases', {
+  createAlias(requestBody: CreateAliasRequestBody) {
+    return this.fetchAWSSigV4<CreateAliasSuccessResponse>('/aliases', {
       method: 'POST',
       body: JSON.stringify(requestBody),
       headers: {
         'Content-Type': 'application/json',
       },
     });
-
-    if (response.status === 201) {
-      return await (response.json() as Promise<CreateAliasSuccessResponse>);
-    }
   }
 
-  async deleteAlias(alias: string) {
-    const response = await this.fetchAWSSigV4(`/aliases/${alias}`, {
+  deleteAlias(alias: string) {
+    return this.fetchAWSSigV4(`/aliases/${alias}`, {
       method: 'DELETE',
     });
-
-    if (response.status === 204) {
-      return true;
-    }
-
-    return null;
   }
 
   async listAliases(deploymentId: string) {
@@ -168,50 +178,31 @@ class ApiService {
       deploymentId,
     };
     const query = new URLSearchParams(params).toString();
-    const response = await this.fetchAWSSigV4(`/aliases?${query}`);
+    const { items } = await this.fetchAWSSigV4<ListAliasSuccessResponse>(
+      `/aliases?${query}`
+    );
 
-    if (response.status === 200) {
-      const { items } =
-        await (response.json() as Promise<ListAliasSuccessResponse>);
-      return items;
-    }
-
-    return null;
+    return items;
   }
 
   // Deployments
-  async createDeployment() {
-    const response = await this.fetchAWSSigV4('/deployments', {
+  createDeployment() {
+    return this.fetchAWSSigV4<CreateDeploymentSuccessResponse>('/deployments', {
       method: 'POST',
     });
-
-    if (response.status === 201) {
-      return response.json() as Promise<CreateDeploymentSuccessResponse>;
-    }
-
-    return null;
   }
 
   async listDeployments() {
-    const response = await this.fetchAWSSigV4('/deployments');
-
-    if (response.status === 200) {
-      const { items } =
-        await (response.json() as Promise<ListDeploymentsSuccessResponse>);
-      return items;
-    }
-
-    return null;
+    const { items } = await this.fetchAWSSigV4<ListDeploymentsSuccessResponse>(
+      '/deployments'
+    );
+    return items;
   }
 
-  async getDeploymentById(deploymentId: string) {
-    const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`);
-
-    if (response.status === 200) {
-      return response.json() as Promise<GetDeploymentByIdSuccessResponse>;
-    }
-
-    return null;
+  getDeploymentById(deploymentId: string) {
+    return this.fetchAWSSigV4<GetDeploymentByIdSuccessResponse>(
+      `/deployments/${deploymentId}`
+    );
   }
 
   /**
@@ -271,16 +262,10 @@ class ApiService {
     return result;
   };
 
-  async deleteDeploymentById(deploymentId: string) {
-    const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
+  deleteDeploymentById(deploymentId: string) {
+    return this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
       method: 'DELETE',
     });
-
-    if (response.status === 204) {
-      return true;
-    }
-
-    return null;
   }
 }
 
