@@ -39,10 +39,6 @@ function createMainCommand(globalYargs: Argv) {
   createDeployCommand(yargs);
   createDeploymentCommand(yargs);
 
-  yargs.fail(() => {
-    console.log('here');
-  });
-
   return yargs;
 }
 

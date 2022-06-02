@@ -53,19 +53,20 @@ type CreateClientMiddlewareOptions = {
 
 const createClientMiddleware =
   (options: CreateClientMiddlewareOptions): MiddlewareFunction<any> =>
-  (argv) => {
-    let apiService: ApiService | undefined;
+  // Ensure that this function is async otherwise errors thrown in the
+  // middleware are not caught!
+  // @see {@link https://github.com/yargs/yargs/issues/1797}
+  async (argv) => {
+    // Initialize client first, so that we can use it in Error middleware
+    argv.client = new Client({
+      logLevel: argv.logLevel,
+    });
 
     if (options.withApiService) {
       // Get AWS profile
       const awsCredentialProvider = awsProfileMiddleware(argv);
-      apiService = apiMiddleware(argv, awsCredentialProvider);
+      argv.client.apiService = apiMiddleware(argv, awsCredentialProvider);
     }
-
-    argv.client = new Client({
-      logLevel: argv.logLevel,
-      apiService,
-    });
   };
 
 /* -----------------------------------------------------------------------------
