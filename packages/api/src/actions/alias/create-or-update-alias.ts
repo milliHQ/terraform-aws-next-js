@@ -171,6 +171,7 @@ async function createOrUpdateAlias(
   return {
     id: generateAliasId(createdAlias),
     deployment: createdAlias.DeploymentId,
+    createDate: createdAlias.CreateDate,
   };
 }
 

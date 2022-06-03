@@ -11,6 +11,13 @@ function renderStatus(status: string) {
       return chalk.green`ready`;
     case 'INITIALIZED':
       return chalk.gray`init`;
+    case 'CREATE_FAILED':
+    case 'DESTROY_FAILED':
+      return chalk.red`error`;
+    case 'CREATE_IN_PROGRESS':
+      return chalk.cyan`creating`;
+    case 'DESTROY_IN_PROGRESS':
+      return chalk.cyan`destroying`;
   }
 
   return status;
@@ -36,16 +43,12 @@ async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
   const deployments = await apiService.listDeployments();
   output.stopSpinner();
 
-  if (!deployments) {
-    return output.error('Could not fetch deployments');
-  }
-
   const todayMillis = Date.now();
   console.log(
     table(
       [
         // Header
-        ['age', 'deployment-id', 'status'].map((header) => chalk.dim(header)),
+        ['age ▼', 'deployment-id', 'status'].map((header) => chalk.dim(header)),
         // Data
         ...deployments.map((deployment) => [
           ms(todayMillis - new Date(deployment.createDate).getTime()),
@@ -54,10 +57,10 @@ async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
         ]),
       ],
       {
-        hsep: ' '.repeat(4),
+        hsep: ' '.repeat(3),
         stringLength: strlen,
       }
-    )
+    ).replace(/^/gm, '  ') + '\n'
   );
 }
 

@@ -133,6 +133,7 @@ class ApiService {
       }),
       method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
       query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
+      body: fetchArgs[1]?.body,
     });
     const response = await nodeFetch(parsedUrl.href, {
       ...fetchArgs[1],
@@ -140,7 +141,7 @@ class ApiService {
     });
 
     if (!response.ok) {
-      throw createResponseError(response);
+      throw await createResponseError(response);
     }
 
     // OK - parse the response

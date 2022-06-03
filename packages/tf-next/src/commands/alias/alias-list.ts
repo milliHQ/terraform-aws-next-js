@@ -1,5 +1,11 @@
+import chalk from 'chalk';
+import ms from 'ms';
+import table from 'text-table';
+
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
+import { DeploymentNotExists, ResponseError } from '../../utils/errors';
+import { strlen } from '../../utils/strlen';
 
 /* -----------------------------------------------------------------------------
  * aliasListCommand
@@ -17,16 +23,54 @@ type AliasListCommandOptions = {
 };
 
 /**
- * Prints the latest 25 deployments to the console.
+ * Prints the latest 25 aliases for a deployment to the console.
  */
 async function aliasListCommand({
   client,
   deploymentId,
 }: AliasListCommandOptions) {
-  const { apiService } = client;
+  const { apiService, output } = client;
 
-  const items = await apiService.listAliases(deploymentId);
-  console.table(items);
+  output.spinner(`Fetching aliases for deployment ${deploymentId}`);
+  try {
+    const aliases = await apiService.listAliases(deploymentId);
+    output.stopSpinner();
+
+    if (aliases.length === 0) {
+      output.log(
+        `No aliases linked to deployment ${deploymentId}\nCreate a new alias with the 'tf-next alias set' command.`
+      );
+      return;
+    }
+
+    output.log(`Linked aliases for deployment ${deploymentId}:\n`);
+
+    // Print table
+    const todayMillis = Date.now();
+    console.log(
+      table(
+        [
+          // Header
+          ['age ▼', 'alias'].map((header) => chalk.dim(header)),
+          // Data
+          ...aliases.map((alias) => [
+            ms(todayMillis - new Date(alias.createDate).getTime()),
+            `https://${alias.id}`,
+          ]),
+        ],
+        {
+          hsep: ' '.repeat(3),
+          stringLength: strlen,
+        }
+      ).replace(/^/gm, '  ') + '\n'
+    );
+  } catch (error: ResponseError | any) {
+    if (error.code === 'DEPLOYMENT_NOT_FOUND') {
+      throw new DeploymentNotExists(deploymentId);
+    }
+
+    throw error;
+  }
 }
 
 /* -----------------------------------------------------------------------------
@@ -39,10 +83,10 @@ type AliasListCommandArguments = {
 
 const createAliasListCommand = withClient<AliasListCommandArguments>(
   'ls <deployment-id>',
-  'List the aliases that are associated with a deployment',
+  'List aliases that are linked to a deployment',
   (yargs) => {
     return yargs.positional('deployment-id', {
-      describe: 'ID of the deployment.',
+      describe: 'ID of the deployment',
       type: 'string',
     });
   },

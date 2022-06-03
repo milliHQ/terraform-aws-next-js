@@ -1,23 +1,27 @@
 import { Response } from 'node-fetch';
 
-type ResponseError = {
+type ResponseErrorOptions = {
   status: number;
   code: string;
-  message: string;
+  message?: string;
+  serverMessage?: string;
 };
 
-async function createResponseError(res: Response): Promise<ResponseError> {
-  // AWS authentication Error
-  // The forbidden message does not follow the schema of error responses from
-  // API since the authorization is handled by API Gateway.
-  if (res.status === 403) {
-    return {
-      status: 403,
-      code: 'PERMISSION_ERROR',
-      message: '',
-    };
-  }
+class ResponseError extends Error {
+  status: number;
+  code: string;
+  serverMessage?: string;
 
+  constructor({ status, code, message, serverMessage }: ResponseErrorOptions) {
+    super(message);
+
+    this.status = status;
+    this.code = code;
+    this.serverMessage = serverMessage;
+  }
+}
+
+async function createResponseError(res: Response): Promise<ResponseError> {
   let errorBody: Record<string, any> = {};
 
   // Try to parse the error
@@ -33,12 +37,24 @@ async function createResponseError(res: Response): Promise<ResponseError> {
   const message =
     typeof errorBody.message === 'string' ? errorBody.message : '';
 
-  return {
+  // AWS authentication Error
+  // The forbidden message does not follow the schema of error responses from
+  // API since the authorization is handled by API Gateway.
+  if (res.status === 403) {
+    return new ResponseError({
+      status: 403,
+      code: 'PERMISSION_ERROR',
+      serverMessage: message,
+      message:
+        'Authentication failed. Make sure that the AWS profile is set correctly.',
+    });
+  }
+
+  return new ResponseError({
     status,
     code,
     message,
-  };
+  });
 }
 
-export type { ResponseError };
-export { createResponseError };
+export { createResponseError, ResponseError };

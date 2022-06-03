@@ -2,7 +2,7 @@ import globalYargs from 'yargs';
 
 import { Client } from './client';
 import { createMainCommand } from './commands/main';
-import { CliError } from './utils/errors';
+import { CliError, ResponseError } from './utils/errors';
 
 async function runCli() {
   let errorCaught = false;
@@ -25,6 +25,23 @@ async function runCli() {
           }
 
           const { output } = client;
+
+          output.error(error.message);
+          errorCaught = true;
+          process.exitCode = 1;
+        } else if (error instanceof ResponseError) {
+          // Unhandled error response from API
+          const client = argv.client as Client;
+
+          // Client should be initialized at this point
+          if (!client) {
+            throw new Error('Client was not initialized');
+          }
+
+          const { output } = client;
+          if (error.serverMessage) {
+            output.debug(`ServerMessage: ${error.serverMessage}`);
+          }
 
           output.error(error.message);
           errorCaught = true;

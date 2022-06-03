@@ -1,5 +1,6 @@
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
+import { DeploymentHasLinkedAliases, ResponseError } from '../../utils/errors';
 
 /* -----------------------------------------------------------------------------
  * deploymentRemoveCommand
@@ -26,13 +27,19 @@ async function deploymentRemoveCommand({
   const { apiService, output } = client;
 
   output.spinner(`Removing deployment ${deploymentId}`);
-  const success = await apiService.deleteDeploymentById(deploymentId);
-  output.stopSpinner();
+  try {
+    const response = await apiService.deleteDeploymentById(deploymentId);
+    output.stopSpinner();
 
-  if (success) {
-    output.log('Deployment successfully removed.');
-  } else {
-    output.log('Could not remove deployment.');
+    output.success('Deployment successfully removed.');
+  } catch (error: ResponseError | any) {
+    if (error.code === 'ALIASES_ASSOCIATED') {
+      throw new DeploymentHasLinkedAliases();
+    }
+
+    console.log(error)
+
+    throw error;
   }
 }
 

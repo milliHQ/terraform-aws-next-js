@@ -28,10 +28,6 @@ describe('DeleteDeployment', () => {
   beforeAll(async () => {
     api = createApi();
 
-    // Insert mocks
-    cloudFormationService = mockCloudFormationService();
-    api.app('cloudFormation', cloudFormationService);
-
     const s3Mock = await mockS3Service();
     api.app('s3', s3Mock[0]);
     s3CleanupCallback = s3Mock[1];
@@ -42,6 +38,12 @@ describe('DeleteDeployment', () => {
     dynamoDBCleanupCallback = dynamoDBMock[1];
   });
 
+  beforeEach(() => {
+    // Insert mocks
+    cloudFormationService = mockCloudFormationService();
+    api.app('cloudFormation', cloudFormationService);
+  });
+
   afterAll(async () => {
     await s3CleanupCallback();
     await dynamoDBCleanupCallback();
@@ -49,6 +51,72 @@ describe('DeleteDeployment', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('CloudFormation fail', async () => {
+    console.error = jest.fn();
+    const stackDeleteError = new Error('Throw from deleteStack');
+
+    /**
+     * Mock for the cloudFormationService that fails when
+     */
+    function mockFailedCloudFormationService(): CloudFormationServiceType {
+      return class CloudFormationServiceMock {
+        static deleteStack(_stackName: string) {
+          return Promise.reject(stackDeleteError);
+        }
+      };
+    }
+    api.app('cloudFormation', mockFailedCloudFormationService());
+
+    const deployment = await createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentDeletionFails',
+    });
+
+    // Status: INITIALIZED -> CREATE_IN-PROGRESS
+    await updateDeploymentStatusCreateInProgress({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+      prerenders: 'foo',
+      routes: 'bar',
+      cloudFormationStack:
+        'arn:aws:cloudformation:eu-central-1:123456789123:stack/tfn-d35de1a94815e0562689b89b6225cd85/319a93a0-c3df-11ec-9e1a-0a226e11de6a',
+    });
+
+    // Status: CREATE_IN-PROGRESS -> FINISHED
+    await updateDeploymentStatusFinished({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: {
+        PK: deployment.PK,
+        SK: deployment.SK,
+      },
+    });
+
+    const event = createAPIGatewayProxyEventV2({
+      uri: '/deployments/deploymentDeletionFails',
+      method: 'DELETE',
+    });
+    const response = (await api.run(
+      event as any,
+      {} as any
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(response).toMatchObject({
+      headers: { 'content-type': 'application/json' },
+      statusCode: 500,
+      isBase64Encoded: false,
+    });
+    expect(JSON.parse(response.body!)).toMatchObject({
+      status: 500,
+      code: 'INTERNAL_ERROR',
+    });
+    expect(console.error).toHaveBeenCalledWith(stackDeleteError);
   });
 
   test('Deployment without aliases', async () => {

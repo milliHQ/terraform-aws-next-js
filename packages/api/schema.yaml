@@ -46,9 +46,12 @@ components:
           type: string
         deployment:
           type: string
+        createDate:
+          type: string
       required:
         - id
         - deployment
+        - createDate
 
     DeploymentStatus:
       type: string
@@ -124,7 +127,7 @@ paths:
           required: true
           description: Only list aliases that are associated with the specified deployment.
         - in: query
-          name: startIndex
+          name: startAt
           schema:
             type: string
           description: Beginning index from where to get the aliases.
@@ -145,6 +148,8 @@ paths:
                 required:
                   - metadata
                   - items
+        '404':
+          $ref: '#/components/responses/NotFound'
         '400':
           $ref: '#/components/responses/InvalidParamsError'
 
