@@ -84,6 +84,8 @@ resource "aws_dynamodb_table" "deployments" {
     projection_type    = "INCLUDE"
     non_key_attributes = ["CreateDate", "DeploymentAlias", "DeploymentId", "Status"]
   }
+
+  tags = var.tags
 }
 
 ###################
