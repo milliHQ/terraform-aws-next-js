@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { Argv } from 'yargs';
 
 import {
@@ -10,6 +11,8 @@ import { createBuildCommand } from './build';
 import { createDeployCommand } from './deploy';
 import { createDeploymentCommand } from './deployment';
 
+const CLI_TITLE = 'milliVolt CLI';
+
 /**
  * Creates the `tf-next` command.
  * Composes all sub commands together.
@@ -17,9 +20,16 @@ import { createDeploymentCommand } from './deployment';
 function createMainCommand(globalYargs: Argv) {
   // Register global options and middleware
   globalYargs
+    .strict()
     .options(globalMiddlewareOptions)
     // @ts-ignore - Don't know how to fix this
-    .middleware(globalMiddleware);
+    .middleware(globalMiddleware)
+    .demandCommand()
+    // Show version on each command
+    .showVersion((message) =>
+      console.log(chalk.gray`${CLI_TITLE} ${message}\n`)
+    )
+    .hide('verbose');
 
   const yargs = globalYargs as Argv<any>;
 

@@ -1,5 +1,9 @@
+import chalk from 'chalk';
+
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
+import { AliasOverrideNotAllowed, ResponseError } from '../../utils/errors';
+import { trimProtocol } from '../../utils/trim-protocol';
 
 /* -----------------------------------------------------------------------------
  * aliasSetCommand
@@ -34,20 +38,28 @@ async function aliasSetCommand({
   override,
 }: AliasSetCommandOptions) {
   const { apiService, output } = client;
+  const trimmedCustomDomain = trimProtocol(customDomain);
+  const trimmedTarget = trimProtocol(target);
 
   output.spinner('Creating alias');
-  const alias = await apiService.createAlias({
-    alias: customDomain,
-    target,
-    override,
-  });
+  try {
+    const alias = await apiService.createAlias({
+      alias: trimmedCustomDomain,
+      target: trimmedTarget,
+      override,
+    });
 
-  output.stopSpinner();
+    output.success(
+      `Alias created: https://${
+        alias.id
+      }\n${chalk.gray`Now linked to deployment ${alias.deployment}`}`
+    );
+  } catch (error: ResponseError | any) {
+    if (error.code === 'ALIAS_OVERRIDE_NOT_ALLOWED') {
+      throw new AliasOverrideNotAllowed(trimmedCustomDomain);
+    }
 
-  if (alias) {
-    output.log(`Alias created: ${alias?.id}`);
-  } else {
-    output.log('Could not create alias');
+    throw error;
   }
 }
 
@@ -65,7 +77,7 @@ type AliasSetCommandArguments = {
 
 const createAliasSetCommand = withClient<AliasSetCommandArguments>(
   'set <custom-domain> <target>',
-  'Links an alias to a deployment or another alias',
+  'Creates an alias that is linked to a deployment or another alias',
   (yargs) => {
     yargs
       .positional('custom-domain', {
@@ -73,7 +85,7 @@ const createAliasSetCommand = withClient<AliasSetCommandArguments>(
         type: 'string',
       })
       .positional('target', {
-        describe: 'deployment id or other alias',
+        describe: 'deployment-id or other alias',
         type: 'string',
       });
     yargs.options({

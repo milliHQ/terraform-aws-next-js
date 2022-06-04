@@ -11,7 +11,7 @@ export interface paths {
           /** Only list aliases that are associated with the specified deployment. */
           deploymentId: string;
           /** Beginning index from where to get the aliases. */
-          startIndex?: string;
+          startAt?: string;
         };
       };
       responses: {
@@ -25,6 +25,7 @@ export interface paths {
           };
         };
         400: components['responses']['InvalidParamsError'];
+        404: components['responses']['NotFound'];
       };
     };
     post: {
@@ -145,6 +146,7 @@ export interface components {
     Alias: {
       id: string;
       deployment: string;
+      createDate: string;
     };
     /** @enum {string} */
     DeploymentStatus:

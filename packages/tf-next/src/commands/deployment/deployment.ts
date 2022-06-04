@@ -5,9 +5,9 @@ import { createDeploymentRemoveCommand } from './deployment-remove';
 
 function createDeploymentCommand(yargs: GlobalYargs) {
   yargs.command(
-    'deployment [action]',
+    'deployment [command]',
     'Manage deployments',
-    (yargs: GlobalYargs<any>) => {
+    async (yargs: GlobalYargs<any>) => {
       createDeploymentListCommand(yargs);
       createDeploymentRemoveCommand(yargs);
       yargs.demandCommand();

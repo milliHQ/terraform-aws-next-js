@@ -1,5 +1,11 @@
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
+import {
+  AliasNotExists,
+  DeleteDeploymentAlias,
+  ResponseError,
+} from '../../utils/errors';
+import { trimProtocol } from '../../utils/trim-protocol';
 
 /* -----------------------------------------------------------------------------
  * aliasRemoveCommand
@@ -24,15 +30,21 @@ async function aliasRemoveCommand({
   customDomain,
 }: AliasRemoveCommandOptions) {
   const { apiService, output } = client;
+  const alias = trimProtocol(customDomain);
 
   output.spinner('Removing alias');
-  const success = await apiService.deleteAlias(customDomain);
-  output.stopSpinner();
+  try {
+    await apiService.deleteAlias(alias);
+    output.success(`Alias ${alias} was removed.`);
+  } catch (error: ResponseError | any) {
+    if (error.code === 'ALIAS_NOT_FOUND') {
+      throw new AliasNotExists(alias);
+    }
+    if (error.code === 'DEPLOYMENT_ALIAS') {
+      throw new DeleteDeploymentAlias();
+    }
 
-  if (success) {
-    output.log('Alias was successfully removed');
-  } else {
-    output.log('Could not create alias');
+    throw error;
   }
 }
 

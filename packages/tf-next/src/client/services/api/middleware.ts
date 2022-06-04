@@ -7,6 +7,7 @@ import {
   writeProjectConfig,
 } from '../../../utils/project-config';
 import { AwsCredentialProvider } from '../../aws-profile';
+import { MissingApiEndpoint } from '../../../utils/errors';
 
 /* -----------------------------------------------------------------------------
  * apiMiddleware
@@ -31,8 +32,7 @@ function apiMiddleware(
   }
 
   if (endpoint === undefined) {
-    // TODO: Format this error
-    throw new Error('API endpoint is not set.');
+    throw new MissingApiEndpoint();
   }
 
   // Write projectConfig

@@ -1,4 +1,4 @@
-import { createAlias } from '@millihq/tfn-dynamodb-actions';
+import { createAlias, createDeployment } from '@millihq/tfn-dynamodb-actions';
 import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { API } from 'lambda-api';
 
@@ -61,9 +61,15 @@ describe('ListAliases', () => {
   });
 
   test('No aliases with deploymentId', async () => {
+    await createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'deploymentIdWithoutAliases',
+    });
+
     const event = createAPIGatewayProxyEventV2({
       uri: `/aliases?deploymentId=${encodeURIComponent(
-        'notExistingDeploymentId'
+        'deploymentIdWithoutAliases'
       )}`,
     });
 
@@ -85,7 +91,32 @@ describe('ListAliases', () => {
     });
   });
 
+  test('Provided deployment id does not exist', async () => {
+    const event = createAPIGatewayProxyEventV2({
+      uri: `/aliases?deploymentId=${encodeURIComponent(
+        'notExistingDeployment'
+      )}`,
+    });
+
+    const result = (await api.run(
+      event as any,
+      {} as any
+    )) as APIGatewayProxyStructuredResultV2;
+
+    expect(result).toMatchObject({
+      headers: { 'content-type': 'application/json' },
+      statusCode: 404,
+      isBase64Encoded: false,
+    });
+  });
+
   test('Pagination', async () => {
+    await createDeployment({
+      dynamoDBClient: dynamoDBService.getDynamoDBClient(),
+      deploymentTableName: dynamoDBService.getDeploymentTableName(),
+      deploymentId: 'paginationDeployment',
+    });
+
     // Create some entries first
     for (let index = 1; index <= 30; index++) {
       await createAlias({

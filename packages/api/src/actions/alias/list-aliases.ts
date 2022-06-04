@@ -1,10 +1,15 @@
-import { listAliasesForDeployment } from '@millihq/tfn-dynamodb-actions';
+import {
+  getDeploymentById,
+  listAliasesForDeployment,
+} from '@millihq/tfn-dynamodb-actions';
 import { Request, Response } from 'lambda-api';
 
 import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 import { generateAliasId } from './alias-utils';
 
+type NotFoundResponse =
+  paths['/aliases']['get']['responses']['404']['content']['application/json'];
 type ErrorResponse =
   paths['/aliases']['get']['responses']['400']['content']['application/json'];
 type SuccessResponse =
@@ -19,7 +24,7 @@ const START_AT_KEY_SPLIT_CHAR = '#';
 async function listAliases(
   req: Request,
   res: Response
-): Promise<SuccessResponse | ErrorResponse> {
+): Promise<SuccessResponse | ErrorResponse | NotFoundResponse> {
   const { deploymentId, startAt } = req.query;
   let startKey:
     | {
@@ -51,11 +56,28 @@ async function listAliases(
 
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
 
+  // Check if the deployment exists
+  const deployment = await getDeploymentById({
+    dynamoDBClient: dynamoDB.getDynamoDBClient(),
+    deploymentTableName: dynamoDB.getDeploymentTableName(),
+    deploymentId,
+  });
+
+  if (!deployment) {
+    const notFoundResponse: NotFoundResponse = {
+      code: 'DEPLOYMENT_NOT_FOUND',
+      status: 404,
+      message: 'Deployment does not exist.',
+    };
+    res.sendStatus(404);
+    return notFoundResponse;
+  }
+
   const { meta, items } = await listAliasesForDeployment({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     aliasTableName: dynamoDB.getAliasTableName(),
     limit: PAGE_LIMIT,
-    deploymentId,
+    deploymentId: deployment.DeploymentId,
     startKey,
   });
 
@@ -77,6 +99,7 @@ async function listAliases(
       return {
         id: generateAliasId(alias),
         deployment: alias.DeploymentId,
+        createDate: alias.CreateDate,
       };
     }),
   };

@@ -2,10 +2,13 @@ import { URL, URLSearchParams } from 'url';
 
 import { Sha256 } from '@aws-crypto/sha256-js';
 import { SignatureV4 } from '@aws-sdk/signature-v4';
-import { HeaderBag, MemoizedProvider } from '@aws-sdk/types';
+import { HeaderBag, MemoizedProvider, QueryParameterBag } from '@aws-sdk/types';
 import { paths } from '@millihq/terraform-next-api/schema';
 import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
+import pWaitFor from 'p-wait-for';
+
+import { createResponseError } from '../../../utils/errors/response-error';
 
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
@@ -21,6 +24,9 @@ type ListDeploymentsSuccessResponse =
   paths['/deployments']['get']['responses']['200']['content']['application/json'];
 type GetDeploymentByIdSuccessResponse =
   paths['/deployments/{deploymentId}']['get']['responses']['200']['content']['application/json'];
+
+const POLLING_DEFAULT_INTERVAL_MS = 5_000;
+const POLLING_DEFAULT_TIMEOUT_MS = 5 * 60_000;
 
 /**
  * API Gateway endpoints use a regional API endpoint which includes the AWS
@@ -52,6 +58,16 @@ function convertFetchHeaders(
   }
 
   return result;
+}
+
+function convertURLSearchParamsToQueryBag(
+  searchParams: URLSearchParams
+): QueryParameterBag {
+  let queryBag: QueryParameterBag = {};
+  for (const [key, value] of searchParams.entries()) {
+    queryBag[key] = value;
+  }
+  return queryBag;
 }
 
 /* -----------------------------------------------------------------------------
@@ -86,7 +102,9 @@ class ApiService {
    * @param fetchArgs
    * @returns
    */
-  private async fetchAWSSigV4(...fetchArgs: Parameters<NodeFetch>) {
+  private async fetchAWSSigV4<T = {}>(
+    ...fetchArgs: Parameters<NodeFetch>
+  ): Promise<T> {
     const signature = new SignatureV4({
       region: this.awsRegion,
       service: 'execute-api',
@@ -114,38 +132,46 @@ class ApiService {
         accept: 'application/json',
       }),
       method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
+      query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
+      body: fetchArgs[1]?.body,
     });
-    return nodeFetch(parsedUrl.href, {
+    const response = await nodeFetch(parsedUrl.href, {
       ...fetchArgs[1],
       headers: signedRequest.headers,
     });
+
+    if (!response.ok) {
+      throw await createResponseError(response);
+    }
+
+    // OK - parse the response
+    if (response.headers.get('content-type') === 'application/json') {
+      try {
+        return (await response.json()) as Promise<T>;
+      } catch (_ignoredError) {
+        return {} as T;
+      }
+    }
+
+    // Response from API is not OK, should never happen
+    throw new Error('Invalid response from API');
   }
 
   // Aliases
-  async createAlias(requestBody: CreateAliasRequestBody) {
-    const response = await this.fetchAWSSigV4('/aliases', {
+  createAlias(requestBody: CreateAliasRequestBody) {
+    return this.fetchAWSSigV4<CreateAliasSuccessResponse>('/aliases', {
       method: 'POST',
       body: JSON.stringify(requestBody),
       headers: {
         'Content-Type': 'application/json',
       },
     });
-
-    if (response.status === 201) {
-      return await (response.json() as Promise<CreateAliasSuccessResponse>);
-    }
   }
 
-  async deleteAlias(alias: string) {
-    const response = await this.fetchAWSSigV4(`/aliases/${alias}`, {
+  deleteAlias(alias: string) {
+    return this.fetchAWSSigV4(`/aliases/${alias}`, {
       method: 'DELETE',
     });
-
-    if (response.status === 204) {
-      return true;
-    }
-
-    return null;
   }
 
   async listAliases(deploymentId: string) {
@@ -153,62 +179,94 @@ class ApiService {
       deploymentId,
     };
     const query = new URLSearchParams(params).toString();
-    const response = await this.fetchAWSSigV4(`/aliases?${query}`);
+    const { items } = await this.fetchAWSSigV4<ListAliasSuccessResponse>(
+      `/aliases?${query}`
+    );
 
-    if (response.status === 200) {
-      const { items } =
-        await (response.json() as Promise<ListAliasSuccessResponse>);
-      return items;
-    }
-
-    return null;
+    return items;
   }
 
   // Deployments
-  async createDeployment() {
-    const response = await this.fetchAWSSigV4('/deployments', {
+  createDeployment() {
+    return this.fetchAWSSigV4<CreateDeploymentSuccessResponse>('/deployments', {
       method: 'POST',
     });
-
-    if (response.status === 201) {
-      return response.json() as Promise<CreateDeploymentSuccessResponse>;
-    }
-
-    return null;
   }
 
   async listDeployments() {
-    const response = await this.fetchAWSSigV4('/deployments');
-
-    if (response.status === 200) {
-      const { items } =
-        await (response.json() as Promise<ListDeploymentsSuccessResponse>);
-      return items;
-    }
-
-    return null;
+    const { items } = await this.fetchAWSSigV4<ListDeploymentsSuccessResponse>(
+      '/deployments'
+    );
+    return items;
   }
 
-  async getDeploymentById(deploymentId: string) {
-    const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`);
-
-    if (response.status === 200) {
-      return response.json() as Promise<GetDeploymentByIdSuccessResponse>;
-    }
-
-    return null;
+  getDeploymentById(deploymentId: string) {
+    return this.fetchAWSSigV4<GetDeploymentByIdSuccessResponse>(
+      `/deployments/${deploymentId}`
+    );
   }
 
-  async deleteDeploymentById(deploymentId: string) {
-    const response = await this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
+  /**
+   * Polls the getDeploymentById endpoint until the status meets the desired
+   * status.
+   *
+   * @param deploymentId - Id of the deployment that should be polled.
+   * @param status - Status to wait for until polling finishes.
+   * @param options - Polling options.
+   */
+  pollForDeploymentStatus = async (
+    deploymentId: string,
+    status: GetDeploymentByIdSuccessResponse['status'],
+    options: {
+      interval?: number;
+      timeout?: number;
+    } = {}
+  ): Promise<GetDeploymentByIdSuccessResponse> => {
+    // Status where we should stop since something bad has happened
+    const failureStatus: GetDeploymentByIdSuccessResponse['status'][] = [
+      'CREATE_FAILED',
+      'DESTROY_FAILED',
+    ];
+    const {
+      interval = POLLING_DEFAULT_INTERVAL_MS,
+      timeout = POLLING_DEFAULT_TIMEOUT_MS,
+    } = options;
+
+    let result: GetDeploymentByIdSuccessResponse | null = null;
+    await pWaitFor(
+      async () => {
+        const response = await this.getDeploymentById(deploymentId);
+
+        if (response) {
+          if (failureStatus.indexOf(response.status) !== -1) {
+            throw new Error('Deployment failed.');
+          }
+
+          if (response.status === status) {
+            result = response;
+            return true;
+          }
+        }
+        return false;
+      },
+      {
+        interval,
+        timeout,
+        leadingCheck: false,
+      }
+    );
+
+    if (!result) {
+      throw new Error('Could not get deployment status.');
+    }
+
+    return result;
+  };
+
+  deleteDeploymentById(deploymentId: string) {
+    return this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
       method: 'DELETE',
     });
-
-    if (response.status === 204) {
-      return true;
-    }
-
-    return null;
   }
 }
 
