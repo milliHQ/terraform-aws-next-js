@@ -6,5 +6,6 @@ declare namespace NodeJS {
     DEPLOY_STATUS_SNS_ARN: string;
     TABLE_REGION: string;
     TABLE_NAME_DEPLOYMENTS: string;
+    CLOUDFORMATION_ROLE_ARN: string;
   }
 }

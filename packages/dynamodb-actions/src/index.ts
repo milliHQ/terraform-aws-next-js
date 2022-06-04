@@ -14,6 +14,7 @@ export { updateDeploymentStatus } from './deployment/update-deployment-status';
 export { updateDeploymentStatusCreateInProgress } from './deployment/update-deployment-status-create-in-progress';
 export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
 export { updateDeploymentStatusDestroyInProgress } from './deployment/update-deployment-status-destroy-in-progress';
+export { updateDeploymentStatusCreateFailed } from './deployment/update-deployment-status-create-failed';
 
 // Utils
 export { reverseHostname } from './utils/reverse-hostname';

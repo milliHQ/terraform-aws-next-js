@@ -8,7 +8,10 @@ import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
 import pWaitFor from 'p-wait-for';
 
-import { createResponseError } from '../../../utils/errors/response-error';
+import {
+  createResponseError,
+  ResponseError,
+} from '../../../utils/errors/response-error';
 
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
@@ -239,7 +242,11 @@ class ApiService {
 
         if (response) {
           if (failureStatus.indexOf(response.status) !== -1) {
-            throw new Error('Deployment failed.');
+            // Create a pseudo error response
+            throw new ResponseError({
+              status: 400,
+              code: 'DEPLOYMENT_CREATE_FAILED',
+            });
           }
 
           if (response.status === status) {

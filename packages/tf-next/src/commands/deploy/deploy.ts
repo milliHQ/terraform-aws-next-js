@@ -10,6 +10,7 @@ import nodeFetch from 'node-fetch';
 
 import { Client, withClient } from '../../client';
 import { GlobalOptions } from '../../types';
+import { DeploymentCreateFailed, ResponseError } from '../../utils/errors';
 
 /* -----------------------------------------------------------------------------
  * deployCommand
@@ -47,15 +48,11 @@ async function deployCommand({
   // Upload package
   output.spinner('Uploading deployment package');
   try {
-    const response = await apiService.createDeployment();
+    const deployment = await apiService.createDeployment();
+    deploymentId = deployment.id;
 
-    if (!response) {
-      throw new Error('Deployment failed: Could not connect to API');
-    }
-
-    deploymentId = response.id;
     const uploadForm = new FormData();
-    Object.entries(response.uploadAttributes).forEach(([key, value]) => {
+    Object.entries(deployment.uploadAttributes).forEach(([key, value]) => {
       uploadForm.append(key, value);
     });
     uploadForm.append(
@@ -64,7 +61,7 @@ async function deployCommand({
     );
     const encoder = new FormDataEncoder(uploadForm);
 
-    const uploadResponse = await nodeFetch(response.uploadUrl, {
+    const uploadResponse = await nodeFetch(deployment.uploadUrl, {
       method: 'POST',
       headers: encoder.headers,
       body: Readable.from(encoder),
@@ -81,9 +78,9 @@ async function deployCommand({
     output.success('Deployment package uploaded');
 
     // Poll until the CloudFormation stack creation has finished
-  } catch (error) {
-    output.stopSpinner();
-    console.log('Upload failed: ', error);
+  } catch (error: any) {
+    console.debug(error.toString());
+    console.error('Could not upload deployment package.');
     return;
   }
 
@@ -117,9 +114,12 @@ async function deployCommand({
     } else {
       output.log(`Deployment Id: ${deploymentCreationResult.id}`);
     }
-  } catch (error) {
-    output.stopSpinner();
-    console.log('Deployment failed: ', error);
+  } catch (error: ResponseError | any) {
+    if (error.code === 'DEPLOYMENT_CREATE_FAILED') {
+      throw new DeploymentCreateFailed();
+    }
+
+    throw error;
   }
 }
 
@@ -141,8 +141,8 @@ const createDeployCommand = withClient<DeployCommandArguments>(
         'Do not copy the url to clipboard after a successful deployment',
     });
   },
-  ({ client, commandCwd, noClipboard }) => {
-    deployCommand({
+  async ({ client, commandCwd, noClipboard }) => {
+    await deployCommand({
       client,
       cwd: commandCwd,
       noClipboard: !!noClipboard,

@@ -18,12 +18,17 @@ type CreateCloudFormationStackOptions = {
   notificationARNs: string[];
   stack: Stack;
   stackName: string;
+  /**
+   * ARN of the role that should be used for managing the CloudFormation stack.
+   */
+  cloudFormationRoleArn: string;
 };
 
 async function createCloudFormationStack({
   notificationARNs,
   stack,
   stackName,
+  cloudFormationRoleArn,
 }: CreateCloudFormationStackOptions): Promise<CreateCloudFormationStackReturnValue> {
   const cloudformationClient = new CloudFormation();
   const template = toCloudFormation(stack);
@@ -34,6 +39,7 @@ async function createCloudFormationStack({
       NotificationARNs: notificationARNs,
       StackName: stackName,
       TemplateBody: JSON.stringify(template),
+      RoleARN: cloudFormationRoleArn,
     })
     .promise();
 

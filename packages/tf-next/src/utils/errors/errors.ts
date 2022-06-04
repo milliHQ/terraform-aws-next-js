@@ -56,3 +56,13 @@ export class DeploymentHasLinkedAliases extends CliError<'DEPLOYMENT_HAS_CUSTOM_
     });
   }
 }
+
+export class DeploymentCreateFailed extends CliError<'DEPLOYMENT_CREATE_FAILED'> {
+  constructor() {
+    super({
+      code: 'DEPLOYMENT_CREATE_FAILED',
+      message:
+        'Creation of the deployment failed. Please see the logs in AWS CloudWatch for more information.',
+    });
+  }
+}
