@@ -46,7 +46,7 @@ function createApi() {
     res.status(500).json({
       status: 500,
       code: 'INTERNAL_ERROR',
-      message: `Internal error. Contact your administrator for a detailed error message. The error message is logged to CloudWatch LogGroup "${cloudWatchLogGroupName}/${cloudWatchLogStreamName}" in AWS region "${awsRegion}".`,
+      message: `Internal error. Contact your administrator for a detailed error message. The error message is logged to CloudWatch LogGroup: '${cloudWatchLogGroupName}', LogStream: '${cloudWatchLogStreamName}' in AWS region '${awsRegion}'.`,
       cloudWatchLogGroupName,
       cloudWatchLogStreamName,
       awsRegion,
