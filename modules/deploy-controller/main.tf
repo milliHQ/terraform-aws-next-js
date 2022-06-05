@@ -36,7 +36,8 @@ data "aws_iam_policy_document" "access_dynamodb_tables" {
       "dynamodb:GetItem",
       "dynamodb:PutItem",
       "dynamodb:Query",
-      "dynamodb:UpdateItem"
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem"
     ]
     resources = [
       var.dynamodb_table_deployments_arn,
