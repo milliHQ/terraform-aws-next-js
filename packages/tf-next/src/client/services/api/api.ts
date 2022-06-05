@@ -8,7 +8,10 @@ import { Credentials } from 'aws-lambda';
 import nodeFetch, { HeadersInit } from 'node-fetch';
 import pWaitFor from 'p-wait-for';
 
-import { createResponseError } from '../../../utils/errors/response-error';
+import {
+  createResponseError,
+  ResponseError,
+} from '../../../utils/errors/response-error';
 
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
@@ -24,6 +27,8 @@ type ListDeploymentsSuccessResponse =
   paths['/deployments']['get']['responses']['200']['content']['application/json'];
 type GetDeploymentByIdSuccessResponse =
   paths['/deployments/{deploymentId}']['get']['responses']['200']['content']['application/json'];
+type DeleteDeploymentByIdSuccessResponse =
+  paths['/deployments/{deploymentId}']['delete']['responses']['200']['content']['application/json'];
 
 const POLLING_DEFAULT_INTERVAL_MS = 5_000;
 const POLLING_DEFAULT_TIMEOUT_MS = 5 * 60_000;
@@ -239,7 +244,11 @@ class ApiService {
 
         if (response) {
           if (failureStatus.indexOf(response.status) !== -1) {
-            throw new Error('Deployment failed.');
+            // Create a pseudo error response
+            throw new ResponseError({
+              status: 400,
+              code: 'DEPLOYMENT_CREATE_FAILED',
+            });
           }
 
           if (response.status === status) {
@@ -263,11 +272,14 @@ class ApiService {
     return result;
   };
 
-  deleteDeploymentById(deploymentId: string) {
-    return this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
-      method: 'DELETE',
-    });
-  }
+  deleteDeploymentById = (deploymentId: string) => {
+    return this.fetchAWSSigV4<undefined | DeleteDeploymentByIdSuccessResponse>(
+      `/deployments/${deploymentId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  };
 }
 
 export { ApiService };

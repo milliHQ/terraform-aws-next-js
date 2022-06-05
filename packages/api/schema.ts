@@ -125,7 +125,13 @@ export interface paths {
         };
       };
       responses: {
-        /** Successful response. */
+        /** Deletion successfully requested. */
+        200: {
+          content: {
+            'application/json': components['schemas']['Deployment'];
+          };
+        };
+        /** Successful deletion. */
         204: never;
         400: components['responses']['InvalidParamsError'];
       };
@@ -156,7 +162,8 @@ export interface components {
       | 'CREATE_FAILED'
       | 'FINISHED'
       | 'DESTROY_IN_PROGRESS'
-      | 'DESTROY_FAILED';
+      | 'DESTROY_FAILED'
+      | 'DESTROY_REQUESTED';
     DeploymentInitialized: {
       id: string;
       status: components['schemas']['DeploymentStatus'];

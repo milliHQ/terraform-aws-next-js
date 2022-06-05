@@ -106,14 +106,19 @@ The following actions on the database are supported:
 
 - `createDeployment`  
   Inserts a new deployment into the DeploymentTable.
-- `listDeployments`  
-  Lists all deployments from the DeploymentTable, sorted by `CreateDate` DESC.
+- `deleteDeploymentById`
 - `getDeploymentById`  
   Returns the Deployment for the given ID. Returns `null` when it does not exist.
-- `deleteDeploymentById`
-- `updateDeploymentStatus`
+- `listDeployments`  
+  Lists all deployments from the DeploymentTable, sorted by `CreateDate` DESC.
+- `updateDeploymentStatusCreateFailed`
 - `updateDeploymentStatusCreateInProgress`
+- `updateDeploymentStatusDestroyFailed`
+- `updateDeploymentStatusDestroyInProgress`
+- `updateDeploymentStatus`
+- `updateDeploymentStatusDestroyRequested`
 - `updateDeploymentStatusFinished`
+- `updateDeploymentStatus`
 
 ### Aliases
 

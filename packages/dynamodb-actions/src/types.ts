@@ -39,7 +39,8 @@ export type DeploymentItem = {
     | 'CREATE_FAILED'
     | 'FINISHED'
     | 'DESTROY_IN_PROGRESS'
-    | 'DESTROY_FAILED';
+    | 'DESTROY_FAILED'
+    | 'DESTROY_REQUESTED';
   /**
    * Version of the item
    */

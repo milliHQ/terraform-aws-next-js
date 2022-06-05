@@ -35,6 +35,19 @@ data "aws_iam_policy_document" "access_upload_bucket" {
   }
 }
 
+# Initiate deletion of CloudFormation stacks
+data "aws_iam_policy_document" "delete_cloudformation_stack" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:DeleteStack"
+    ]
+    resources = [
+      "arn:aws:cloudformation:*:*:stack/*/*"
+    ]
+  }
+}
+
 module "lambda" {
   source = "../lambda-worker"
 
@@ -49,10 +62,11 @@ module "lambda" {
   memory_size   = 128
 
   attach_policy_jsons    = true
-  number_of_policy_jsons = 2
+  number_of_policy_jsons = 3
   policy_jsons = [
     data.aws_iam_policy_document.access_dynamodb_tables.json,
     data.aws_iam_policy_document.access_upload_bucket.json,
+    data.aws_iam_policy_document.delete_cloudformation_stack.json,
   ]
 
   environment_variables = {

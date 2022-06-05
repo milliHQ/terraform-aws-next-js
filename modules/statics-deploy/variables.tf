@@ -18,6 +18,15 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
+################
+# CloudFormation
+################
+
+variable "cloudformation_role_arn" {
+  description = "Role ARN that should be assigned to the CloudFormation substacks created by CDK."
+  type        = string
+}
+
 #####################
 # Deployment database
 #####################

@@ -1,6 +1,7 @@
 import {
   updateDeploymentStatusCreateInProgress,
   getDeploymentById,
+  updateDeploymentStatusCreateFailed,
 } from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
@@ -206,6 +207,7 @@ async function s3Handler(Record: S3EventRecord) {
       stack: atomicDeployment,
       // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
       stackName,
+      cloudFormationRoleArn: process.env.CLOUDFORMATION_ROLE_ARN,
     });
 
     // TODO: Move this to the deployment controller
@@ -218,7 +220,12 @@ async function s3Handler(Record: S3EventRecord) {
       cloudFormationStack: stackARN,
     });
   } catch (error) {
-    // TODO: Update the item with failed status
+    console.error(error);
+    await updateDeploymentStatusCreateFailed({
+      dynamoDBClient,
+      deploymentTableName: dynamoDBTableNameDeployments,
+      deploymentId,
+    });
   }
 
   // Update the manifest

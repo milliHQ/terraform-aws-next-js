@@ -7,13 +7,16 @@ export { listAliasesForDeployment } from './alias/list-aliases-for-deployment';
 
 // Deployment
 export { createDeployment } from './deployment/create-deployment';
-export { listDeployments } from './deployment/list-deployments';
-export { getDeploymentById } from './deployment/get-deployment-by-id';
 export { deleteDeploymentById } from './deployment/delete-deployment-by-id';
-export { updateDeploymentStatus } from './deployment/update-deployment-status';
+export { getDeploymentById } from './deployment/get-deployment-by-id';
+export { listDeployments } from './deployment/list-deployments';
+export { updateDeploymentStatusCreateFailed } from './deployment/update-deployment-status-create-failed';
 export { updateDeploymentStatusCreateInProgress } from './deployment/update-deployment-status-create-in-progress';
-export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
+export { updateDeploymentStatusDestroyFailed } from './deployment/update-deployment-status-destroy-failed';
 export { updateDeploymentStatusDestroyInProgress } from './deployment/update-deployment-status-destroy-in-progress';
+export { updateDeploymentStatusDestroyRequested } from './deployment/update-deployment-status-destroy-requested';
+export { updateDeploymentStatusFinished } from './deployment/update-deployment-status-finished';
+export { updateDeploymentStatus } from './deployment/update-deployment-status';
 
 // Utils
 export { reverseHostname } from './utils/reverse-hostname';

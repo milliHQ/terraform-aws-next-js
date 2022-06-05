@@ -112,46 +112,20 @@ data "aws_iam_policy_document" "access_static_deploy" {
     resources = [var.cloudfront_arn]
   }
 
-  # Permissions for CloudFormation to create resources
+  # Create new substacks from CDK templates
   statement {
     actions = [
-      "apigateway:*",
-      "cloudformation:CreateStack",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:GetRole",
-      "iam:GetRolePolicy",
-      "iam:PassRole",
-      "iam:PutRolePolicy",
-      "iam:TagRole",
-      "iam:UntagRole",
-      "lambda:AddPermission",
-      "lambda:CreateFunction",
-      "lambda:DeleteFunction",
-      "lambda:CreateFunctionUrlConfig",
-      "lambda:GetFunctionUrlConfig",
-      "lambda:GetFunction",
-      "lambda:RemovePermission",
-      "lambda:TagResource",
-      "lambda:UntagResource",
-      "logs:CreateLogGroup",
-      "logs:DeleteLogGroup",
-      "logs:DeleteRetentionPolicy",
-      "logs:PutRetentionPolicy",
-      "logs:TagLogGroup",
-      "logs:UntagLogGroup",
+      "cloudformation:CreateStack"
     ]
     resources = ["*"]
   }
 
-  # Allow CloudFormation to publish status changes to the SNS queue
+  # Allow to pass the cloudfront role to the cloudformation stack
   statement {
-    effect = "Allow"
     actions = [
-      "sns:Publish"
+      "iam:PassRole"
     ]
-    resources = [var.deploy_status_sns_topic_arn]
+    resources = [var.cloudformation_role_arn]
   }
 }
 
@@ -254,13 +228,14 @@ module "deploy_trigger" {
   ]
 
   environment_variables = {
-    NODE_ENV               = "production"
-    TARGET_BUCKET          = aws_s3_bucket.static_deploy.id
-    DISTRIBUTION_ID        = var.cloudfront_id
-    SQS_QUEUE_URL          = aws_sqs_queue.this.id
-    DEPLOY_STATUS_SNS_ARN  = var.deploy_status_sns_topic_arn
-    TABLE_REGION           = var.dynamodb_region
-    TABLE_NAME_DEPLOYMENTS = var.dynamodb_table_deployments_name
+    NODE_ENV                = "production"
+    TARGET_BUCKET           = aws_s3_bucket.static_deploy.id
+    DISTRIBUTION_ID         = var.cloudfront_id
+    SQS_QUEUE_URL           = aws_sqs_queue.this.id
+    DEPLOY_STATUS_SNS_ARN   = var.deploy_status_sns_topic_arn
+    TABLE_REGION            = var.dynamodb_region
+    TABLE_NAME_DEPLOYMENTS  = var.dynamodb_table_deployments_name
+    CLOUDFORMATION_ROLE_ARN = var.cloudformation_role_arn
   }
 
   event_source_mapping = {

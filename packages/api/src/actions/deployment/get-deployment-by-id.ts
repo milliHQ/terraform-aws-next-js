@@ -2,6 +2,7 @@ import { getDeploymentById as dynamoDBgetDeploymentById } from '@millihq/tfn-dyn
 import { Request, Response } from 'lambda-api';
 
 import { paths } from '../../../schema';
+import { deploymentDefaultSerializer } from '../../serializers/deployment';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 
 type SuccessResponse =
@@ -20,13 +21,13 @@ async function getDeploymentById(
     throw new Error('Could not get deploymentId from path');
   }
 
-  const result = await dynamoDBgetDeploymentById({
+  const deployment = await dynamoDBgetDeploymentById({
     dynamoDBClient: dynamoDB.getDynamoDBClient(),
     deploymentTableName: dynamoDB.getDeploymentTableName(),
     deploymentId,
   });
 
-  if (!result) {
+  if (!deployment) {
     res.status(404);
     return {
       status: 404,
@@ -35,14 +36,7 @@ async function getDeploymentById(
     };
   }
 
-  return {
-    // Required attributes
-    id: result.DeploymentId,
-    createDate: result.CreateDate,
-    status: result.Status,
-    // Optional attributes
-    deploymentAlias: result.DeploymentAlias,
-  };
+  return deploymentDefaultSerializer(deployment);
 }
 
 export { getDeploymentById };
