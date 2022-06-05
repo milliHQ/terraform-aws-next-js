@@ -27,6 +27,8 @@ type ListDeploymentsSuccessResponse =
   paths['/deployments']['get']['responses']['200']['content']['application/json'];
 type GetDeploymentByIdSuccessResponse =
   paths['/deployments/{deploymentId}']['get']['responses']['200']['content']['application/json'];
+type DeleteDeploymentByIdSuccessResponse =
+  paths['/deployments/{deploymentId}']['delete']['responses']['200']['content']['application/json'];
 
 const POLLING_DEFAULT_INTERVAL_MS = 5_000;
 const POLLING_DEFAULT_TIMEOUT_MS = 5 * 60_000;
@@ -270,11 +272,14 @@ class ApiService {
     return result;
   };
 
-  deleteDeploymentById(deploymentId: string) {
-    return this.fetchAWSSigV4(`/deployments/${deploymentId}`, {
-      method: 'DELETE',
-    });
-  }
+  deleteDeploymentById = (deploymentId: string) => {
+    return this.fetchAWSSigV4<undefined | DeleteDeploymentByIdSuccessResponse>(
+      `/deployments/${deploymentId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  };
 }
 
 export { ApiService };

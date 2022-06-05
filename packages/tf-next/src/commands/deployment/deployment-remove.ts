@@ -32,8 +32,23 @@ async function deploymentRemoveCommand({
 
   output.spinner(`Removing deployment ${deploymentId}`);
   try {
-    await apiService.deleteDeploymentById(deploymentId);
-    output.stopSpinner();
+    const result = await apiService.deleteDeploymentById(deploymentId);
+    if (
+      result &&
+      (result.status === 'DESTROY_REQUESTED' ||
+        result.status === 'DESTROY_IN_PROGRESS')
+    ) {
+      try {
+        // Poll until the destruction is complete
+        // When destruction is complete the polling should fail with a
+        // 404 - Deployment not found
+        await apiService.pollForDeploymentStatus(deploymentId, 'FINISHED');
+      } catch (error: ResponseError | any) {
+        if (error.code !== 'DEPLOYMENT_NOT_FOUND') {
+          throw error;
+        }
+      }
+    }
 
     output.success('Deployment successfully removed.');
   } catch (error: ResponseError | any) {

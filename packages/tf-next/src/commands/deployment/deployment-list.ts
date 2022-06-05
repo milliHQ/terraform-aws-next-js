@@ -43,6 +43,15 @@ async function deploymentListCommand({ client }: DeploymentListCommandOptions) {
   const deployments = await apiService.listDeployments();
   output.stopSpinner();
 
+  if (deployments.length === 0) {
+    output.log(
+      `No deployments created yet.\n${chalk.gray(
+        'Create a new deployment by running `tf-next deploy`.'
+      )}`
+    );
+    return;
+  }
+
   const todayMillis = Date.now();
   console.log(
     table(

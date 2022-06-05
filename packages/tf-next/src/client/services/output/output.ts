@@ -31,7 +31,7 @@ class OutputService {
   }
 
   log = (message: string, color = chalk.grey) => {
-    this.print(`${color('>')} ${message}`);
+    this.print(message, color('> '));
   };
 
   debug = (message: string) => {
