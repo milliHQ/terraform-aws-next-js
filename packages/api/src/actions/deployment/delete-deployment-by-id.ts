@@ -5,13 +5,16 @@ import {
   getDeploymentById,
   deleteDeploymentById as dynamoDBdeleteDeploymentById,
   deleteAliasById,
-  updateDeploymentStatusDestroyInProgress,
+  updateDeploymentStatusDestroyRequested,
 } from '@millihq/tfn-dynamodb-actions';
 
 import { paths } from '../../../schema';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 import { CloudFormationServiceType } from '../../services/cloudformation';
+import { deploymentDefaultSerializer } from '../../serializers/deployment';
 
+type SuccessResponse =
+  paths['/deployments/{deploymentId}']['delete']['responses']['200']['content']['application/json'];
 type ErrorResponse =
   paths['/deployments/{deploymentId}']['delete']['responses']['400']['content']['application/json'];
 
@@ -24,7 +27,7 @@ const RESPONSE_DEPLOYMENT_DELETION_FAILED: ErrorResponse = {
 async function deleteDeploymentById(
   req: Request,
   res: Response
-): Promise<void> {
+): Promise<SuccessResponse | void> {
   const cloudFormationService = req.namespace
     .cloudFormation as CloudFormationServiceType;
   const dynamoDB = req.namespace.dynamoDB as DynamoDBServiceType;
@@ -122,9 +125,7 @@ async function deleteDeploymentById(
 
       // Trigger stack deletion
       if (deployment.CFStack) {
-        await cloudFormationService.deleteStack(deployment.CFStack);
-
-        await updateDeploymentStatusDestroyInProgress({
+        const updatedDeployment = await updateDeploymentStatusDestroyRequested({
           dynamoDBClient: dynamoDB.getDynamoDBClient(),
           deploymentTableName: dynamoDB.getDeploymentTableName(),
           deploymentId: {
@@ -132,8 +133,12 @@ async function deleteDeploymentById(
             SK: deployment.SK,
           },
         });
+        await cloudFormationService.deleteStack(deployment.CFStack);
 
-        return res.sendStatus(204);
+        // Deployment status is updated by deployment-controller when
+        // CloudFormation triggers a `DELETE_IN_PROGRESS` event on the stack
+        res.status(200);
+        return deploymentDefaultSerializer(updatedDeployment);
       }
 
       // No CloudFormation Stack present, so we can delete it from the database
@@ -152,6 +157,7 @@ async function deleteDeploymentById(
 
       return res.sendStatus(204);
 
+    case 'DESTROY_REQUESTED':
     case 'DESTROY_IN_PROGRESS': {
       const errorResponse: ErrorResponse = {
         code: 'DEPLOYMENT_DESTROY_IN_PROGRESS',

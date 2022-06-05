@@ -204,8 +204,11 @@ describe('DeleteDeployment', () => {
     )) as APIGatewayProxyStructuredResultV2;
     expect(response).toMatchObject({
       headers: { 'content-type': 'application/json' },
-      statusCode: 204,
+      statusCode: 200,
       isBase64Encoded: false,
+    });
+    expect(JSON.parse(response.body!)).toMatchObject({
+      status: 'DESTROY_REQUESTED',
     });
     expect(deleteStackSpy).toHaveBeenCalledTimes(1);
   });

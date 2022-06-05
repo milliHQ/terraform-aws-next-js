@@ -63,6 +63,7 @@ components:
         - FINISHED
         - DESTROY_IN_PROGRESS
         - DESTROY_FAILED
+        - DESTROY_REQUESTED
 
     DeploymentInitialized:
       type: object
@@ -271,7 +272,13 @@ paths:
           required: true
           description: The id of the deployment to delete.
       responses:
+        '200':
+          description: Deletion successfully requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
         '204':
-          description: Successful response.
+          description: Successful deletion.
         '400':
           $ref: '#/components/responses/InvalidParamsError'

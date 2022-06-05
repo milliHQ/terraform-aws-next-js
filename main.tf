@@ -150,6 +150,7 @@ data "aws_iam_policy_document" "cloudformation_permission" {
       "iam:DeleteRolePolicy",
       "iam:UntagRole",
       "lambda:DeleteFunction",
+      "lambda:DeleteFunctionUrlConfig",
       "lambda:RemovePermission",
       "lambda:UntagResource",
       "logs:DeleteLogGroup",

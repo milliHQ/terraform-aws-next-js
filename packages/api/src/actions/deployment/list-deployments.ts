@@ -2,6 +2,7 @@ import { listDeployments as dynamoDBlistDeployments } from '@millihq/tfn-dynamod
 import { Request, Response } from 'lambda-api';
 
 import { paths } from '../../../schema';
+import { deploymentDefaultSerializer } from '../../serializers/deployment';
 import { DynamoDBServiceType } from '../../services/dynamodb';
 
 /**
@@ -58,13 +59,7 @@ async function listDeployments(
     metadata: {
       next: nextKey,
     },
-    items: items.map((item) => {
-      return {
-        id: item.DeploymentId,
-        createDate: item.CreateDate,
-        status: item.Status,
-      };
-    }),
+    items: items.map(deploymentDefaultSerializer),
   };
 }
 
