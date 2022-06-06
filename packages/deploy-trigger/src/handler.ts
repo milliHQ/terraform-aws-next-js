@@ -2,6 +2,9 @@ import {
   updateDeploymentStatusCreateInProgress,
   getDeploymentById,
   updateDeploymentStatusCreateFailed,
+  updateDeploymentStatusFinished,
+  reverseHostname,
+  createAlias,
 } from '@millihq/tfn-dynamodb-actions';
 import { S3Event, S3EventRecord, SQSEvent, SQSRecord } from 'aws-lambda';
 import CloudFront from 'aws-sdk/clients/cloudfront';
@@ -136,6 +139,7 @@ export const handler = async function (event: S3Event | SQSEvent) {
 async function s3Handler(Record: S3EventRecord) {
   const dynamoDBRegion = ensureEnv('TABLE_REGION');
   const dynamoDBTableNameDeployments = ensureEnv('TABLE_NAME_DEPLOYMENTS');
+  const dynamoDBTableNameAliases = ensureEnv('TABLE_NAME_ALIASES');
 
   const dynamoDBClient = new DynamoDB({
     region: dynamoDBRegion,
@@ -186,46 +190,81 @@ async function s3Handler(Record: S3EventRecord) {
     // TODO: Cleanup extracted files from S3
   }
 
-  // Create the stack
-  const atomicDeployment =
-    deployment.DeploymentTemplate === 'API_GATEWAY'
-      ? new AtomicDeploymentAPIGateway({
-          deploymentId,
-          deploymentBucketId: deployBucket,
-          lambdas: lambdas,
-        })
-      : new AtomicDeploymentFunctionUrls({
-          deploymentId,
-          deploymentBucketId: deployBucket,
-          lambdas: lambdas,
-        });
+  // Static deployment, doesn't need a CloudFormation template
+  if (lambdas.length === 0) {
+    const lambdaRoutes = '{}';
+    const routes = JSON.stringify(deploymentConfig.routes);
+    const prerenders = JSON.stringify(deploymentConfig.prerenders);
 
-  try {
-    const stackName = `tfn-${deploymentId}`;
-    const { stackARN } = await createCloudFormationStack({
-      notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
-      stack: atomicDeployment,
-      // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
-      stackName,
-      cloudFormationRoleArn: process.env.CLOUDFORMATION_ROLE_ARN,
+    // TODO: Handle case when multi deployments is not enabled
+    const deploymentAliasBasePath = '/';
+    const deploymentAliasHostname =
+      deploymentId + process.env.MULTI_DEPLOYMENTS_BASE_DOMAIN;
+    const deploymentAliasHostnameRev = reverseHostname(deploymentAliasHostname);
+    await createAlias({
+      dynamoDBClient,
+      hostnameRev: deploymentAliasHostnameRev,
+      isDeploymentAlias: true,
+      aliasTableName: dynamoDBTableNameAliases,
+      createDate: new Date(),
+      deploymentId,
+      lambdaRoutes,
+      routes,
+      prerenders,
+      basePath: deploymentAliasBasePath,
     });
 
-    // TODO: Move this to the deployment controller
-    await updateDeploymentStatusCreateInProgress({
+    await updateDeploymentStatusFinished({
       dynamoDBClient,
       deploymentTableName: dynamoDBTableNameDeployments,
       deploymentId,
-      routes: JSON.stringify(deploymentConfig.routes),
-      prerenders: JSON.stringify(deploymentConfig.prerenders),
-      cloudFormationStack: stackARN,
+      routes,
+      prerenders,
+      lambdaRoutes,
+      deploymentAlias: deploymentAliasHostname + deploymentAliasBasePath,
     });
-  } catch (error) {
-    console.error(error);
-    await updateDeploymentStatusCreateFailed({
-      dynamoDBClient,
-      deploymentTableName: dynamoDBTableNameDeployments,
-      deploymentId,
-    });
+  } else {
+    // Create the CloudFormation stack for the lambdas
+    const atomicDeployment =
+      deployment.DeploymentTemplate === 'API_GATEWAY'
+        ? new AtomicDeploymentAPIGateway({
+            deploymentId,
+            deploymentBucketId: deployBucket,
+            lambdas: lambdas,
+          })
+        : new AtomicDeploymentFunctionUrls({
+            deploymentId,
+            deploymentBucketId: deployBucket,
+            lambdas: lambdas,
+          });
+
+    try {
+      const stackName = `tfn-${deploymentId}`;
+      const { stackARN } = await createCloudFormationStack({
+        notificationARNs: [process.env.DEPLOY_STATUS_SNS_ARN],
+        stack: atomicDeployment,
+        // Stackname has to match [a-zA-Z][-a-zA-Z0-9]*
+        stackName,
+        cloudFormationRoleArn: process.env.CLOUDFORMATION_ROLE_ARN,
+      });
+
+      // TODO: Move this to the deployment controller
+      await updateDeploymentStatusCreateInProgress({
+        dynamoDBClient,
+        deploymentTableName: dynamoDBTableNameDeployments,
+        deploymentId,
+        routes: JSON.stringify(deploymentConfig.routes),
+        prerenders: JSON.stringify(deploymentConfig.prerenders),
+        cloudFormationStack: stackARN,
+      });
+    } catch (error) {
+      console.error(error);
+      await updateDeploymentStatusCreateFailed({
+        dynamoDBClient,
+        deploymentTableName: dynamoDBTableNameDeployments,
+        deploymentId,
+      });
+    }
   }
 
   // Update the manifest

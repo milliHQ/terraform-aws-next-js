@@ -143,8 +143,7 @@ data "aws_iam_policy_document" "access_api" {
 }
 
 resource "aws_iam_policy" "access_api" {
-  name = "api-access"
-  path = "/${var.deployment_name}/"
+  name = "${var.deployment_name}_api-access"
 
   description = "Managed by Terraform Next.js"
 

@@ -27,11 +27,32 @@ variable "cloudformation_role_arn" {
   type        = string
 }
 
+######################
+# Multiple deployments
+######################
+
+variable "enable_multiple_deployments" {
+  type = bool
+}
+
+variable "multiple_deployments_base_domain" {
+  type    = string
+  default = null
+}
+
 #####################
 # Deployment database
 #####################
 
 variable "dynamodb_region" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_arn" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_name" {
   type = string
 }
 
