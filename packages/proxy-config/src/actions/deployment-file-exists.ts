@@ -31,12 +31,13 @@ async function deploymentFileExists({
   }
 
   const decodedKey = decodeURIComponent(key);
+  const absoluteKey = deploymentId + '/static/' + decodedKey;
 
   try {
     const result = await s3Client
       .headObject({
         Bucket: s3BucketId,
-        Key: deploymentId + '/static/' + decodedKey,
+        Key: absoluteKey,
       })
       .promise();
 
@@ -44,7 +45,7 @@ async function deploymentFileExists({
       status: '200',
       body: JSON.stringify({
         status: 200,
-        key: decodedKey,
+        key: absoluteKey,
         cacheControl: result.CacheControl,
         contentType: result.ContentType,
       }),

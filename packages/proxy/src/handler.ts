@@ -201,7 +201,7 @@ async function handler(
     const notFound =
       proxyResult.phase === 'error' && proxyResult.status === 404;
     const uri = !notFound && proxyResult.found ? proxyResult.dest : undefined;
-    return serveRequestFromS3Origin(request, proxyConfig.deploymentId, uri);
+    return serveRequestFromS3Origin(request, uri);
   } catch (error: any) {
     if (!error.isHandled) {
       // Log full error message to CloudWatch Logs

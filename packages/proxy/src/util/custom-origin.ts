@@ -120,12 +120,10 @@ function serveRequestFromCustomOrigin(
  *
  * @param request Incoming request from the handler. Gets modified by the
  *                function.
- * @param deploymentId DeploymentId that should be used to serve the content.
  * @returns Modified request that is served from S3.
  */
 function serveRequestFromS3Origin(
   request: CloudFrontRequest,
-  deploymentId: string,
   uri?: string
 ): CloudFrontRequest {
   // Modify `Host` header to match the S3 host. If the `Host` header is
@@ -141,7 +139,7 @@ function serveRequestFromS3Origin(
   });
 
   if (typeof uri === 'string') {
-    request.uri = `/${deploymentId}/static${uri}`;
+    request.uri = uri;
   }
 
   // Querystring is not supported by S3 origin

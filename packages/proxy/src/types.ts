@@ -41,4 +41,5 @@ export interface RouteResult {
 
 export type FileSystemEntry = {
   etag: string;
+  key: string;
 };
