@@ -106,7 +106,7 @@ export class Proxy {
       );
 
       if (file) {
-        return requestedFilePathWithoutTrailingSlash;
+        return '/' + file.key;
       }
     } catch (error) {
       console.error(

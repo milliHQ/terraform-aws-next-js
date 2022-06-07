@@ -174,8 +174,7 @@ data "aws_iam_policy_document" "cloudformation_permission_assume_role" {
 }
 
 resource "aws_iam_policy" "cloudformation_permission" {
-  name        = "cloudformation-control"
-  path        = "/${var.deployment_name}/"
+  name        = "${var.deployment_name}_cf-control"
   description = "Managed by Terraform Next.js"
   policy      = data.aws_iam_policy_document.cloudformation_permission.json
 
@@ -183,8 +182,7 @@ resource "aws_iam_policy" "cloudformation_permission" {
 }
 
 resource "aws_iam_role" "cloudformation_permission" {
-  name               = "cloudformation-control"
-  path               = "/${var.deployment_name}/"
+  name               = "${var.deployment_name}_cf-control"
   assume_role_policy = data.aws_iam_policy_document.cloudformation_permission_assume_role.json
   managed_policy_arns = [
     aws_iam_policy.cloudformation_permission.arn
@@ -227,10 +225,15 @@ module "statics_deploy" {
   deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn
 
   dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
   dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
   dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
 
   cloudformation_role_arn = aws_iam_role.cloudformation_permission.arn
+
+  enable_multiple_deployments      = var.enable_multiple_deployments
+  multiple_deployments_base_domain = var.multiple_deployments_base_domain
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 

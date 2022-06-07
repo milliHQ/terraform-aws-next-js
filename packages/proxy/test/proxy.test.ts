@@ -17,7 +17,13 @@ describe('Proxy', () => {
             url ===
             `http://localhost/filesystem/123/${encodeURIComponent(staticRoute)}`
           ) {
-            return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+            return generateMockedFetchResponse(
+              200,
+              {
+                key: staticRoute,
+              },
+              { etag: '"found"' }
+            );
           }
         }
 

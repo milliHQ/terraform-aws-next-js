@@ -19,6 +19,23 @@ type UpdateDeploymentStatusFinishedOptions = {
    * The alias that is assigned with this deployment.
    */
   deploymentAlias?: string;
+  /**
+   * Only used for static deployments.
+   * Stringified JSON object that contains routes that are served from
+   * prerendered generated HTML files.
+   *
+   */
+  prerenders?: string;
+  /**
+   * Only used for static deployments.
+   * Stringified JSON object that contains the route config.
+   */
+  routes?: string;
+  /**
+   * Only used for static deployments.
+   * Stringified routing table for Lambdas
+   */
+  lambdaRoutes?: string;
 };
 
 /**
@@ -32,6 +49,9 @@ function updateDeploymentStatusFinished({
   deploymentTableName,
   deploymentId,
   deploymentAlias,
+  prerenders,
+  routes,
+  lambdaRoutes,
 }: UpdateDeploymentStatusFinishedOptions) {
   return updateDeployment({
     dynamoDBClient,
@@ -40,6 +60,9 @@ function updateDeploymentStatusFinished({
     updateAttributes: {
       DeploymentAlias: deploymentAlias,
       Status: 'FINISHED',
+      LambdaRoutes: lambdaRoutes,
+      Prerenders: prerenders,
+      Routes: routes,
     },
   });
 }

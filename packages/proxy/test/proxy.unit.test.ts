@@ -373,13 +373,18 @@ describe('Proxy unit', () => {
   test('With trailing slash', async () => {
     const mockedFetch = jest.fn().mockImplementation((url: string) => {
       if (
-        url ===
-          `http://localhost/filesystem/123/${encodeURIComponent(
-            'test/index'
-          )}` ||
-        url === `http://localhost/filesystem/123/${encodeURIComponent('index')}`
+        url === 'http://localhost/filesystem/123/test/index' ||
+        url === 'http://localhost/filesystem/123/index'
       ) {
-        return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+        return generateMockedFetchResponse(
+          200,
+          {
+            key:
+              '123/static/' +
+              url.substring('http://localhost/filesystem/123/'.length),
+          },
+          { etag: '"found"' }
+        );
       }
 
       return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
@@ -400,7 +405,7 @@ describe('Proxy unit', () => {
     );
     expect(result1).toEqual({
       found: true,
-      dest: '/test/index',
+      dest: '/123/static/test/index',
       continue: false,
       status: undefined,
       headers: {},
@@ -418,7 +423,7 @@ describe('Proxy unit', () => {
     );
     expect(result2).toEqual({
       found: true,
-      dest: '/index',
+      dest: '/123/static/index',
       continue: false,
       status: undefined,
       headers: {},
@@ -648,10 +653,14 @@ describe('Proxy unit', () => {
 
   test('Static index route', async () => {
     const mockedFetch = jest.fn().mockImplementation((url: string) => {
-      if (
-        url === `http://localhost/filesystem/123/${encodeURIComponent('index')}`
-      ) {
-        return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+      if (url === 'http://localhost/filesystem/123/index') {
+        return generateMockedFetchResponse(
+          200,
+          {
+            key: '123/static/index',
+          },
+          { etag: '"found"' }
+        );
       }
 
       return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
@@ -671,7 +680,7 @@ describe('Proxy unit', () => {
 
     expect(result).toEqual({
       found: true,
-      dest: '/index',
+      dest: '/123/static/index',
       target: 'filesystem',
       continue: false,
       status: undefined,
@@ -683,13 +692,14 @@ describe('Proxy unit', () => {
 
   test('Multiple dynamic parts', async () => {
     const mockedFetch = jest.fn().mockImplementation((url: string) => {
-      if (
-        url ===
-        `http://localhost/filesystem/123/${encodeURIComponent(
-          '[teamSlug]/[project]/[id]'
-        )}`
-      ) {
-        return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+      if (url === 'http://localhost/filesystem/123/[teamSlug]/[project]/[id]') {
+        return generateMockedFetchResponse(
+          200,
+          {
+            key: '123/static/[teamSlug]/[project]/[id]',
+          },
+          { etag: '"found"' }
+        );
       }
 
       return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
@@ -721,7 +731,7 @@ describe('Proxy unit', () => {
 
     expect(result).toEqual({
       found: true,
-      dest: '/[teamSlug]/[project]/[id]',
+      dest: '/123/static/[teamSlug]/[project]/[id]',
       target: 'filesystem',
       continue: false,
       status: undefined,
@@ -733,13 +743,14 @@ describe('Proxy unit', () => {
 
   test('Dynamic static route', async () => {
     const mockedFetch = jest.fn().mockImplementation((url: string) => {
-      if (
-        url ===
-        `http://localhost/filesystem/123/${encodeURIComponent(
-          'users/[user_id]'
-        )}`
-      ) {
-        return generateMockedFetchResponse(200, {}, { etag: '"found"' });
+      if (url === 'http://localhost/filesystem/123/users/[user_id]') {
+        return generateMockedFetchResponse(
+          200,
+          {
+            key: '123/static/users/[user_id]',
+          },
+          { etag: '"found"' }
+        );
       }
 
       return generateMockedFetchResponse(404, {}, { etag: '"notfound"' });
@@ -767,7 +778,7 @@ describe('Proxy unit', () => {
 
     expect(result).toEqual({
       found: true,
-      dest: '/users/[user_id]',
+      dest: '/123/static/users/[user_id]',
       target: 'filesystem',
       continue: false,
       status: undefined,

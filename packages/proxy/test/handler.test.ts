@@ -20,16 +20,19 @@ class ConfigServer {
     this.server = createServer((req, res) => {
       if (req.url && req.url.startsWith('/filesystem')) {
         const splittedUrl = req.url.split('/');
-        const filePath = decodeURIComponent(
-          splittedUrl[splittedUrl.length - 1]
-        );
+        const filePath = splittedUrl.slice(3).join('/');
 
-        if (this.staticFiles.includes(filePath)) {
+        if (this.proxyConfig && this.staticFiles.includes(filePath)) {
           res.statusCode = 200;
+          return res.end(
+            JSON.stringify({
+              key: this.proxyConfig.deploymentId + '/static/' + filePath,
+            })
+          );
         } else {
           res.statusCode = 404;
+          return res.end(JSON.stringify({}));
         }
-        return res.end(JSON.stringify({}));
       }
 
       // Respond with config
@@ -283,12 +286,16 @@ describe('[proxy] Handler', () => {
           dest: '/en',
           continue: true,
         },
+        {
+          handle: 'filesystem',
+        },
       ],
     };
     const requestPath = '/';
 
     // Prepare configServer
     configServer.proxyConfig = proxyConfig;
+    configServer.staticFiles = ['en'];
     const cloudFrontEvent = generateCloudFrontRequestEvent({
       configEndpoint,
       uri: requestPath,

@@ -153,7 +153,10 @@ data "aws_iam_policy_document" "access_dynamodb_table_deployments" {
       "dynamodb:PutItem",
       "dynamodb:UpdateItem"
     ]
-    resources = [var.dynamodb_table_deployments_arn]
+    resources = [
+      var.dynamodb_table_aliases_arn,
+      var.dynamodb_table_deployments_arn
+    ]
   }
 }
 
@@ -234,8 +237,11 @@ module "deploy_trigger" {
     SQS_QUEUE_URL           = aws_sqs_queue.this.id
     DEPLOY_STATUS_SNS_ARN   = var.deploy_status_sns_topic_arn
     TABLE_REGION            = var.dynamodb_region
+    TABLE_NAME_ALIASES      = var.dynamodb_table_aliases_name
     TABLE_NAME_DEPLOYMENTS  = var.dynamodb_table_deployments_name
     CLOUDFORMATION_ROLE_ARN = var.cloudformation_role_arn
+    # Remove the * from the base domain (e.g. *.example.com -> .example.com)
+    MULTI_DEPLOYMENTS_BASE_DOMAIN = var.enable_multiple_deployments ? replace(var.multiple_deployments_base_domain, "/^\\*/", "") : null
   }
 
   event_source_mapping = {
