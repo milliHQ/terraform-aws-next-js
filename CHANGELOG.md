@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.0-canary.3] - 2022-06-07
+
 - Fixes deployments without Lambdas ([#325](https://github.com/milliHQ/terraform-aws-next-js/pull/325))
 - Use CloudFormation role ([#324](https://github.com/milliHQ/terraform-aws-next-js/pull/324))
 - Improve CLI ([#323](https://github.com/milliHQ/terraform-aws-next-js/pull/323))

@@ -1,6 +1,6 @@
 {
   "name": "@dealmore/terraform-aws-nextjs-ws",
-  "version": "1.0.0-canary.2",
+  "version": "1.0.0-canary.3",
   "private": true,
   "license": "Apache-2.0",
   "workspaces": [

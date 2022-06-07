@@ -1,6 +1,6 @@
 {
   "name": "@millihq/terraform-next-proxy",
-  "version": "1.0.0-canary.2",
+  "version": "1.0.0-canary.3",
   "description": "Proxy component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",

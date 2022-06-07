@@ -1,6 +1,6 @@
 {
   "name": "tf-next",
-  "version": "1.0.0-canary.2",
+  "version": "1.0.0-canary.3",
   "description": "CLI build tool for AWS Next.js Terraform module.",
   "homepage": "https://registry.terraform.io/modules/milliHQ/next-js/aws",
   "main": "index.js",
@@ -22,7 +22,7 @@
     "@aws-crypto/sha256-js": "^2.0.1",
     "@aws-sdk/credential-provider-node": "3.100.0",
     "@aws-sdk/signature-v4": "^3.78.0",
-    "@millihq/tf-next-runtime": "1.0.0-canary.2",
+    "@millihq/tf-next-runtime": "1.0.0-canary.3",
     "@vercel/build-utils": "2.12.1",
     "@vercel/frameworks": "^0.0.15",
     "@vercel/routing-utils": "^1.10.1",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.78.0",
-    "@millihq/terraform-next-api": "1.0.0-canary.2",
+    "@millihq/terraform-next-api": "1.0.0-canary.3",
     "@tsconfig/node14": "1.0.1",
     "@types/archiver": "^5.1.0",
     "@types/fs-extra": "^9.0.1",

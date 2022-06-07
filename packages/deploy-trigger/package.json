@@ -1,6 +1,6 @@
 {
   "name": "@millihq/terraform-next-deploy-trigger",
-  "version": "1.0.0-canary.2",
+  "version": "1.0.0-canary.3",
   "description": "Deploy trigger component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",
@@ -18,7 +18,7 @@
   "dependencies": {
     "@aws-cdk/aws-apigatewayv2-alpha": "2.25.0-alpha.0",
     "@aws-cdk/aws-apigatewayv2-integrations-alpha": "2.25.0-alpha.0",
-    "@millihq/tfn-dynamodb-actions": "1.0.0-canary.2",
+    "@millihq/tfn-dynamodb-actions": "1.0.0-canary.3",
     "aws-cdk-lib": "2.25.0",
     "constructs": "^10.0.130",
     "mime-types": "^2.1.33"
