@@ -1,6 +1,6 @@
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "1.0.0-canary.2"
+  default = "1.0.0-canary.3"
 }
 
 variable "cloudfront_id" {
@@ -18,11 +18,41 @@ variable "lambda_role_permissions_boundary" {
   default = null
 }
 
+################
+# CloudFormation
+################
+
+variable "cloudformation_role_arn" {
+  description = "Role ARN that should be assigned to the CloudFormation substacks created by CDK."
+  type        = string
+}
+
+######################
+# Multiple deployments
+######################
+
+variable "enable_multiple_deployments" {
+  type = bool
+}
+
+variable "multiple_deployments_base_domain" {
+  type    = string
+  default = null
+}
+
 #####################
 # Deployment database
 #####################
 
 variable "dynamodb_region" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_arn" {
+  type = string
+}
+
+variable "dynamodb_table_aliases_name" {
   type = string
 }
 

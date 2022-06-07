@@ -84,6 +84,109 @@ resource "aws_dynamodb_table" "deployments" {
     projection_type    = "INCLUDE"
     non_key_attributes = ["CreateDate", "DeploymentAlias", "DeploymentId", "Status"]
   }
+
+  tags = var.tags
+}
+
+#####################
+# CloudFormation Role
+#####################
+
+# Policy that controls which actions can be performed when CloudFormation
+# creates a substack (from CDK)
+data "aws_iam_policy_document" "cloudformation_permission" {
+  # Allow CloudFormation to publish status changes to the SNS queue
+  statement {
+    effect = "Allow"
+    actions = [
+      "sns:Publish"
+    ]
+    resources = [module.deploy_controller.sns_topic_arn]
+  }
+
+  # Allow CloudFormation to access the lambda content
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = [
+      module.statics_deploy.static_bucket_arn,
+      "${module.statics_deploy.static_bucket_arn}/*"
+    ]
+  }
+
+  # Stack creation
+  statement {
+    effect = "Allow"
+    actions = [
+      # TODO: Restrict the API Gateway action more
+      "apigateway:*",
+      "iam:CreateRole",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:PassRole",
+      "iam:PutRolePolicy",
+      "iam:TagRole",
+      "lambda:AddPermission",
+      "lambda:CreateFunction",
+      "lambda:CreateFunctionUrlConfig",
+      "lambda:GetFunctionUrlConfig",
+      "lambda:GetFunction",
+      "lambda:TagResource",
+      "logs:CreateLogGroup",
+      "logs:PutRetentionPolicy",
+      "logs:TagLogGroup"
+    ]
+    resources = ["*"]
+  }
+
+  # Stack deletion
+  statement {
+    effect = "Allow"
+    actions = [
+      "apigateway:*",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
+      "iam:UntagRole",
+      "lambda:DeleteFunction",
+      "lambda:DeleteFunctionUrlConfig",
+      "lambda:RemovePermission",
+      "lambda:UntagResource",
+      "logs:DeleteLogGroup",
+      "logs:DeleteRetentionPolicy",
+      "logs:UntagLogGroup"
+    ]
+    resources = ["*"]
+  }
+}
+
+data "aws_iam_policy_document" "cloudformation_permission_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudformation.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_policy" "cloudformation_permission" {
+  name        = "${var.deployment_name}_cf-control"
+  description = "Managed by Terraform Next.js"
+  policy      = data.aws_iam_policy_document.cloudformation_permission.json
+
+  tags = var.tags
+}
+
+resource "aws_iam_role" "cloudformation_permission" {
+  name               = "${var.deployment_name}_cf-control"
+  assume_role_policy = data.aws_iam_policy_document.cloudformation_permission_assume_role.json
+  managed_policy_arns = [
+    aws_iam_policy.cloudformation_permission.arn
+  ]
 }
 
 ###################
@@ -122,8 +225,15 @@ module "statics_deploy" {
   deploy_status_sns_topic_arn = module.deploy_controller.sns_topic_arn
 
   dynamodb_region                 = data.aws_region.current.name
+  dynamodb_table_aliases_arn      = aws_dynamodb_table.aliases.arn
+  dynamodb_table_aliases_name     = aws_dynamodb_table.aliases.id
   dynamodb_table_deployments_arn  = aws_dynamodb_table.deployments.arn
   dynamodb_table_deployments_name = aws_dynamodb_table.deployments.id
+
+  cloudformation_role_arn = aws_iam_role.cloudformation_permission.arn
+
+  enable_multiple_deployments      = var.enable_multiple_deployments
+  multiple_deployments_base_domain = var.multiple_deployments_base_domain
 
   lambda_role_permissions_boundary = var.lambda_role_permissions_boundary
 
