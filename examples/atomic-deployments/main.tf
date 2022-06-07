@@ -119,7 +119,7 @@ module "tf_next" {
 
   # Uncomment when using in the cloned monorepo for tf-next development
   # source = "../.."
-  debug_use_local_packages = true
+  # debug_use_local_packages = true
 }
 
 #########

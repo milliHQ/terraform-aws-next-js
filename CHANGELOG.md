@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.0.0-canary.4] - 2022-06-07
+
+- Correctly increase version number of new packages
+
 ## [1.0.0-canary.3] - 2022-06-07
 
 - Fixes deployments without Lambdas ([#325](https://github.com/milliHQ/terraform-aws-next-js/pull/325))
