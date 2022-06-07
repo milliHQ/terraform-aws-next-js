@@ -156,7 +156,7 @@ module "cloudfront_cert" {
 
 module "tf_next" {
   source  = "milliHQ/next-js/aws"
-  version = "1.0.0-canary.3"
+  version = "1.0.0-canary.4"
 
   cloudfront_aliases             = local.aliases
   cloudfront_acm_certificate_arn = module.cloudfront_cert.acm_certificate_arn
