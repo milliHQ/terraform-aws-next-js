@@ -4,7 +4,7 @@ variable "tf_next_module_root" {
 
 variable "deploy_controller_component_version" {
   type    = string
-  default = "0.12.2"
+  default = "1.0.0-canary.3"
 }
 
 #####################

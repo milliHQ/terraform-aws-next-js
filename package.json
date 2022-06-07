@@ -61,6 +61,18 @@
       "@release-it/bumper": {
         "out": [
           {
+            "file": "modules/api/variables.tf",
+            "type": "text/plain"
+          },
+          {
+            "file": "modules/cloudfront-proxy-config/variables.tf",
+            "type": "text/plain"
+          },
+          {
+            "file": "modules/deploy-controller/variables.tf",
+            "type": "text/plain"
+          },
+          {
             "file": "modules/proxy/variables.tf",
             "type": "text/plain"
           },
