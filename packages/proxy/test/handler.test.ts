@@ -20,9 +20,7 @@ class ConfigServer {
     this.server = createServer((req, res) => {
       if (req.url && req.url.startsWith('/filesystem')) {
         const splittedUrl = req.url.split('/');
-        const filePath = decodeURIComponent(
-          splittedUrl[splittedUrl.length - 1]
-        );
+        const filePath = splittedUrl.slice(3).join('/');
 
         if (this.proxyConfig && this.staticFiles.includes(filePath)) {
           res.statusCode = 200;
