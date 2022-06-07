@@ -1,6 +1,6 @@
 {
   "name": "@millihq/terraform-next-proxy-config",
-  "version": "1.0.0-canary.3",
+  "version": "1.0.0-canary.4",
   "description": "Proxy config component of Terraform Next.js module for AWS",
   "main": "index.js",
   "license": "Apache-2.0",
@@ -16,7 +16,7 @@
     "postpack": "rm ./LICENSE ./third-party-licenses.txt"
   },
   "dependencies": {
-    "@millihq/tfn-dynamodb-actions": "1.0.0-canary.3",
+    "@millihq/tfn-dynamodb-actions": "1.0.0-canary.4",
     "aws-sdk": "*"
   },
   "devDependencies": {

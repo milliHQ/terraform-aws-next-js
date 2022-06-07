@@ -4,7 +4,7 @@
 
 variable "proxy_config_module_version" {
   type    = string
-  default = "1.0.0-canary.3"
+  default = "1.0.0-canary.4"
 }
 
 variable "lambda_runtime" {
