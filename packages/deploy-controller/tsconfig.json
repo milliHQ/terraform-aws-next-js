@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["./src/**/*", "./test/**/*"]
-}
