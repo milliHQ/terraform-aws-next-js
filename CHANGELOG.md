@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Fixes deployments without Lambdas ([#325](https://github.com/milliHQ/terraform-aws-next-js/pull/325))
+- Use CloudFormation role ([#324](https://github.com/milliHQ/terraform-aws-next-js/pull/324))
+- Improve CLI ([#323](https://github.com/milliHQ/terraform-aws-next-js/pull/323))
+- Fix runtime bundle ([#322](https://github.com/milliHQ/terraform-aws-next-js/pull/322))
+
 ## [1.0.0-canary.2] - 2022-05-31
 
 - Adds static prefix to files served from S3 ([#321](https://github.com/milliHQ/terraform-aws-next-js/pull/321))
