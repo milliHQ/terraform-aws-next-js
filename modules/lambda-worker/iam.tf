@@ -29,6 +29,11 @@ resource "aws_iam_role" "lambda" {
   tags = var.tags
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_vpc" {
+  role       = aws_iam_role.lambda
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 #################
 # Cloudwatch Logs
 #################
