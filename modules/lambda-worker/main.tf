@@ -59,6 +59,14 @@ resource "aws_lambda_function" "this" {
     }
   }
 
+  dynamic "vpc_config" {
+    for_each = var.lambda_attach_to_vpc ? [true] : []
+    content {
+      security_group_ids = var.vpc_security_group_ids
+      subnet_ids         = var.vpc_subnet_ids
+    }
+  }
+
   tags = var.tags
 
   # Wait until the creation of the log group is finished before the lambda is
