@@ -99,6 +99,10 @@ module "worker" {
     }
   }
 
+  lambda_attach_to_vpc   = var.lambda_attach_to_vpc
+  vpc_subnet_ids         = var.vpc_subnet_ids
+  vpc_security_group_ids = var.vpc_security_group_ids
+
   tags = var.tags
 
   debug_use_local_packages = var.debug_use_local_packages
