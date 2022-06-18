@@ -1,9 +1,27 @@
+<blockquote>
+  <p align="center">
+    <strong>Note</strong>
+    <br />
+    The main branch currently contains the atomic deployments alpha preview.
+    <br />
+    For the lastest stable release, check out the <a href="https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x"><code>v0.x</code> branch</a>.
+  </p>
+  <p align="center">
+    Please see our blog post <a href="https://milli.is/blog/the-road-to-atomic-deployments" target="_blank" rel="noopener">"The road to Atomic Deployments"</a><br />or watch the latest release review for more information:
+    <br />
+    <br />
+    <a aria-label="Terraform Next.js for AWS: First look at the new atomic deployments feature" href="https://www.youtube.com/watch?v=NY3zKnIcLd4" target="_blank" rel="noopener">
+      <img src="https://img.youtube.com/vi/NY3zKnIcLd4/0.jpg" height="260px">
+    </a>
+
+  </p>
+</blockquote>
+
+---
+
 # Terraform Next.js module for AWS
 
 ![CI status](https://github.com/milliHQ/terraform-aws-next-js/workflows/CI/badge.svg)
-
-> **Note:** The main branch currently contains the atomic deployments alpha preview.  
-> For the lastest stable release, please see the [`v0.x` branch](https://github.com/milliHQ/terraform-aws-next-js/tree/v0.x).
 
 A zero-config Terraform module for self-hosting Next.js sites serverless on AWS Lambda.
 
@@ -37,10 +55,10 @@ You should have the following tools installed:
 - [Node.js](https://nodejs.org)
 - [Bash](https://www.gnu.org/software/bash/) & [curl](https://curl.se/) (Should be available by default on many Linux based images or macOS)
 
-> Additionally we assume here that you already have a public [Route53 Hosted Zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html) associated with your AWS account.
+> **Note:** Additionally we assume here that you already have a public [Route53 Hosted Zone](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html) associated with your AWS account.
 >
-> This is currently a requirement in the preview phase of atomic deployments to enable preview deployments, where each deployment gets a unique subdomain assigned.
-> This will change once atomic deployments become generally available.
+> This is a requirement in the preview phase of atomic deployments, where each deployment gets a unique subdomain assigned.
+> It will change once atomic deployments become generally available.
 
 ### Setup the Next.js Terraform module
 
