@@ -79,6 +79,10 @@
           {
             "file": "modules/statics-deploy/variables.tf",
             "type": "text/plain"
+          },
+          {
+            "file": "examples/*/main.tf",
+            "type": "text/plain"
           }
         ]
       },
