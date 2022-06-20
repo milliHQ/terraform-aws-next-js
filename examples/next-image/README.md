@@ -1,5 +1,8 @@
 # Terraform Next.js Image component example
 
+> **Warning:** This example is not fully updated for the upcoming `v1.0.0` release.  
+> We recommend following the [Atomic Deployments Example](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/atomic-deployments) instead until this example gets an update.
+
 This example shows the usage of Next.js together with the `next/image` component.
 You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/next-image).
 

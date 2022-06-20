@@ -21,7 +21,8 @@ provider "aws" {
 }
 
 module "tf_next" {
-  source = "milliHQ/next-js/aws"
+  source  = "milliHQ/next-js/aws"
+  version = "1.0.0-canary.4"
 
   deployment_name = "tf-next-example-static"
 

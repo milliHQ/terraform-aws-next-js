@@ -1,8 +1,11 @@
 # Terraform Next.js complete example
 
+> **Warning:** This example is not fully updated for the upcoming `v1.0.0` release.  
+> We recommend following the [Atomic Deployments Example](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/atomic-deployments) instead until this example gets an update.
+
 This example contains a fully featured Next.js app (Static files, API-Routes, SSR) that can be deployed using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/milliHQ/next-js/aws) module.
 
-You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete).
+> **Notice:** You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/complete).
 
 ## Setup
 

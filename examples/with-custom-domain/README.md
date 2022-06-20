@@ -1,5 +1,8 @@
 # Terraform Next.js custom domain example
 
+> **Warning:** This example is not fully updated for the upcoming `v1.0.0` release.  
+> We recommend following the [Atomic Deployments Example](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/atomic-deployments) instead until this example gets an update.
+
 This example shows how to use a custom domain with the [Next.js Terraform module for AWS](https://registry.terraform.io/modules/milliHQ/next-js/aws).
 
 ## Features
