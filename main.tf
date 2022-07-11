@@ -2,7 +2,8 @@ locals {
   # next-tf config
   config_dir           = trimsuffix(var.next_tf_dir, "/")
   config_file          = jsondecode(file("${local.config_dir}/config.json"))
-  lambdas              = lookup(local.config_file, "lambdas", {})
+  plambdas              = lookup(local.config_file, "lambdas", {})
+  lambdas             = { for k, v in local.plambdas : replace(k, "/[^a-zA-Z0-9-_]/", "_") => v}
   static_files_archive = "${local.config_dir}/${lookup(local.config_file, "staticFilesArchive", "")}"
 
   # Build the proxy config JSON
