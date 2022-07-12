@@ -1,5 +1,8 @@
 # Terraform Next.js static example
 
+> **Warning:** This example is not fully updated for the upcoming `v1.0.0` release.  
+> We recommend following the [Atomic Deployments Example](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/atomic-deployments) instead until this example gets an update.
+
 This example shows a simple static Next.js app that is deployed to S3 without lambdas using the [Terraform Next.js for AWS](https://registry.terraform.io/modules/milliHQ/next-js/aws) module.
 
 You can find the full example code on [GitHub](https://github.com/milliHQ/terraform-aws-next-js/tree/main/examples/static).
