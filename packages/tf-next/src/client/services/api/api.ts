@@ -12,6 +12,7 @@ import {
   createResponseError,
   ResponseError,
 } from '../../../utils/errors/response-error';
+import { CredentialsError } from '../../../utils/errors';
 
 type NodeFetch = typeof nodeFetch;
 type CreateAliasRequestBody =
@@ -127,39 +128,46 @@ class ApiService {
     }
 
     const parsedUrl = new URL(requestUrl, this.apiEndpoint);
-    const signedRequest = await signature.sign({
-      hostname: parsedUrl.hostname,
-      protocol: parsedUrl.protocol,
-      path: parsedUrl.pathname,
-      headers: convertFetchHeaders({
-        ...fetchArgs[1]?.headers,
-        host: parsedUrl.hostname,
-        accept: 'application/json',
-      }),
-      method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
-      query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
-      body: fetchArgs[1]?.body,
-    });
-    const response = await nodeFetch(parsedUrl.href, {
-      ...fetchArgs[1],
-      headers: signedRequest.headers,
-    });
-
-    if (!response.ok) {
-      throw await createResponseError(response);
-    }
-
-    // OK - parse the response
-    if (response.headers.get('content-type') === 'application/json') {
-      try {
-        return (await response.json()) as Promise<T>;
-      } catch (_ignoredError) {
-        return {} as T;
+    try {
+      const signedRequest = await signature.sign({
+        hostname: parsedUrl.hostname,
+        protocol: parsedUrl.protocol,
+        path: parsedUrl.pathname,
+        headers: convertFetchHeaders({
+          ...fetchArgs[1]?.headers,
+          host: parsedUrl.hostname,
+          accept: 'application/json',
+        }),
+        method: fetchArgs[1]?.method?.toUpperCase() ?? 'GET',
+        query: convertURLSearchParamsToQueryBag(parsedUrl.searchParams),
+        body: fetchArgs[1]?.body,
+      });
+      const response = await nodeFetch(parsedUrl.href, {
+        ...fetchArgs[1],
+        headers: signedRequest.headers,
+      });
+      if (!response.ok) {
+        throw await createResponseError(response);
       }
-    }
 
-    // Response from API is not OK, should never happen
-    throw new Error('Invalid response from API');
+      // OK - parse the response
+      if (response.headers.get('content-type') === 'application/json') {
+        try {
+          return (await response.json()) as Promise<T>;
+        } catch (_ignoredError) {
+          return {} as T;
+        }
+      }
+
+      // Response from API is not OK, should never happen
+      throw new Error('Invalid response from API');
+    } catch (error: any) {
+      if (error.name === 'CredentialsProviderError') {
+        throw new CredentialsError();
+      }
+
+      throw error;
+    }
   }
 
   // Aliases

@@ -10,6 +10,16 @@ export class MissingApiEndpoint extends CliError<'MISSING_API_ENDPOINT'> {
   }
 }
 
+export class CredentialsError extends CliError<'INVALID_CREDENTIALS'> {
+  constructor() {
+    super({
+      code: 'INVALID_CREDENTIALS',
+      message:
+        'Could not read the provided AWS credentials.\nPlease make sure that the provided AWS profile exists.',
+    });
+  }
+}
+
 export class AliasOverrideNotAllowed extends CliError<'ALIAS_OVERRIDE_NOT_ALLOWED'> {
   constructor(alias: string) {
     super({

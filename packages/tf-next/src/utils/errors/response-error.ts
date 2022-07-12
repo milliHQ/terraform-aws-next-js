@@ -46,7 +46,7 @@ async function createResponseError(res: Response): Promise<ResponseError> {
       code: 'PERMISSION_ERROR',
       serverMessage: message,
       message:
-        'Authentication failed. Make sure that the AWS profile is set correctly.',
+        'Authentication failed.\nMake sure that the AWS user has the correct permissions.',
     });
   }
 

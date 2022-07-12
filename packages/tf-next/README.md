@@ -73,7 +73,8 @@ tf-next deploy --endpoint <api-endpoint>
 The following options can be passed when using the `tf-next deploy` command:
 
 - `--endpoint`
-- `--awsProfile`
+- `--profile` (also available as `--awsProfile`)  
+  AWS profile to use for authenticating against the API endpoint. Uses `default` profile if not specified.
 
 ### Deployment
 
@@ -106,7 +107,8 @@ tf-next deployment rm <deployment-id> --force
 The following options can be passed when using the `tf-next deployment` command:
 
 - `--endpoint`
-- `--awsProfile`
+- `--profile` (also available as `--awsProfile`)  
+  AWS profile to use for authenticating against the API endpoint. Uses `default` profile if not specified.
 
 ### Alias
 

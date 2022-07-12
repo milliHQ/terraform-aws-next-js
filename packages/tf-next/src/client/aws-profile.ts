@@ -2,6 +2,8 @@ import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { Credentials, MemoizedProvider } from '@aws-sdk/types';
 import { Options, Arguments } from 'yargs';
 
+import { Client } from './client';
+
 type AwsCredentialProvider = MemoizedProvider<Credentials>;
 
 type AWSProfileArguments = {
@@ -21,9 +23,13 @@ type AWSProfileArguments = {
  * @see {@link https://www.npmjs.com/package/@aws-sdk/credential-provider-node}
  */
 const awsProfileMiddleware = (argv: Arguments): AwsCredentialProvider => {
-  // If the --awsProfile flag is provided load a named profile
-  const profile =
-    typeof argv.awsProfile === 'string' ? argv.awsProfile : undefined;
+  // If the --profile flag is provided load a named profile
+  const profile = typeof argv.profile === 'string' ? argv.profile : undefined;
+
+  if (profile) {
+    const client = argv.client as Client;
+    client.output.debug(`Using AWS profile ${profile}`);
+  }
 
   return defaultProvider({
     profile,
@@ -38,6 +44,7 @@ const awsProfileMiddlewareOptions: Record<string, Options> = {
     type: 'string',
     description:
       'AWS profile that should be used for authentication with the API endpoint.',
+    alias: 'awsProfile',
   },
 };
 
