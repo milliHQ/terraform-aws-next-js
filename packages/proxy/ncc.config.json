@@ -1,7 +1,0 @@
-{
-  "externals": {
-    "aws-sdk": "aws-sdk",
-    "/^aws-sdk(/.*)/": "aws-sdk$1"
-  },
-  "minify": true
-}
