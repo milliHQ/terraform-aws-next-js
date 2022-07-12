@@ -4,7 +4,7 @@ variable "tf_next_module_root" {
 
 variable "api_component_version" {
   type    = string
-  default = "1.0.0-canary.4"
+  default = "1.0.0-canary.5"
 }
 
 ##########

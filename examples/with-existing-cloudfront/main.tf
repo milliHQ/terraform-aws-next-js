@@ -26,7 +26,7 @@ provider "aws" {
 
 module "tf_next" {
   source  = "milliHQ/next-js/aws"
-  version = "1.0.0-canary.4"
+  version = "1.0.0-canary.5"
 
   # Prevent creation of the main CloudFront distribution
   cloudfront_create_distribution = false

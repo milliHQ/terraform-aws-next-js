@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.0-canary.5] - 2022-07-12
+
 - Adds alias for profile, improves error message ([#344](https://github.com/milliHQ/terraform-aws-next-js/pull/344))
 
 ## [1.0.0-canary.4] - 2022-06-07

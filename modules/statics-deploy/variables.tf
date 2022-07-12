@@ -1,6 +1,6 @@
 variable "deploy_trigger_module_version" {
   type    = string
-  default = "1.0.0-canary.4"
+  default = "1.0.0-canary.5"
 }
 
 variable "cloudfront_id" {
