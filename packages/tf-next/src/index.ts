@@ -16,9 +16,14 @@ async function runCli() {
       // give us access to the argv argument.
       // @see {@link https://github.com/yargs/yargs/issues/2133}
       (error, argv, output) => {
-        if (error instanceof CliError) {
-          const client = argv.client as Client;
+        const client = argv.client as Client | undefined;
 
+        // Ensure that the output halts
+        if (client) {
+          client.output.stopSpinner();
+        }
+
+        if (error instanceof CliError) {
           // Client should be initialized at this point
           if (!client) {
             throw new Error('Client was not initialized');
