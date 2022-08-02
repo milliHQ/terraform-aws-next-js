@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "watch": "tsc --watch",
     "prepack": "cp ../../LICENSE ./",
     "postpack": "rm ./LICENSE"
   },

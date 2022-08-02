@@ -6,6 +6,7 @@
   "homepage": "https://registry.terraform.io/modules/milliHQ/next-js/aws",
   "scripts": {
     "build": "./build.sh",
+    "watch": "tsc --watch",
     "test-integration-once": "jest --env node --verbose --runInBand --bail"
   },
   "repository": {

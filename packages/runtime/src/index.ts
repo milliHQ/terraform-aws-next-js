@@ -41,7 +41,7 @@ import path from 'path';
 import resolveFrom from 'resolve-from';
 import semver from 'semver';
 import url from 'url';
-import createServerlessConfig from './create-serverless-config';
+// import createServerlessConfig from './create-serverless-config';
 import nextLegacyVersions from './legacy-versions';
 import {
   addLocaleOrDefault,
@@ -118,22 +118,22 @@ async function readPackageJson(entryPath: string): Promise<PackageJson> {
 /**
  * Write package.json
  */
-async function writePackageJson(workPath: string, packageJson: PackageJson) {
-  await writeFile(
-    path.join(workPath, 'package.json'),
-    JSON.stringify(packageJson, null, 2)
-  );
-}
+// async function writePackageJson(workPath: string, packageJson: PackageJson) {
+//   await writeFile(
+//     path.join(workPath, 'package.json'),
+//     JSON.stringify(packageJson, null, 2)
+//   );
+// }
 
 /**
  * Write .npmrc with npm auth token
  */
-async function writeNpmRc(workPath: string, token: string) {
-  await writeFile(
-    path.join(workPath, '.npmrc'),
-    `//registry.npmjs.org/:_authToken=${token}`
-  );
-}
+// async function writeNpmRc(workPath: string, token: string) {
+//   await writeFile(
+//     path.join(workPath, '.npmrc'),
+//     `//registry.npmjs.org/:_authToken=${token}`
+//   );
+// }
 
 /**
  * Get the installed Next version.
@@ -247,7 +247,7 @@ export async function build({
   const dotNextStatic = path.join(entryPath, outputDirectory, 'static');
   const baseDir = repoRootPath || workPath;
 
-  await download(files, workPath, meta);
+  // await download(files, workPath, meta);
 
   let pkg = await readPackageJson(entryPath);
   const nextVersionRange = await getNextVersionRange(entryPath);
@@ -352,75 +352,75 @@ export async function build({
   const isLegacy = nextVersionRange && isLegacyNext(nextVersionRange);
   debug(`MODE: ${isLegacy ? 'legacy' : 'serverless'}`);
 
-  if (isLegacy) {
-    console.warn(
-      "WARNING: your application is being deployed in @vercel/next's legacy mode. http://err.sh/vercel/vercel/now-next-legacy-mode"
-    );
+  // if (isLegacy) {
+  //   console.warn(
+  //     "WARNING: your application is being deployed in @vercel/next's legacy mode. http://err.sh/vercel/vercel/now-next-legacy-mode"
+  //   );
 
-    await Promise.all([
-      remove(path.join(entryPath, 'yarn.lock')),
-      remove(path.join(entryPath, 'package-lock.json')),
-    ]);
+  //   await Promise.all([
+  //     remove(path.join(entryPath, 'yarn.lock')),
+  //     remove(path.join(entryPath, 'package-lock.json')),
+  //   ]);
 
-    debug('Normalizing package.json');
-    pkg = normalizePackageJson(pkg);
-    debug('Normalized package.json result: ', pkg);
-    await writePackageJson(entryPath, pkg);
-  }
+  //   debug('Normalizing package.json');
+  //   pkg = normalizePackageJson(pkg);
+  //   debug('Normalized package.json result: ', pkg);
+  //   await writePackageJson(entryPath, pkg);
+  // }
 
-  let buildScriptName = getScriptName(pkg, [
-    'vercel-build',
-    'now-build',
-    'build',
-  ]);
-  const { installCommand, buildCommand } = config;
+  // let buildScriptName = getScriptName(pkg, [
+  //   'vercel-build',
+  //   'now-build',
+  //   'build',
+  // ]);
+  //   const { installCommand, buildCommand } = config;
 
-  if (!buildScriptName && !buildCommand) {
-    console.log(
-      'Your application is being built using `next build`. ' +
-        'If you need to define a different build step, please create a `vercel-build` script in your `package.json` ' +
-        '(e.g. `{ "scripts": { "vercel-build": "npm run prepare && next build" } }`).'
-    );
+  // if (!buildScriptName && !buildCommand) {
+  //   console.log(
+  //     'Your application is being built using `next build`. ' +
+  //       'If you need to define a different build step, please create a `vercel-build` script in your `package.json` ' +
+  //       '(e.g. `{ "scripts": { "vercel-build": "npm run prepare && next build" } }`).'
+  //   );
 
-    await writePackageJson(entryPath, {
-      ...pkg,
-      scripts: {
-        'vercel-build': 'next build',
-        ...pkg.scripts,
-      },
-    });
-    buildScriptName = 'vercel-build';
-  }
+  //   await writePackageJson(entryPath, {
+  //     ...pkg,
+  //     scripts: {
+  //       'vercel-build': 'next build',
+  //       ...pkg.scripts,
+  //     },
+  //   });
+  //   buildScriptName = 'vercel-build';
+  // }
 
-  if (process.env.NPM_AUTH_TOKEN) {
-    debug('Found NPM_AUTH_TOKEN in environment, creating .npmrc');
-    await writeNpmRc(entryPath, process.env.NPM_AUTH_TOKEN);
-  }
+  // if (process.env.NPM_AUTH_TOKEN) {
+  //   debug('Found NPM_AUTH_TOKEN in environment, creating .npmrc');
+  //   await writeNpmRc(entryPath, process.env.NPM_AUTH_TOKEN);
+  // }
 
-  if (typeof installCommand === 'string') {
-    if (installCommand.trim()) {
-      console.log(`Running "install" command: \`${installCommand}\`...`);
-      await execCommand(installCommand, {
-        ...spawnOpts,
+  // if (typeof installCommand === 'string') {
+  //   if (installCommand.trim()) {
+  //     console.log(`Running "install" command: \`${installCommand}\`...`);
+  //     await execCommand(installCommand, {
+  //       ...spawnOpts,
 
-        // Yarn v2 PnP mode may be activated, so force
-        // "node-modules" linker style
-        env: {
-          YARN_NODE_LINKER: 'node-modules',
-          ...spawnOpts.env,
-        },
+  //       // Yarn v2 PnP mode may be activated, so force
+  //       // "node-modules" linker style
+  //       env: {
+  //         YARN_NODE_LINKER: 'node-modules',
+  //         ...spawnOpts.env,
+  //       },
 
-        cwd: entryPath,
-      });
-    } else {
-      console.log(`Skipping "install" command...`);
-    }
-  } else {
-    console.log('Installing dependencies...');
-    const installTime = Date.now();
-    await runNpmInstall(entryPath, [], spawnOpts, meta);
-    debug(`Install complete [${Date.now() - installTime}ms]`);
-  }
+  //       cwd: entryPath,
+  //     });
+  //   } else {
+  //     console.log(`Skipping "install" command...`);
+  //   }
+  // } else {
+  //   console.log('Installing dependencies...');
+  //   const installTime = Date.now();
+  //   await runNpmInstall(entryPath, [], spawnOpts, meta);
+  //   debug(`Install complete [${Date.now() - installTime}ms]`);
+  // }
 
   // Refetch Next version now that dependencies are installed.
   // This will now resolve the actual installed Next version,
@@ -434,40 +434,40 @@ export async function build({
     });
   }
 
-  if (!isLegacy) {
-    await createServerlessConfig(workPath, entryPath, nextVersion);
-  }
+  // if (!isLegacy) {
+  //   await createServerlessConfig(workPath, entryPath, nextVersion);
+  // }
 
   const memoryToConsume = Math.floor(os.totalmem() / 1024 ** 2) - 128;
   const env: typeof process.env = { ...spawnOpts.env };
   env.NODE_OPTIONS = `--max_old_space_size=${memoryToConsume}`;
 
-  if (buildCommand) {
-    // Add `node_modules/.bin` to PATH
-    const nodeBinPath = await getNodeBinPath({ cwd: entryPath });
-    env.PATH = `${nodeBinPath}${path.delimiter}${env.PATH}`;
+  // if (buildCommand) {
+  //   // Add `node_modules/.bin` to PATH
+  //   const nodeBinPath = await getNodeBinPath({ cwd: entryPath });
+  //   env.PATH = `${nodeBinPath}${path.delimiter}${env.PATH}`;
 
-    // Yarn v2 PnP mode may be activated, so force "node-modules" linker style
-    if (!env.YARN_NODE_LINKER) {
-      env.YARN_NODE_LINKER = 'node-modules';
-    }
+  //   // Yarn v2 PnP mode may be activated, so force "node-modules" linker style
+  //   if (!env.YARN_NODE_LINKER) {
+  //     env.YARN_NODE_LINKER = 'node-modules';
+  //   }
 
-    debug(
-      `Added "${nodeBinPath}" to PATH env because a build command was used.`
-    );
+  //   debug(
+  //     `Added "${nodeBinPath}" to PATH env because a build command was used.`
+  //   );
 
-    console.log(`Running "${buildCommand}"`);
-    await execCommand(buildCommand, {
-      ...spawnOpts,
-      cwd: entryPath,
-      env,
-    });
-  } else if (buildScriptName) {
-    await runPackageJsonScript(entryPath, buildScriptName, {
-      ...spawnOpts,
-      env,
-    });
-  }
+  //   console.log(`Running "${buildCommand}"`);
+  //   await execCommand(buildCommand, {
+  //     ...spawnOpts,
+  //     cwd: entryPath,
+  //     env,
+  //   });
+  // } else if (buildScriptName) {
+  //   await runPackageJsonScript(entryPath, buildScriptName, {
+  //     ...spawnOpts,
+  //     env,
+  //   });
+  // }
 
   let appMountPrefixNoTrailingSlash = path.posix
     .join('/', entryDirectory)
@@ -985,7 +985,12 @@ export async function build({
         return;
       }
 
-      const staticRoute = path.join(entryDirectory, pathname);
+      let staticRoute = path.join(entryDirectory, pathname);
+
+      const normalizedBasePath = routesManifest?.basePath?.replace(/^\//, '');
+      if (normalizedBasePath && staticRoute === `${normalizedBasePath}/index`) {
+        staticRoute = normalizedBasePath;
+      }
 
       staticPages[staticRoute] = staticPageFiles[page];
       staticPages[staticRoute].contentType = htmlContentType;
@@ -995,7 +1000,6 @@ export async function build({
         return;
       }
     });
-
     // this can be either 404.html in latest versions
     // or _errors/404.html versions while this was experimental
     static404Page =
