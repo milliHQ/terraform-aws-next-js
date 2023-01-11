@@ -10,7 +10,7 @@
   "dependencies": {
     "@millihq/tfn-dynamodb-actions": "1.0.0-canary.5",
     "aws-sdk": "*",
-    "class-validator": "^0.13.2",
+    "class-validator": "^0.14.0",
     "lambda-api": "^0.11.2"
   },
   "devDependencies": {
