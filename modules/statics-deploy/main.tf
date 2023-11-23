@@ -14,7 +14,16 @@ resource "aws_s3_bucket" "static_upload" {
   tags = merge(var.tags, var.tags_s3_bucket)
 }
 
+resource "aws_s3_bucket_ownership_controls" "static_upload" {
+  bucket = aws_s3_bucket.static_upload.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+    
+  }
+}
+
 resource "aws_s3_bucket_acl" "static_upload" {
+  depends_on = [aws_s3_bucket_ownership_controls.static_upload]
   bucket = aws_s3_bucket.static_upload.id
   acl    = "private"
 }
@@ -39,7 +48,15 @@ resource "aws_s3_bucket" "static_deploy" {
   tags = merge(var.tags, var.tags_s3_bucket)
 }
 
+resource "aws_s3_bucket_ownership_controls" "static_deploy" {
+  bucket = aws_s3_bucket.static_deploy.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
 resource "aws_s3_bucket_acl" "static_deploy" {
+  depends_on = [aws_s3_bucket_ownership_controls.static_deploy]
   bucket = aws_s3_bucket.static_deploy.id
   acl    = "private"
 }
